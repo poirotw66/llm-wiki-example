@@ -1,6 +1,6 @@
-# LLM Wiki（Example）
+# LLM Wiki（llm-wiki-example）
 
-Persistent, LLM-maintained knowledge base in markdown（空骨架）。
+Persistent, LLM-maintained knowledge base in markdown（空骨架）；本 repo 根目錄即主工作區。
 
 ## Folder Layout
 
@@ -18,7 +18,7 @@ wiki/
   graph/
   index.md
   log.md
-AGENTS.md     # 本 example 內複本，規約以此為準
+AGENTS.md     # repo 根目錄規約，以此為準
 ```
 
 ## Quick Start

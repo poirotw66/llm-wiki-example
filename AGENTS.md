@@ -50,9 +50,9 @@ Build a **self-evolving knowledge base** that:
 
 * `docs/` (**supporting files**, not part of the wiki knowledge corpus):
 
-  * `docs/templates/page-template.md` — optional scaffold for new Markdown pages; MUST still match **Required Frontmatter** below and, for `wiki/sources/*`, the **Source Page Schema** section.
+  * `docs/templates/page-template.md` — index of templates; choose **page-template-source.md** for `wiki/sources/*` or **page-template-concept.md** for other wiki types. MUST still match **Required Frontmatter** below and, for `wiki/sources/*`, the **Source Page Schema** section headings exactly.
 
-  * `docs/OPERATIONS.md` — canonical **copy-paste English prompts** and numbered procedural checklists for Ingest / Query / Lint agents; maintain prompts here as the single source of truth.
+  * `docs/OPERATIONS.md` — canonical **copy-paste English prompts** and numbered procedural checklists for Ingest / Query / Lint / FAQ / Graph agents; maintain prompts here as the single source of truth.
 
 ---
 
@@ -60,7 +60,7 @@ Build a **self-evolving knowledge base** that:
 
 * Markdown only
 
-* Must include YAML frontmatter
+* Must include YAML frontmatter on wiki pages **except** `wiki/index.md` (catalog — see **Required Frontmatter** below)
 
 * Language: **Traditional Chinese**
 
@@ -86,6 +86,12 @@ source_count: 0
 tags: []
 ---
 ```
+
+### `wiki/index.md` (catalog)
+
+* **YAML frontmatter is optional** for this file. The required shape is the **Index Structure** heading layout (`# Index`, `## Overview`, …); do not fail compliance for missing frontmatter here.
+* The `type: "overview"` value in the schema is for **standalone** overview pages if you add them (e.g. team-specific `wiki/overview.md`); it is **not** required for `wiki/index.md`.
+* If you choose to add frontmatter to `wiki/index.md`, use the same keys as **Required Frontmatter** (e.g. `type: overview`, `title` describing the catalog).
 
 ---
 
@@ -173,7 +179,7 @@ Each `wiki/sources/*` must include:
 ## Limitations / Gaps
 ```
 
-Optional starter layout (including generic sections beyond sources): **`docs/templates/page-template.md`**.
+Starter layouts: **`docs/templates/page-template-source.md`** (`wiki/sources/*`); **`docs/templates/page-template-concept.md`** (concept / entity / query / lint). See **`docs/templates/page-template.md`** for the index.
 
 ---
 
@@ -256,7 +262,9 @@ Generate reusable knowledge from existing wiki
    * workflows
    * cross-page relationships
 4. Generate FAQ (basic → advanced)
-5. Persist
+5. Persist new or updated FAQ pages under `wiki/faq/`
+6. Update `wiki/index.md` (FAQ section: each entry = link + one-line description)
+7. Append `wiki/log.md`
 
 ---
 
@@ -320,6 +328,10 @@ Detect:
 
 Output → `wiki/lint/`
 
+When you **add or materially change** persisted lint artifacts under `wiki/lint/`, update `wiki/index.md` if the catalog should surface them (e.g. link a lint summary page).
+
+Append `wiki/log.md` for **every** Lint run (including when no new files were written — record pass / short summary).
+
 ---
 
 # 🧠 Operation: Graph
@@ -357,7 +369,8 @@ Append only:
 * NEVER hallucinate without marking
 * ALWAYS cite
 * ALWAYS link pages
-* ALWAYS update index + log
+* ALWAYS append `wiki/log.md` when completing any operation defined in this document (each run leaves a trace; use pass / no-op when that operation allows no file changes)
+* Update `wiki/index.md` when the operation **creates, deletes, or materially changes** wiki pages or catalog-listed artifacts; when an operation’s steps are narrower (e.g. Graph: index only after graph artifacts change), **follow those steps**
 
 ---
 
