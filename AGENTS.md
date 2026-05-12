@@ -72,6 +72,11 @@ Build a **self-evolving knowledge base** that:
   * structured
   * verifiable
 
+* **檔案與路徑命名**（`wiki/**`、Ingest 新增之 `raw/sources/*.md` 等由本 wiki 決定之檔名）：
+
+  * 使用**繁體中文**或**英文**（含技術詞、既有目錄沿用之 slug，例如 `concepts/api`）。
+  * **勿**以**漢語拼音**拼寫中文語意作為檔名或路徑片段：對台灣讀者不直觀，也與本地慣用之書寫系統不一致；應改為繁體字面，或改用具辨識度之英文識別名。
+
 ---
 
 # 📌 Required Frontmatter
@@ -206,7 +211,7 @@ The canonical catalog is **`wiki/index.md`** (single file). Do **not** assume a 
 # 🛠 Operation: Ingest
 
 1. Read the **specified** source file (path or artifact provided for this ingest).
-2. **Archive** it into `raw/sources/*.md` (new file only; stable name per team convention). **Do not** overwrite or in-place edit existing files under `raw/` unless explicitly approved.
+2. **Archive** it into `raw/sources/*.md` (new file only; stable name per team convention; follow **檔案與路徑命名** in Wiki Page Conventions). **Do not** overwrite or in-place edit existing files under `raw/` unless explicitly approved.
 3. Create/update `wiki/sources/` from that archived file under `raw/sources/`.
 4. Extract:
 
