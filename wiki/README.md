@@ -7,6 +7,7 @@
 ```text
 raw/                          # repo 擴充：不可變歸檔（非 bundle 本體）
   sources/
+  assets/                     # 圖片／附件
 wiki/                         # OKF bundle 根
   index.md                    # okf_version + 總目錄（§6）
   log.md                      # 變更／操作 log（§7 + 本倉擴充）

@@ -11,7 +11,8 @@
 ```text
 repo/
 ├── raw/                    # 本倉擴充：不可變歸檔（不在 OKF bundle 內）
-│   └── sources/
+│   ├── sources/
+│   └── assets/             # 圖片／附件（.gitkeep 佔位）
 └── wiki/                   # OKF Knowledge Bundle 根
     ├── index.md            # OKF 保留檔：目錄（§6）
     ├── log.md              # OKF 保留檔：變更 log（§7）
@@ -31,7 +32,7 @@ repo/
 | Concept ID | 路徑去 `.md`，相對 `wiki/`（例：`entities/訂單服務`） |
 | 保留檔名 | 僅 `index.md`、`log.md`（[SPEC §3.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)） |
 
-`raw/` 為 **可追溯歸檔** 擴充：Concept 的 `resource` 可指向 `raw/sources/...` 或外部 URL，消費端無須理解 `raw/` 目錄即可讀 bundle。
+`raw/` 為 **可追溯歸檔** 擴充：Concept 的 `resource` 填 **歸檔 slug** 或外部 URL（見下方 **resource 語意**）；消費端讀 bundle 時無須理解 `raw/` 目錄。
 
 ---
 
@@ -54,7 +55,7 @@ repo/
 | `type`（必填） | `concept` \| `entity` \| `source` \| `query` \| `lint` | OKF 不登錄型別；本倉以 **頁面角色** 作為 `type`。對外可另映射領域型別（見下方匯出） |
 | `title`（建議） | 同左 | |
 | `description`（建議） | 同左 | 宜與 Summary 首句一致 |
-| `resource`（建議） | `raw/sources/...` 或 HTTPS URL | 來源頁／實體頁優先填 |
+| `resource`（建議） | **歸檔 slug** 或 HTTPS URL | 見下方 **resource 語意**；勿與 bundle 內 `/sources/....md` 路徑混淆 |
 | `tags`（建議） | 同左 | |
 | `timestamp`（建議） | ISO 8601 | |
 | — | `status` | 本倉擴充：審閱狀態 |
@@ -62,17 +63,49 @@ repo/
 | — | `source_count` | 本倉擴充：引用計數慣例 |
 | `okf_version` | 僅 `wiki/index.md` 可選 | 宣告 `"0.1"`（[SPEC §11](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)） |
 
+### resource 語意（本倉慣例）
+
+OKF `resource` 為底層資產識別。本倉採兩種填法：
+
+| `resource` 值 | 意義 | 範例 |
+|---------------|------|------|
+| **歸檔 slug** | 對應 `raw/sources/<slug>.md`（不含路徑、不含 `.md`） | `訂單-api-簡介` → `raw/sources/訂單-api-簡介.md` |
+| **HTTPS URL** | 外部 canonical URI | `https://api.example.internal/v1` |
+
+* **來源頁**（`type: source`）與綁定實體的 **entity** 頁：優先填歸檔 slug（與歸檔檔名一致，不含副檔名）。
+* **抽象 concept** 頁：通常省略 `resource`，或填外部標準文件 URL。
+* **Citations** 正文仍寫實際路徑 `raw/sources/<slug>.md`，與 frontmatter slug 對照。
+
+示範：[訂單 API 簡介](../wiki/sources/訂單-api-簡介.md) 之 `resource: "訂單-api-簡介"`。
+
 ---
 
 ## 連結
 
-| 情境 | OKF 建議 | 本倉撰寫慣例 |
-|------|----------|--------------|
-| Bundle 內 | `[標題](/concepts/rest-api.md)` | `[[concepts/rest-api]]` |
-| 相對路徑 | `[鄰居](./other.md)` | 可用 |
-| 斷鏈 | 允許（待補知識） | 同左 |
+### 撰寫（`wiki/` 嵌於 repo — 本範本）
 
-匯出給 [enrichment_agent visualize](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf) 或其他消費端時，將 `[[path]]` 轉為 `/path.md` markdown 連結。
+GitHub／IDE **無法** 解析以 `/` 開頭的 OKF bundle 路徑。互連 **一律** 用 **markdown 相對路徑**：
+
+```md
+<!-- 自 wiki/concepts/rest-api.md -->
+[訂單 API 簡介](../sources/訂單-api-簡介.md)
+```
+
+| 情境 | 格式 |
+|------|------|
+| 跨型別子目錄 | `../sources/foo.md`、`../concepts/bar.md` |
+| 同子目錄 | `./neighbor.md` |
+| 自子目錄連 Index | `../index.md` |
+| `wiki/index.md` 列目錄 | `./concepts/foo.md` |
+| 歸檔稿（Citations） | `../../raw/sources/<slug>.md`（自 `wiki/sources/`） |
+
+**禁止** `[[concepts/...]]` 與撰寫時的 `/concepts/....md`（除非匯出獨立 bundle）。
+
+### 匯出（獨立 OKF bundle）
+
+將 `wiki/` 打包為 bundle 根時，可將相對連結轉為 OKF 建議的 `/concepts/foo.md` 供 visualize 等工具使用。
+
+示範：`resource: "訂單-api-簡介"` 對應 [歸檔](../../raw/sources/訂單-api-簡介.md)；wiki 頁見 [訂單 API 簡介](../wiki/sources/訂單-api-簡介.md)（自 repo 根）。
 
 ---
 
@@ -80,7 +113,8 @@ repo/
 
 | 來源類型 | 作法 |
 |----------|------|
-| Bundle 內來源 Concept | 內文 `[[sources/檔名]]` 或 `/sources/檔名.md` |
+| Bundle 內來源 Concept | 相對路徑，例 `../sources/檔名.md` |
+| 歸檔稿 | `../../raw/sources/<slug>.md`（自 `wiki/sources/` 等） |
 | 外部 URL | 文末 `# Citations` 編號列表（[SPEC §8](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)） |
 
 本倉 **來源頁 Schema**（Summary、Key Concepts…）為 producer 慣例，非 OKF 強制 body 區塊；與 OKF「結構化 markdown body」目標一致。
@@ -94,7 +128,7 @@ repo/
 1. 以 `wiki/` 為 bundle 根打包（git／tar）。
 2. 確保每 Concept 有 `type`；補齊建議欄位 `title`、`description`、`resource`、`tags`、`timestamp`。
 3. 可選：將 `type` 映射為領域字串（例：`entity` + 標籤 `api` → `API Service`）。
-4. 將 `[[...]]` 轉為 `/...md` 連結。
+4. 匯出獨立 bundle 時，可將相對連結轉為 OKF `/path.md`。
 5. 根 `index.md` 可加 `okf_version: "0.1"`。
 
 ### 匯入（他方 OKF → 本倉）

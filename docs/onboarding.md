@@ -25,7 +25,7 @@
 
 ## 步驟 1：歸檔來源（`raw/sources/`）
 
-**新增** `raw/sources/訂單-api-簡介.md`（本倉已有示範檔，fork 後請改為你們的真實來源）。
+**新增** `raw/sources/訂單-api-簡介.md`（本倉已有示範檔）。日後修訂來源時 **另建新歸檔檔**，勿改寫既有 `raw/` 檔。fork 後請改為你們的真實來源。
 
 命名：依 **AGENTS.md** 使用繁體字面或英文識別名，**勿**用漢語拼音。
 
@@ -56,16 +56,18 @@
 
 ## 步驟 5：append 操作日誌（`wiki/log.md`）
 
-本倉示範見 [`wiki/log.md`](../wiki/log.md)。部門 fork 後可清空 log，自第一次真實 Ingest 起 append。
+本倉 `wiki/log.md` **刻意留白**（範例 repo 不記維護 log）。部門 fork 後自第一次真實操作起 append。
 
 ---
 
 ## 步驟 6（可選）：Query 與 FAQ
 
-| 需求 | 位置 |
-|------|------|
-| 單一可重用問答 | `wiki/queries/` |
-| 題組（8–15 題） | `wiki/faq/` |
+| 需求 | 本倉示範 |
+|------|----------|
+| 單一可重用問答 | [`wiki/queries/如何建立訂單.md`](../wiki/queries/如何建立訂單.md) |
+| 題組（8 題） | [`wiki/faq/訂單-api-範例-faq.md`](../wiki/faq/訂單-api-範例-faq.md) |
+
+版型：`page-template-concept.md`（`type: query`；FAQ 另加 `tags: ["faq"]`）。
 
 ---
 
@@ -79,6 +81,7 @@
 
 - [ ] `raw/sources/` 有新歸檔，且未就地改寫舊檔
 - [ ] 每個新 wiki 頁有 frontmatter 與 ≥1 連結
-- [ ] 可驗證敘述有 `[[sources/...]]` 或 `raw/` 路徑
+- [ ] 可驗證敘述有 [來源](../sources/....md)（相對路徑）或 `../../raw/sources/*`
+- [ ] bundle 內連結為 **相對路徑**（勿用 `/path.md` 根路徑；無 `[[...]]`）
 - [ ] `wiki/index.md` 已列出所有新頁
 - [ ] `wiki/log.md` 已 append 本輪操作

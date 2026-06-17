@@ -2,7 +2,7 @@
 title: "<來源頁標題>"
 type: source
 description: "<一語摘要（OKF 建議）>"
-resource: "<raw/sources/... 或 URL（OKF 建議）>"
+resource: "<歸檔 slug（對應 raw/sources/<slug>.md）或 URL>"
 tags: []
 timestamp: "YYYY-MM-DDTHH:MM:SSZ"
 status: draft
@@ -22,15 +22,15 @@ source_count: 1
 
 ## Key Concepts
 
-- 概念或術語 — 簡短說明；可連結例如 [[concepts/example]]
+- 概念或術語 — 簡短說明；可連結例如 [範例概念](../concepts/example.md)
 
 ## Entities
 
-- 系統或產品 — 簡短說明；可連結例如 [[entities/example]]
+- 系統或產品 — 簡短說明；可連結例如 [範例實體](../entities/example.md)
 
 ## Notable Claims
 
-- 可驗證主張，附引用 [[sources/<slug>]] 或 `raw/sources/*` 路徑錨點。
+- 可驗證主張，附引用 [本來源頁](./<slug>.md) 或 `../../raw/sources/<slug>.md`
 
 ## Limitations / Gaps
 
@@ -38,9 +38,9 @@ source_count: 1
 
 ## Relationships
 
-- related_to: [[concepts/...]]
-- used_in: [[entities/...]]
+- related_to: [概念](../concepts/....md)
+- used_in: [實體](../entities/....md)
 
 ## Citations
 
-- 外部 URL 請列於此（OKF §8）；bundle 內來源可用 `[[sources/<slug>]]`。
+- 外部 URL 請列於此（OKF §8）；歸檔稿：`../../raw/sources/<slug>.md`

@@ -44,7 +44,7 @@
 
 # 📁 目錄契約
 
-* `raw/`：既有來源的 **不可變** 區（❗ 不可就地修改）。**Ingest** 第二步可將 **新** 檔 **歸檔** 至 `raw/sources/`。
+* `raw/`：既有來源的 **不可變** 區（❗ 不可就地修改）。**Ingest** 第二步可將 **新** 檔 **歸檔** 至 `raw/sources/`。來源修訂時 **另建新歸檔檔**（勿改寫既有 `raw/` 檔）；示範見 `raw/sources/訂單-api-簡介.md`。
 
 * `raw/assets/`：選用之圖片／附件，由來源或 wiki 頁引用（不解析為知識頁；Ingest 或維護時視需要新增）。
 
@@ -71,6 +71,8 @@
 * `docs/`（**支援文件**，不計入 wiki 知識本體）：
 
   * `docs/templates/page-template-source.md` — 僅供 **`wiki/sources/*`** 起稿；區塊標題須與下方 **來源頁 Schema** 完全一致。
+
+  * `docs/templates/page-template-concept.md` — 供 **`wiki/concepts/*`**、**`wiki/entities/*`**、**`wiki/queries/*`** 起稿（建議骨架）。
 
   * `docs/onboarding.md` — 第一輪 Ingest 解說；與本倉 **wiki 虛構示範頁** 對照。
 
@@ -122,7 +124,7 @@ OKF **不**規定固定分類法；子目錄僅為組織 Concept 之用（[SPEC 
 | **必填** | `type` | 概念種類；本倉慣用 `concept`、`entity`、`source`、`query`、`lint`（亦符合 OKF「自描述型別字串」） |
 | **建議** | `title` | 顯示名稱 |
 | **建議** | `description` | 一語摘要（index、搜尋預覽） |
-| **建議** | `resource` | 底層資產 URI；來源頁指向 `raw/sources/...` 或原始 URL |
+| **建議** | `resource` | **歸檔 slug**（對應 `raw/sources/<slug>.md`）或外部 HTTPS URL；見 **`docs/okf.md`** → **resource 語意** |
 | **建議** | `tags` | 標籤列表 |
 | **建議** | `timestamp` | ISO 8601 最後有意義變更時間 |
 
@@ -141,7 +143,7 @@ OKF **不**規定固定分類法；子目錄僅為組織 Concept 之用（[SPEC 
 type: concept
 title: "<Page title>"
 description: "<一語摘要>"
-resource: "<URL 或 raw/sources/...>"
+resource: "<歸檔 slug 或 https://...>"
 tags: []
 timestamp: "YYYY-MM-DDTHH:MM:SSZ"
 status: "<draft|active|needs-review>"
@@ -167,29 +169,33 @@ source_count: 0
 * 每個新頁須被別處引用
 * 盡量雙向連結
 
-### OKF 連結（互通首選）
+### Bundle 內連結（強制格式）
 
-Bundle 內 Concept 互連時，OKF **建議** bundle 根相對絕對路徑（以 `/` 開頭、含 `.md`）：
+`wiki/` **嵌於本 repo** 時，GitHub／IDE **無法** 解析 OKF 的 `/concepts/foo.md`（會指向網站或磁碟根目錄而斷鏈）。Concept 互連 **一律** 使用 **markdown 相對路徑**（含 `.md`）：
 
 ```md
-見 [REST API](/concepts/rest-api.md)。
+<!-- 自 wiki/concepts/rest-api.md -->
+見 [訂單 API 簡介](../sources/訂單-api-簡介.md)。
+
+<!-- 自 wiki/sources/訂單-api-簡介.md -->
+見 [REST API](../concepts/rest-api.md)。
 ```
 
-### Wiki 撰寫慣例（本倉）
+| 起點 | 連至同層鄰居 | 連至其他型別子目錄 |
+|------|--------------|-------------------|
+| `wiki/concepts/` | `./other.md` | `../sources/foo.md`、`../entities/bar.md` |
+| `wiki/sources/` | `./本頁.md` | `../concepts/foo.md` |
+| `wiki/index.md` | — | `./concepts/foo.md` |
 
-內文可使用 wiki 式連結，不含 `wiki/` 前綴，語意等同 OKF bundle 內路徑：
+**OKF `/path.md`**：僅用於 **獨立 bundle 匯出**（`wiki/` 為根目錄）或 OKF visualize 等消費端；撰寫時勿用。
 
-* `[[sources/example]]` ↔ `/sources/example.md`
-* `[[concepts/api]]` ↔ `/concepts/api.md`
-* `[[entities/spring-boot]]` ↔ `/entities/spring-boot.md`
+**禁止** `[[concepts/...]]` wiki 式連結。
 
-路徑相對於 `wiki/` 解析。匯出至他方 OKF 工具時，應轉為標準 markdown 連結（見 **`docs/okf.md`**）。
-
-自 wiki 頁連至總目錄或支援文件時，`[[../index]]`（即 `wiki/index.md`）以及 repo 根 **`AGENTS.md`**、**`docs/PROMPTS.md`**、**`docs/onboarding.md`**、**`SKILL.md`** 均為有效目標。
+連至 [Index](../index.md)（自子目錄）或 `./index.md`（自 `wiki/index.md`）。連至 `wiki/` 外支援文件：`../../AGENTS.md`、`../../docs/PROMPTS.md` 等（依深度調整 `../`）。
 
 ### 冷啟動（空白 wiki）
 
-* 第一則知識頁建立前，骨架無 wiki 頁可互連。**第一次 Ingest 後**，每個新頁至少連結一個其他 wiki 頁（通常經 `[[../index]]` 連至 `wiki/index.md`，或 source／concept／entity 頁互連）。
+* 第一則知識頁建立前，骨架無 wiki 頁可互連。**第一次 Ingest 後**，每個新頁至少連結一個其他 wiki 頁（通常連至 `../index.md`，或 source／concept／entity 頁互連）。
 
 ---
 
@@ -209,9 +215,9 @@ Bundle 內 Concept 互連時，OKF **建議** bundle 根相對絕對路徑（以
 ```md
 ## Relationships
 
-- related_to: [[concepts/api]]
-- implemented_by: [[entities/spring-boot]]
-- used_in: [[sources/ch1]]
+- related_to: [API](../concepts/api.md)
+- implemented_by: [Spring Boot](../entities/spring-boot.md)
+- used_in: [ch1](../sources/ch1.md)
 ```
 
 👉 供日後 graph 推理（RAG／agents）
@@ -230,13 +236,11 @@ Bundle 內 Concept 互連時，OKF **建議** bundle 根相對絕對路徑（以
 
 * 所有可驗證主張須引用來源（與 OKF [§8 Citations](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) 一致）
 
-**Bundle 內來源 Concept**（慣例）：
+**Bundle 內來源 Concept**（路徑相對於**當前檔案**）：
 
 ```md
-[[sources/ch1]]
+[來源標題](../sources/ch1.md)
 ```
-
-或 OKF 形式：`[ch1](/sources/ch1.md)`
 
 **外部 URL**：建議在文末加 `# Citations` 區塊（編號列表），例如：
 
@@ -246,10 +250,12 @@ Bundle 內 Concept 互連時，OKF **建議** bundle 根相對絕對路徑（以
 [1] [官方文件](https://example.com/docs)
 ```
 
+**歸檔稿**（`raw/sources/*`）可在 Citations 或內文以 repo 相對路徑標示，例如 `raw/sources/ch1.md`。
+
 多個 bundle 內來源：
 
 ```md
-[[sources/ch1]], [[sources/ch3]]
+[ch1](../sources/ch1.md)、[ch3](../sources/ch3.md)
 ```
 
 ---
@@ -279,20 +285,20 @@ Bundle 內 Concept 互連時，OKF **建議** bundle 根相對絕對路徑（以
 ## Limitations / Gaps
 ```
 
-來源頁起稿版型：**`docs/templates/page-template-source.md`**。
+來源頁起稿版型：**`docs/templates/page-template-source.md`**。概念／實體／Query 起稿：**`docs/templates/page-template-concept.md`**。
 
 ---
 
 # 📄 Concept／Entity／Query／Lint 頁（建議骨架）
 
-**`wiki/concepts/*`**、**`wiki/entities/*`**、**`wiki/queries/*`**、**`wiki/lint/*`**：使用 **必填 Frontmatter**；下列區塊名稱為 **建議**（不如 **來源頁 Schema** 嚴格）。`type` 設為 `concept` | `entity` | `query` | `lint`。有根據的主張須引用來源。
+**`wiki/concepts/*`**、**`wiki/entities/*`**、**`wiki/queries/*`**、**`wiki/lint/*`**：使用 **Frontmatter（OKF + 本倉擴充）**；下列區塊名稱為 **建議**（不如 **來源頁 Schema** 嚴格）。`type` 設為 `concept` | `entity` | `query` | `lint`。有根據的主張須引用來源。起稿見 **`docs/templates/page-template-concept.md`**。
 
 ```yaml
 ---
 type: concept
 title: "<Page title>"
 description: "<一語摘要>"
-resource: "<URL 或 raw/sources/...>"
+resource: "<歸檔 slug 或 https://...>"
 tags: []
 timestamp: "YYYY-MM-DDTHH:MM:SSZ"
 status: draft
@@ -310,16 +316,16 @@ source_count: 1
 
 ## Key Points
 
-- 要點並引用 [[sources/...]]
+- 要點並引用 [來源](../sources/....md)
 
 ## Evidence
 
-- 有根據的主張 → [[sources/...]] 或 `raw/sources/*`
+- 有根據的主張 → [來源](../sources/....md) 或 `../../raw/sources/<slug>.md`
 
 ## Relationships
 
-- related_to: [[concepts/...]]
-- implemented_by: [[entities/...]]
+- related_to: [概念](../concepts/....md)
+- implemented_by: [實體](../entities/....md)
 
 ## Open Questions
 
@@ -444,8 +450,8 @@ tags: ["faq"]
 **Detailed Answer：**  
 
 **Related Pages：**
-- [[concepts/...]]
-- [[sources/...]]
+- [概念](../concepts/....md)
+- [來源](../sources/....md)
 ```
 
 ---
@@ -472,6 +478,8 @@ tags: ["faq"]
 * 重複概念
 * 無來源頁
 * 超過 30 天未更新
+* **斷鏈**（`/path.md` 目標不存在於 `wiki/`）
+* **`/path.md` 根路徑連結**（在嵌於 repo 的 `wiki/` 內會斷鏈；應改相對路徑）
 
 輸出 → `wiki/lint/`
 

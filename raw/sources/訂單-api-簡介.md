@@ -32,7 +32,7 @@
 | GET | `/orders` | 列表（支援 `status`、`created_after` 查詢參數） |
 | POST | `/orders/{order_id}/cancel` | 取消訂單（僅 `PENDING` 可取消） |
 
-完整 OpenAPI 規格見內部「訂單服務 API v2」— 本簡介稿尚未納入 v2 全部欄位（見 §6 缺口）。
+完整 OpenAPI 規格見內部「訂單服務 API v2」— 本簡介稿尚未納入 v2 全部欄位（見 §7 缺口）。
 
 ## 4. 建立訂單 — POST /orders
 

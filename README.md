@@ -11,7 +11,7 @@
 ### 三步開始
 
 1. **建立部門專用 repo** — 使用 **Use this template** 或 fork 後改名；**勿**在本 example 倉寫部門內容。  
-2. **客製化** — 編輯 [`wiki/index.md`](wiki/index.md) 的 **Overview**；刪除或覆寫標有 `範例` 的示範頁與 `raw/sources/訂單-api-簡介.md`；必要時微調 [**AGENTS.md**](AGENTS.md)。  
+2. **客製化** — 編輯 [`wiki/index.md`](wiki/index.md) 的 **Overview**；刪除或覆寫標有 `範例` 的示範頁（含 `queries/`、`faq/`）與 `raw/sources/訂單-api-簡介.md`；必要時微調 [**AGENTS.md**](AGENTS.md)。  
 3. **第一次 Ingest** — 參考本倉 [`wiki/`](wiki/) 示範與 [**docs/onboarding.md**](docs/onboarding.md)；在 Cursor 可輸入 **`/ingest <路徑>`**（見 [`.cursor/skills/`](.cursor/skills/)）或複製 [**docs/PROMPTS.md**](docs/PROMPTS.md) 請 Agent 執行。
 
 ### 日常在做什麼
@@ -45,6 +45,7 @@
 | [**docs/onboarding.md**](docs/onboarding.md) | 第一輪 Ingest 解說 |
 | [**wiki/README.md**](wiki/README.md) | OKF bundle（`wiki/`）目錄樹與連結 |
 | [**docs/templates/page-template-source.md**](docs/templates/page-template-source.md) | `wiki/sources/*` 版型 |
+| [**docs/templates/page-template-concept.md**](docs/templates/page-template-concept.md) | `wiki/concepts/*`、`entities/*`、`queries/*` 版型 |
 
 ---
 

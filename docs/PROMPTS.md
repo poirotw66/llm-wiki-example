@@ -15,10 +15,11 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 2. 歸檔至 `raw/sources/*.md`（僅新檔；勿修改 `raw/` 既有檔）。
 3. 依歸檔稿建立或更新 `wiki/sources/*`，區塊標題須符合 **來源頁 Schema**。版型：`docs/templates/page-template-source.md`。
 4. 抽取並更新 `wiki/concepts/*`、`wiki/entities/*`。
-5. 視需要建立雙向連結。
-6. 更新 `wiki/index.md`。
-7. Append `wiki/log.md`。
-8. 必要時標記不確定性；所有主張須引用來源。
+5. 每個新建或更新的 **Concept** frontmatter 補齊 **OKF v0.1 建議欄位**：`description`、`resource`（**歸檔 slug** 如 `訂單-api-簡介` → `raw/sources/訂單-api-簡介.md`，或 **HTTPS URL**）、`timestamp`（ISO 8601）；對照 [**docs/okf.md**](./okf.md) → **resource 語意**。
+6. 視需要建立雙向連結（**markdown 相對路徑**，如 `../sources/foo.md`；勿用 `/path.md`，見 **AGENTS.md** → 連結規則）。
+7. 更新 `wiki/index.md`。
+8. Append `wiki/log.md`。
+9. 必要時標記不確定性；所有主張須引用來源。
 
 ---
 
@@ -43,7 +44,7 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 
 遵循 **AGENTS.md** → **操作：Lint**。
 
-檢查：矛盾、過時資訊、孤兒頁、缺頁、重複概念、無來源頁、過時頁面。
+檢查：矛盾、過時資訊、孤兒頁、缺頁、重複概念、無來源頁、過時頁面、**斷鏈**（相對路徑目標不存在）、**`/path.md` 根路徑**（嵌於 repo 時必斷）、**`[[...]]` 混用**（見 **AGENTS.md** → 連結規則）。
 
 結果輸出至 `wiki/lint/`，附可執行修正與檔案級引用。**新增或實質變更** lint 產物時，若目錄需露出，更新 `wiki/index.md`（**Overview** 區：連結 + 一行說明）。
 
