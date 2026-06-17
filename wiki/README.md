@@ -1,30 +1,33 @@
-# LLM Wiki（llm-wiki-example）
+# OKF Knowledge Bundle（`wiki/`）
 
-`wiki/` 為知識庫本體（目前為**空骨架**）。各部門請 **fork／Template** 專用 repo 後再寫入內容。
+`wiki/` 為本 repo 的 **[OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) Knowledge Bundle**。本倉含 **虛構示範頁**（`範例` 標籤）；各部門 fork 後請刪除或覆寫。
 
 ## 目錄結構
 
 ```text
-raw/
-  sources/    # 歸檔來源（新增檔；既有檔不就地修改）
-  assets/     # 圖片／附件（選用）
-wiki/
+raw/                          # repo 擴充：不可變歸檔（非 bundle 本體）
   sources/
+wiki/                         # OKF bundle 根
+  index.md                    # okf_version + 總目錄（§6）
+  log.md                      # 變更／操作 log（§7 + 本倉擴充）
+  sources/                    # Concept：來源摘要
   concepts/
   entities/
   queries/
   faq/
   lint/
-  graph/      # 選用
-  index.md    # 總目錄
-  log.md      # 操作日誌（僅 append）
+  graph/
 ```
 
 ## 進一步閱讀
 
 | 需求 | 檔案 |
 |------|------|
-| 採用與 fork | 根目錄 [README.md](../README.md) |
-| 第一輪 Ingest 假資料流程 | [docs/onboarding.md](../docs/onboarding.md) |
-| 規約、命名、連結、操作與 Agent 提示 | [AGENTS.md](../AGENTS.md) |
-| `wiki/sources/*` 起稿版型 | [docs/templates/page-template-source.md](../docs/templates/page-template-source.md) |
+| OKF 對照與互通 | [docs/okf.md](../docs/okf.md) |
+| 採用與 fork | [README.md](../README.md) |
+| Ingest 流程 | [docs/onboarding.md](../docs/onboarding.md) |
+| 規約 | [AGENTS.md](../AGENTS.md) |
+| Agent 提示詞 | [docs/PROMPTS.md](../docs/PROMPTS.md) |
+| Skill 總覽 | [SKILL.md](../SKILL.md) |
+| 薄 Skill（`/ingest` …） | [.cursor/skills/](../.cursor/skills/) |
+| 來源頁版型 | [page-template-source.md](../docs/templates/page-template-source.md) |

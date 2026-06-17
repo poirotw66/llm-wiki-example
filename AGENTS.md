@@ -24,13 +24,31 @@
 
 ---
 
+# 📦 OKF 主軸
+
+本倉以 **[Open Knowledge Format（OKF）v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)** 為知識表示主軸（參考 [knowledge-catalog/okf](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)）。`wiki/` 即 **Knowledge Bundle**；其餘目錄與操作規則為在 OKF 之上的 **本倉擴充**（可追溯歸檔、Agent 維護流程）。
+
+| OKF 術語 | 本倉對應 |
+|----------|----------|
+| Knowledge Bundle | `wiki/` |
+| Concept | `wiki/**/*.md`（保留檔名 `index.md`、`log.md` 除外） |
+| Concept ID | 相對 `wiki/` 之路徑去掉 `.md`（例：`concepts/rest-api`） |
+| `index.md` | `wiki/index.md`（漸進式揭露總目錄） |
+| `log.md` | `wiki/log.md`（變更歷史；本倉另訂操作日誌格式） |
+
+**OKF 合規（v0.1）**：每個 Concept 須有可解析 YAML frontmatter，且含非空 `type`。其餘約束見下方 Frontmatter 與 [**docs/okf.md**](docs/okf.md)。
+
+**本倉擴充（不違反 OKF 消費端容忍未知鍵）**：`raw/` 不可變歸檔、`status`／`source_count`／`updated`、來源頁 Schema、五大操作與 `wiki/log.md` 操作留痕。
+
+---
+
 # 📁 目錄契約
 
 * `raw/`：既有來源的 **不可變** 區（❗ 不可就地修改）。**Ingest** 第二步可將 **新** 檔 **歸檔** 至 `raw/sources/`。
 
 * `raw/assets/`：選用之圖片／附件，由來源或 wiki 頁引用（不解析為知識頁；Ingest 或維護時視需要新增）。
 
-* `wiki/`：由 LLM 管理的知識庫
+* `wiki/`：**OKF Knowledge Bundle**（由 LLM／人類維護的知識本體）
 
 * `wiki/index.md`：總目錄（canonical catalog）
 
@@ -54,9 +72,19 @@
 
   * `docs/templates/page-template-source.md` — 僅供 **`wiki/sources/*`** 起稿；區塊標題須與下方 **來源頁 Schema** 完全一致。
 
-  * `docs/onboarding.md` — **非 wiki** 之虛構上手流程；含 concept／entity 頁 inline 範例。
+  * `docs/onboarding.md` — 第一輪 Ingest 解說；與本倉 **wiki 虛構示範頁** 對照。
 
-  * **Operations Prompts（複製貼上）** — Ingest／Query／Lint／FAQ／Graph 之 Agent 提示詞見本檔下方 **Operations Prompts（複製貼上）**；以此為唯一維護來源。
+  * `docs/PROMPTS.md` — **Operations Prompts（複製貼上）** 與範例指令；Agent **操作步驟**之唯一維護來源。
+
+  * `docs/okf.md` — **OKF v0.1 對照與互通**（bundle 映射、欄位、連結、匯出）；規格原文見 [SPEC.md](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)。
+
+  * `SKILL.md`（repo 根）— 總覽 Skill；指向子 Skill 與三步流程。
+
+  * `.cursor/skills/llm-wiki-{ingest,query,lint,faq,graph}/` — **薄 Skill**（觸發 `/ingest` 等）；委派 `docs/PROMPTS.md` 對應章節，勿複製長步驟。
+
+### 目錄設計：型別式子目錄（OKF 相容）
+
+OKF **不**規定固定分類法；子目錄僅為組織 Concept 之用（[SPEC §3](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)）。本倉採 **`sources`／`concepts`／`entities`** 等 **知識角色** 分層，而非 `wiki/<topic>/` 純主題目錄——以利 Ingest 落點、Schema 檢查與 Agent 操作。規模變大時可在型別下加領域子目錄（例如 `wiki/entities/訂單/訂單服務.md`），無須改為純主題式。
 
 ---
 
@@ -64,7 +92,7 @@
 
 * 僅 Markdown
 
-* 除 `wiki/index.md`（總目錄）外，wiki 頁須含 YAML frontmatter（見下方 **必填 Frontmatter**）
+* 除 `wiki/index.md`（bundle 根 index，frontmatter 僅可選 `okf_version`）外，每個 Concept 須含 YAML frontmatter（見 **Frontmatter（OKF + 本倉擴充）**）
 
 * 語言：**繁體中文**
 
@@ -83,38 +111,81 @@
 
 ---
 
-# 📌 必填 Frontmatter
+# 📌 Frontmatter（OKF + 本倉擴充）
+
+每個 **Concept**（`wiki/**/*.md`，保留檔名除外）須含 YAML frontmatter。
+
+### OKF v0.1（規格層）
+
+| 層級 | 鍵 | 說明 |
+|------|-----|------|
+| **必填** | `type` | 概念種類；本倉慣用 `concept`、`entity`、`source`、`query`、`lint`（亦符合 OKF「自描述型別字串」） |
+| **建議** | `title` | 顯示名稱 |
+| **建議** | `description` | 一語摘要（index、搜尋預覽） |
+| **建議** | `resource` | 底層資產 URI；來源頁指向 `raw/sources/...` 或原始 URL |
+| **建議** | `tags` | 標籤列表 |
+| **建議** | `timestamp` | ISO 8601 最後有意義變更時間 |
+
+規格與範例見 [OKF SPEC §4.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)。
+
+### 本倉擴充（維護層）
+
+| 鍵 | 說明 |
+|-----|------|
+| `status` | `draft` \| `active` \| `needs-review` |
+| `updated` | 維護用日期 `YYYY-MM-DD`（可與 `timestamp` 並存） |
+| `source_count` | 引用之來源 concept 數（慣例） |
 
 ```yaml
 ---
+type: concept
 title: "<Page title>"
-type: "<overview|entity|concept|source|query|lint>"
+description: "<一語摘要>"
+resource: "<URL 或 raw/sources/...>"
+tags: []
+timestamp: "YYYY-MM-DDTHH:MM:SSZ"
 status: "<draft|active|needs-review>"
 updated: "YYYY-MM-DD"
 source_count: 0
-tags: []
 ---
 ```
 
-### `wiki/index.md`（總目錄）
+互通對照與匯出映射見 **`docs/okf.md`**。
 
-* 本檔 **YAML frontmatter 可省略**。必要結構為 **索引結構** 標題排版（`# Index`、`## Overview`…）；缺 frontmatter 不視為不合規。
+### `wiki/index.md`（bundle 根 index）
+
+* 依 OKF [§6](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)，**一般不含 frontmatter**；本檔亦 **可不** 加 YAML。
+* 若宣告目標 OKF 版本，**僅** 可在 bundle 根 `index.md` 加 `okf_version: "0.1"`（[§11](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)）；其餘 frontmatter 鍵非 OKF 標準。
+* 必要結構為下方 **索引結構** 標題排版（`# Index`、`## Overview`…）；缺 frontmatter 不視為不合規。
 * schema 中 `type: "overview"` 供團隊自訂之獨立概覽頁（例如 `wiki/overview.md`）；**非** `wiki/index.md` 必填。
-* 若為 `wiki/index.md` 加上 frontmatter，鍵名與 **必填 Frontmatter** 相同（例如 `type: overview`、`title` 描述總目錄）。
 
 ---
 
 # 🔗 連結規則（強制）
 
-* 每頁至少連結 ≥1 頁
+* 每頁至少連結 ≥1 頁（OKF 跨頁關係；見 [SPEC §5](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)）
 * 每個新頁須被別處引用
 * 盡量雙向連結
 
-### Wiki 連結慣例
+### OKF 連結（互通首選）
 
-* 內文使用 wiki 式連結，不含 `wiki/` 前綴，例如 `[[sources/example]]`、`[[concepts/api]]`、`[[entities/spring-boot]]`。
-* 路徑相對於 `wiki/` 解析（檔案為 `wiki/sources/example.md` 等）。
-* 自 wiki 頁連至總目錄或支援文件時，`[[../index]]`（即 `wiki/index.md`）以及 repo 根目錄 **`AGENTS.md`**、**`docs/onboarding.md`** 均為有效目標。
+Bundle 內 Concept 互連時，OKF **建議** bundle 根相對絕對路徑（以 `/` 開頭、含 `.md`）：
+
+```md
+見 [REST API](/concepts/rest-api.md)。
+```
+
+### Wiki 撰寫慣例（本倉）
+
+內文可使用 wiki 式連結，不含 `wiki/` 前綴，語意等同 OKF bundle 內路徑：
+
+* `[[sources/example]]` ↔ `/sources/example.md`
+* `[[concepts/api]]` ↔ `/concepts/api.md`
+* `[[entities/spring-boot]]` ↔ `/entities/spring-boot.md`
+
+路徑相對於 `wiki/` 解析。匯出至他方 OKF 工具時，應轉為標準 markdown 連結（見 **`docs/okf.md`**）。
+
+自 wiki 頁連至總目錄或支援文件時，`[[../index]]`（即 `wiki/index.md`）以及 repo 根 **`AGENTS.md`**、**`docs/PROMPTS.md`**、**`docs/onboarding.md`**、**`SKILL.md`** 均為有效目標。
 
 ### 冷啟動（空白 wiki）
 
@@ -157,15 +228,25 @@ tags: []
 
 # 📌 引用規則（關鍵）
 
-* 所有可驗證主張須引用來源
+* 所有可驗證主張須引用來源（與 OKF [§8 Citations](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) 一致）
 
-格式：
+**Bundle 內來源 Concept**（慣例）：
 
 ```md
 [[sources/ch1]]
 ```
 
-多個來源：
+或 OKF 形式：`[ch1](/sources/ch1.md)`
+
+**外部 URL**：建議在文末加 `# Citations` 區塊（編號列表），例如：
+
+```md
+# Citations
+
+[1] [官方文件](https://example.com/docs)
+```
+
+多個 bundle 內來源：
 
 ```md
 [[sources/ch1]], [[sources/ch3]]
@@ -208,12 +289,15 @@ tags: []
 
 ```yaml
 ---
-title: "<Page title>"
 type: concept
+title: "<Page title>"
+description: "<一語摘要>"
+resource: "<URL 或 raw/sources/...>"
+tags: []
+timestamp: "YYYY-MM-DDTHH:MM:SSZ"
 status: draft
 updated: "YYYY-MM-DD"
 source_count: 1
-tags: []
 ---
 ```
 
@@ -242,7 +326,7 @@ tags: []
 - 待釐清事項（選填）
 ```
 
-`wiki/faq/` 使用下方 **FAQ 頁格式**（非本骨架）。concept／entity 路徑實例見 **`docs/onboarding.md`** 步驟 3。
+`wiki/faq/` 使用下方 **FAQ 頁格式**（非本骨架）。實例見 **`wiki/concepts/rest-api.md`**、**`wiki/entities/訂單服務.md`**（標籤 `範例`）及 **`docs/onboarding.md`**。
 
 ---
 
@@ -418,11 +502,15 @@ wiki/graph/knowledge-map.md
 
 # 🪵 日誌規則
 
+`wiki/log.md` 對應 OKF 選用 [log.md](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)（§7）。本倉在日期分組之上，以 **操作類型** 留痕（Agent 維護用）。
+
 僅可 append：
 
 ```md
 ## [YYYY-MM-DD] <operation> | <title>
 ```
+
+（日期標題須為 ISO `YYYY-MM-DD`，與 OKF log 日期標題相容。）
 
 ---
 
@@ -446,111 +534,8 @@ wiki/graph/knowledge-map.md
 
 ---
 
-# 📋 Operations Prompts（複製貼上）
+# ⚡ Agent 提示詞與 Skill
 
-Ingest／Query／Lint／FAQ／Graph 之標準提示詞。日誌：本文件定義之 **每次** 操作須 append `wiki/log.md`（無檔案變更時用 **pass** 或 **no-op**）。若操作新增／刪除／實質變更 wiki 頁或目錄所列產物，更新 `wiki/index.md`（各操作另有更細規則，見上文）。
-
----
-
-## Ingest 提示詞
-
-將本 repository 作為以來源為根據的 wiki 系統。
-
-嚴格遵循本文件（`AGENTS.md`）：
-1. 讀取指定來源檔。
-2. 歸檔至 `raw/sources/*.md`（僅新檔；勿修改 `raw/` 既有檔）。
-3. 依歸檔稿建立或更新 `wiki/sources/*`，區塊標題須符合 **來源頁 Schema**（`Summary`、`Key Concepts`、`Entities`、`Notable Claims`、`Limitations / Gaps`）。版型：`docs/templates/page-template-source.md`。
-4. 抽取並更新 `wiki/concepts/*`、`wiki/entities/*`。
-5. 視需要建立雙向連結。
-6. 更新 `wiki/index.md`。
-7. Append `wiki/log.md`。
-8. 必要時標記不確定性；所有主張須引用來源。
-
----
-
-## Query 提示詞
-
-以可追溯、以來源為根據的流程回答使用者問題。
-
-依序：
-1. 先查 `wiki/` 摘要頁（`faq`、`concepts`、`entities`、`queries`）。
-2. 摘要足夠且無衝突 → 直接回答。
-3. 不足、模糊或衝突 → 核對 `raw/sources/*`。
-4. 答案須含可追溯位置（至少檔案路徑；必要時章節／行）。
-5. 引用來源並標記不確定性（`（確定）`、`（推測）`、`（未知）`）。
-6. 若可重用，持久化至 `wiki/queries/*` 並更新 `wiki/index.md`（**Queries** 區：連結 + 一行說明）。
-7. **一律** append `wiki/log.md` — 含僅回答、未持久化（記 **pass** 或 **no-op**，見下方 **Wiki log append**）。
-
----
-
-## Lint 提示詞
-
-執行 wiki 品質 Lint，附證據回報。
-
-遵循上文 **操作：Lint**。
-
-檢查：
-- 矛盾
-- 過時資訊
-- 孤兒頁
-- 缺頁
-- 重複概念
-- 無來源頁
-- 過時頁面
-
-結果輸出至 `wiki/lint/`，附可執行修正與檔案級引用。**新增或實質變更** lint 產物時，若目錄需露出，更新 `wiki/index.md`（**Overview** 區：連結 + 一行說明）。
-
-**一律** append `wiki/log.md`（即使未寫新 lint 檔）：一行摘要，例如 `pass`、`no issues` 或簡短發現。
-
----
-
-## FAQ 提示詞
-
-自既有 wiki 產出可重用 FAQ。
-
-遵循 **操作：FAQ** 與 **FAQ 頁格式**／**FAQ 規則**。
-
-1. 讀取 `wiki/index.md`。
-2. 掃描 sources、concepts、entities、queries。
-3. 偵測重複模式、易混淆主題、流程、跨頁關係。
-4. 產出 8–15 題（初階至進階，至少一題跨頁綜合）。勿虛構 wiki 無依據的題目。
-5. 持久化至 `wiki/faq/`，使用規定 frontmatter（`type: query`、`tags: ["faq"]` 等）及 Scope／FAQ／Short Answer／Detailed Answer／Related Pages 結構。
-6. 更新 `wiki/index.md`（FAQ 區：連結 + 一行說明）。
-7. Append `wiki/log.md`。
-
----
-
-## Graph 提示詞
-
-建立或更新本 wiki 知識關係。
-
-遵循 **操作：Graph**。
-
-1. 遍歷 wiki 頁（遵守本文件連結與關係規則）。
-2. 抽取連結並適當推論關係。
-3. 產出或更新 graph 摘要（可選產物範例：`wiki/graph/knowledge-map.md`）。
-4. **新增或實質變更** graph 產物時，更新 `wiki/index.md`（**Overview** 區：連結 + 一行說明）。
-5. **一律** append `wiki/log.md` — 含可選輸出或 **未變更**（記 `pass`、`no-op` 或一行摘要）。
-
----
-
-## Wiki log append（pass／no-op）
-
-本文件任一操作在 **無須改檔** 但仍須留痕時使用（例如 Lint／Graph 通過且無新產物）。
-
-1. 以 `## [YYYY-MM-DD] <operation> | <title>` 格式 append 新章節至 `wiki/log.md`。
-2. 一至兩條 bullet：標 **pass**、**no-op** 或簡述結果；註明操作（lint／graph／faq／ingest／query persist 等）。
-3. 勿改寫或刪除既有 log 章節。
-
----
-
-# ⚡ 範例指令
-
-```md
-- Ingest：指定路徑 → 歸檔 raw/sources/*.md → wiki（依 Ingest 步驟；用上方 Ingest 提示詞）
-- Ingest raw/sources/ 下既有檔（每檔一輪；更新 index + log）
-- 自現有 wiki 產生 FAQ（8–15 題、勿虛構；用 FAQ 提示詞）
-- 回答：<問題>（附引用與不確定性標記；用 Query 提示詞）
-- Lint wiki（用 Lint 提示詞）
-- 建立知識 graph（例如 wiki/graph/knowledge-map.md；用 Graph 提示詞）
-```
+* **複製貼上提示詞**、**Wiki log append**、**範例指令** → [**docs/PROMPTS.md**](docs/PROMPTS.md)（**步驟單一來源**）
+* **總覽 Skill** → [**SKILL.md**](SKILL.md)
+* **薄 Skill 觸發**（`/ingest`、`/query`、`/lint`、`/faq`、`/graph`）→ [`.cursor/skills/`](.cursor/skills/)（委派 PROMPTS；規約仍見本檔）
