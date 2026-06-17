@@ -1,6 +1,6 @@
 # OKF Knowledge Bundle（`wiki/`）
 
-`wiki/` 為本 repo 的 **[OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) Knowledge Bundle**。本倉含 **虛構示範頁**（`範例` 標籤）；各部門 fork 後請刪除或覆寫。
+`wiki/` 為本 repo 的 **[OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) Knowledge Bundle**。fork 後以 Ingest 填入真實知識；頁面長相見 [docs/templates/](../docs/templates/)。
 
 ## 目錄結構
 
@@ -26,9 +26,10 @@ wiki/                         # OKF bundle 根
 |------|------|
 | OKF 對照與互通 | [docs/okf.md](../docs/okf.md) |
 | 採用與 fork | [README.md](../README.md) |
-| Ingest 流程 | [docs/onboarding.md](../docs/onboarding.md) |
+| 第一輪 Ingest | [docs/onboarding.md](../docs/onboarding.md) |
 | 規約 | [AGENTS.md](../AGENTS.md) |
 | Agent 提示詞 | [docs/PROMPTS.md](../docs/PROMPTS.md) |
-| Skill 總覽 | [SKILL.md](../SKILL.md) |
-| 薄 Skill（`/ingest` …） | [.cursor/skills/](../.cursor/skills/) |
+| Skill 總覽 | [skills/llm-wiki-example/](../skills/llm-wiki-example/SKILL.md) |
+| 薄 Skill（`/ingest` …） | [skills/](../skills/) 或 [.cursor/skills/](../.cursor/skills/) |
 | 來源頁版型 | [page-template-source.md](../docs/templates/page-template-source.md) |
+| 概念／實體／Query 版型 | [page-template-concept.md](../docs/templates/page-template-concept.md) |

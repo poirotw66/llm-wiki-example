@@ -29,7 +29,7 @@ repo/
 |-----|------|
 | Knowledge Bundle | `wiki/` |
 | Concept | 任一 `wiki/**/*.md`（`index.md`、`log.md` 除外） |
-| Concept ID | 路徑去 `.md`，相對 `wiki/`（例：`entities/訂單服務`） |
+| Concept ID | 路徑去 `.md`，相對 `wiki/`（例：`entities/my-service`） |
 | 保留檔名 | 僅 `index.md`、`log.md`（[SPEC §3.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)） |
 
 `raw/` 為 **可追溯歸檔** 擴充：Concept 的 `resource` 填 **歸檔 slug** 或外部 URL（見下方 **resource 語意**）；消費端讀 bundle 時無須理解 `raw/` 目錄。
@@ -69,14 +69,14 @@ OKF `resource` 為底層資產識別。本倉採兩種填法：
 
 | `resource` 值 | 意義 | 範例 |
 |---------------|------|------|
-| **歸檔 slug** | 對應 `raw/sources/<slug>.md`（不含路徑、不含 `.md`） | `訂單-api-簡介` → `raw/sources/訂單-api-簡介.md` |
+| **歸檔 slug** | 對應 `raw/sources/<slug>.md`（不含路徑、不含 `.md`） | `my-api-intro` → `raw/sources/my-api-intro.md` |
 | **HTTPS URL** | 外部 canonical URI | `https://api.example.internal/v1` |
 
 * **來源頁**（`type: source`）與綁定實體的 **entity** 頁：優先填歸檔 slug（與歸檔檔名一致，不含副檔名）。
 * **抽象 concept** 頁：通常省略 `resource`，或填外部標準文件 URL。
-* **Citations** 正文仍寫實際路徑 `raw/sources/<slug>.md`，與 frontmatter slug 對照。
+* **Citations** 正文仍寫實際路徑 `../../raw/sources/<slug>.md`（自 `wiki/sources/`），與 frontmatter slug 對照。
 
-示範：[訂單 API 簡介](../wiki/sources/訂單-api-簡介.md) 之 `resource: "訂單-api-簡介"`。
+範例：來源頁 frontmatter 設 `resource: "my-api-intro"`，對應 `raw/sources/my-api-intro.md` 與 `wiki/sources/my-api-intro.md`。
 
 ---
 
@@ -87,8 +87,8 @@ OKF `resource` 為底層資產識別。本倉採兩種填法：
 GitHub／IDE **無法** 解析以 `/` 開頭的 OKF bundle 路徑。互連 **一律** 用 **markdown 相對路徑**：
 
 ```md
-<!-- 自 wiki/concepts/rest-api.md -->
-[訂單 API 簡介](../sources/訂單-api-簡介.md)
+<!-- 自 wiki/concepts/my-concept.md -->
+[API 簡介](../sources/my-api-intro.md)
 ```
 
 | 情境 | 格式 |
@@ -103,9 +103,7 @@ GitHub／IDE **無法** 解析以 `/` 開頭的 OKF bundle 路徑。互連 **一
 
 ### 匯出（獨立 OKF bundle）
 
-將 `wiki/` 打包為 bundle 根時，可將相對連結轉為 OKF 建議的 `/concepts/foo.md` 供 visualize 等工具使用。
-
-示範：`resource: "訂單-api-簡介"` 對應 [歸檔](../../raw/sources/訂單-api-簡介.md)；wiki 頁見 [訂單 API 簡介](../wiki/sources/訂單-api-簡介.md)（自 repo 根）。
+將 `wiki/` 打包為 bundle 根時，可將相對連結轉為 OKF 建議的 `/concepts/foo.md` 供 visualize 等工具使用。`resource: "my-api-intro"` 對應 `raw/sources/my-api-intro.md` 與 `wiki/sources/my-api-intro.md`。
 
 ---
 

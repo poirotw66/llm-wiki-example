@@ -1,6 +1,6 @@
 # llm-wiki-example（OKF Knowledge Bundle 範本）
 
-供各部門 **fork／GitHub Template** 後自建 wiki 的 **起步 repo**：`wiki/` 為 **[OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) Knowledge Bundle**，含虛構示範頁、`raw/` 歸檔擴充與 [SKILL.md](SKILL.md)。規約見 [**AGENTS.md**](AGENTS.md)；OKF 對照見 [**docs/okf.md**](docs/okf.md)；Agent 提示詞見 [**docs/PROMPTS.md**](docs/PROMPTS.md)。
+供各部門 **fork／GitHub Template** 後自建 wiki 的 **起步 repo**：`wiki/` 為 **[OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) Knowledge Bundle**（**內容留白**，以 Ingest 填入）、`raw/` 歸檔擴充與 [SKILL.md](SKILL.md)。規約見 [**AGENTS.md**](AGENTS.md)；OKF 對照見 [**docs/okf.md**](docs/okf.md)；Agent 提示詞見 [**docs/PROMPTS.md**](docs/PROMPTS.md)。
 
 ---
 
@@ -11,8 +11,8 @@
 ### 三步開始
 
 1. **建立部門專用 repo** — 使用 **Use this template** 或 fork 後改名；**勿**在本 example 倉寫部門內容。  
-2. **客製化** — 編輯 [`wiki/index.md`](wiki/index.md) 的 **Overview**；刪除或覆寫標有 `範例` 的示範頁（含 `queries/`、`faq/`）與 `raw/sources/訂單-api-簡介.md`；必要時微調 [**AGENTS.md**](AGENTS.md)。  
-3. **第一次 Ingest** — 參考 [docs/onboarding.md](docs/onboarding.md) 與 [`wiki/`](wiki/) 示範；在 Cursor 輸入 **`/ingest <路徑>`**（詳見下方 **Cursor Skill 用法**）。  
+2. **客製化** — 編輯 [`wiki/index.md`](wiki/index.md) 的 **Overview**（部門名稱、範圍）；必要時微調 [**AGENTS.md**](AGENTS.md)。  
+3. **第一次 Ingest** — 參考 [docs/onboarding.md](docs/onboarding.md) 與 [docs/templates/](docs/templates/)；在 Cursor 輸入 **`/ingest <路徑>`**（詳見下方 **Cursor Skill 用法**）。  
    - **Skill**：fork 後可直接用內建 [`.cursor/skills/`](.cursor/skills/)；若要裝到 Claude Code／Codex 或本機全域，見下方 **[npx skills 安裝](#npx-skills-安裝可選)**。
 
 ### 日常在做什麼
@@ -101,7 +101,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 
 ```text
 /ingest ./docs/內部規格.md
-/query 訂單服務建單要帶哪些 header？
+/query <你的問題>
 /lint
 /faq
 /graph
@@ -112,7 +112,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 1. 依 **AGENTS.md** 硬約束（引用、連結、frontmatter 等）
 2. 依 **PROMPTS.md** 該操作步驟全文執行
 3. 必要時更新 [wiki/index.md](wiki/index.md)
-4. 部門 wiki：**append** [wiki/log.md](wiki/log.md)（本範例 repo 的 log 刻意留白）
+4. 部門 wiki：**append** [wiki/log.md](wiki/log.md)
 
 ### 不用 Skill 時
 
@@ -148,5 +148,5 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 
 - **給 Agent 複製貼上** → [docs/PROMPTS.md](docs/PROMPTS.md)
 - **Skill** → [skills/llm-wiki-example/](skills/llm-wiki-example/SKILL.md) · `/ingest` … `/graph` → [skills/](skills/) 或 [.cursor/skills/](.cursor/skills/) · **npx 安裝** → 見上方 [npx skills 安裝](#npx-skills-安裝可選)
-- **示範 wiki 頁** → [wiki/index.md](wiki/index.md)
+- **wiki 總目錄** → [wiki/index.md](wiki/index.md)
 - **部門上手** → [docs/onboarding.md](docs/onboarding.md)

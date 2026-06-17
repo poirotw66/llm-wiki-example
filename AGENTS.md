@@ -32,7 +32,7 @@
 |----------|----------|
 | Knowledge Bundle | `wiki/` |
 | Concept | `wiki/**/*.md`（保留檔名 `index.md`、`log.md` 除外） |
-| Concept ID | 相對 `wiki/` 之路徑去掉 `.md`（例：`concepts/rest-api`） |
+| Concept ID | 相對 `wiki/` 之路徑去掉 `.md`（例：`concepts/rest-api`、`entities/my-service`） |
 | `index.md` | `wiki/index.md`（漸進式揭露總目錄） |
 | `log.md` | `wiki/log.md`（變更歷史；本倉另訂操作日誌格式） |
 
@@ -44,7 +44,7 @@
 
 # 📁 目錄契約
 
-* `raw/`：既有來源的 **不可變** 區（❗ 不可就地修改）。**Ingest** 第二步可將 **新** 檔 **歸檔** 至 `raw/sources/`。來源修訂時 **另建新歸檔檔**（勿改寫既有 `raw/` 檔）；示範見 `raw/sources/訂單-api-簡介.md`。
+* `raw/`：既有來源的 **不可變** 區（❗ 不可就地修改）。**Ingest** 第二步可將 **新** 檔 **歸檔** 至 `raw/sources/`。來源修訂時 **另建新歸檔檔**（勿改寫既有 `raw/` 檔）；slug 慣例見 [**docs/okf.md**](docs/okf.md) → **resource 語意**。
 
 * `raw/assets/`：選用之圖片／附件，由來源或 wiki 頁引用（不解析為知識頁；Ingest 或維護時視需要新增）。
 
@@ -74,7 +74,7 @@
 
   * `docs/templates/page-template-concept.md` — 供 **`wiki/concepts/*`**、**`wiki/entities/*`**、**`wiki/queries/*`** 起稿（建議骨架）。
 
-  * `docs/onboarding.md` — 第一輪 Ingest 解說；與本倉 **wiki 虛構示範頁** 對照。
+  * `docs/onboarding.md` — 第一輪 Ingest 解說；對照 **docs/templates/** 版型。
 
   * `docs/PROMPTS.md` — **Operations Prompts（複製貼上）** 與範例指令；Agent **操作步驟**之唯一維護來源。
 
@@ -86,7 +86,7 @@
 
 ### 目錄設計：型別式子目錄（OKF 相容）
 
-OKF **不**規定固定分類法；子目錄僅為組織 Concept 之用（[SPEC §3](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)）。本倉採 **`sources`／`concepts`／`entities`** 等 **知識角色** 分層，而非 `wiki/<topic>/` 純主題目錄——以利 Ingest 落點、Schema 檢查與 Agent 操作。規模變大時可在型別下加領域子目錄（例如 `wiki/entities/訂單/訂單服務.md`），無須改為純主題式。
+OKF **不**規定固定分類法；子目錄僅為組織 Concept 之用（[SPEC §3](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)）。本倉採 **`sources`／`concepts`／`entities`** 等 **知識角色** 分層，而非 `wiki/<topic>/` 純主題目錄——以利 Ingest 落點、Schema 檢查與 Agent 操作。規模變大時可在型別下加領域子目錄（例如 `wiki/entities/billing/invoice-service.md`），無須改為純主題式。
 
 ---
 
@@ -174,11 +174,11 @@ source_count: 0
 `wiki/` **嵌於本 repo** 時，GitHub／IDE **無法** 解析 OKF 的 `/concepts/foo.md`（會指向網站或磁碟根目錄而斷鏈）。Concept 互連 **一律** 使用 **markdown 相對路徑**（含 `.md`）：
 
 ```md
-<!-- 自 wiki/concepts/rest-api.md -->
-見 [訂單 API 簡介](../sources/訂單-api-簡介.md)。
+<!-- 自 wiki/concepts/my-concept.md -->
+見 [API 簡介](../sources/my-api-intro.md)。
 
-<!-- 自 wiki/sources/訂單-api-簡介.md -->
-見 [REST API](../concepts/rest-api.md)。
+<!-- 自 wiki/sources/my-api-intro.md -->
+見 [REST 約定](../concepts/my-concept.md)。
 ```
 
 | 起點 | 連至同層鄰居 | 連至其他型別子目錄 |
@@ -332,7 +332,7 @@ source_count: 1
 - 待釐清事項（選填）
 ```
 
-`wiki/faq/` 使用下方 **FAQ 頁格式**（非本骨架）。實例見 **`wiki/concepts/rest-api.md`**、**`wiki/entities/訂單服務.md`**（標籤 `範例`）及 **`docs/onboarding.md`**。
+`wiki/faq/` 使用下方 **FAQ 頁格式**（非本骨架）。版型與流程見 **`docs/templates/page-template-concept.md`**、**`docs/onboarding.md`**。
 
 ---
 

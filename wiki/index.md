@@ -6,28 +6,28 @@ okf_version: "0.1"
 
 ## Overview
 
-- 本 repo **llm-wiki-example** 為各部門可 fork 的 **範例**；`wiki/` 為 **OKF v0.1 Knowledge Bundle**（見 [docs/okf.md](../docs/okf.md)）。
+- 本 repo **llm-wiki-example** 為各部門可 fork 的 **OKF v0.1 Knowledge Bundle 範本**（見 [docs/okf.md](../docs/okf.md)）。
 - 採用見 [README](../README.md)、[docs/onboarding.md](../docs/onboarding.md)、[SKILL.md](../SKILL.md)。
-- **含虛構示範頁**（`tags` 含 `範例`）：Ingest（`sources`／`concepts`／`entities`）、Query、FAQ。**fork 後請刪除或覆寫**，改寫本 Overview。
-- Lint／Graph 產物預設列於本檔 **Overview** 區。示範 Lint：[連結檢查（2026-06-17）](./lint/2026-06-17-連結檢查.md)。
+- **`wiki/` 內容刻意留白** — fork 後以 `/ingest` 或依 [docs/onboarding.md](../docs/onboarding.md) 納入第一份真實來源；頁面版型見 [docs/templates/](../docs/templates/)。
+- Lint／Graph 產物完成後可列於本檔 **Overview** 區。
 - 規約：[AGENTS.md](../AGENTS.md)；提示詞：[docs/PROMPTS.md](../docs/PROMPTS.md)；`wiki/` 導覽：[Wiki README](./README.md)。
 
 ## Concepts
 
-- [REST API](./concepts/rest-api.md) — 【範例】部門 REST 約定：JWT、錯誤 envelope、冪等 POST。
+（尚無內容 — 請 Ingest 後更新）
 
 ## Entities
 
-- [訂單服務](./entities/訂單服務.md) — 【範例】虛構 order-service 與 v1 端點盤點。
+（尚無內容 — 請 Ingest 後更新）
 
 ## Sources
 
-- [訂單 API 簡介](./sources/訂單-api-簡介.md) — 【範例】虛構內部稿：認證、建單 JSON、速率限制。
+（尚無內容 — 請 Ingest 後更新）
 
 ## Queries
 
-- [如何建立訂單？](./queries/如何建立訂單.md) — 【範例】POST /orders 與冪等 key。
+（尚無內容 — 請 Ingest 或 Query 後更新）
 
 ## FAQ
 
-- [訂單 API 常見問題（範例）](./faq/訂單-api-範例-faq.md) — 【範例】8 題入門與跨頁綜合。
+（尚無內容 — 請 FAQ 操作後更新）

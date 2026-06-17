@@ -15,7 +15,7 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 2. 歸檔至 `raw/sources/*.md`（僅新檔；勿修改 `raw/` 既有檔）。
 3. 依歸檔稿建立或更新 `wiki/sources/*`，區塊標題須符合 **來源頁 Schema**。版型：`docs/templates/page-template-source.md`。
 4. 抽取並更新 `wiki/concepts/*`、`wiki/entities/*`。
-5. 每個新建或更新的 **Concept** frontmatter 補齊 **OKF v0.1 建議欄位**：`description`、`resource`（**歸檔 slug** 如 `訂單-api-簡介` → `raw/sources/訂單-api-簡介.md`，或 **HTTPS URL**）、`timestamp`（ISO 8601）；對照 [**docs/okf.md**](./okf.md) → **resource 語意**。
+5. 每個新建或更新的 **Concept** frontmatter 補齊 **OKF v0.1 建議欄位**：`description`、`resource`（**歸檔 slug** 如 `my-api-intro` → `raw/sources/my-api-intro.md`，或 **HTTPS URL**）、`timestamp`（ISO 8601）；對照 [**docs/okf.md**](./okf.md) → **resource 語意**。
 6. 視需要建立雙向連結（**markdown 相對路徑**，如 `../sources/foo.md`；勿用 `/path.md`，見 **AGENTS.md** → 連結規則）。
 7. 更新 `wiki/index.md`。
 8. Append `wiki/log.md`。
@@ -58,6 +58,8 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 
 遵循 **AGENTS.md** → **操作：FAQ**、**FAQ 頁格式**、**FAQ 規則**。
 
+**空 wiki**：若 `wiki/` 尚無可掃描的 Concept 頁（僅 `index.md`、`log.md` 或各子目錄為空），**勿虛構題目**、勿寫入 `wiki/faq/`；向使用者說明須先 Ingest，並 append `wiki/log.md` 記 **no-op**。
+
 1. 讀取 `wiki/index.md`。
 2. 掃描 sources、concepts、entities、queries。
 3. 偵測重複模式、易混淆主題、流程、跨頁關係。
@@ -73,6 +75,8 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 建立或更新本 wiki 知識關係。
 
 遵循 **AGENTS.md** → **操作：Graph**。
+
+**空 wiki**：若尚無 Concept 頁可遍歷，**勿**產出 `wiki/graph/*`；向使用者說明須先累積知識頁，並 append `wiki/log.md` 記 **no-op**（或 **pass**）。
 
 1. 遍歷 wiki 頁（遵守連結與關係規則）。
 2. 抽取連結並適當推論關係。

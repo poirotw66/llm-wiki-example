@@ -22,11 +22,11 @@ source_count: 1
 
 ## Key Concepts
 
-- 概念或術語 — 簡短說明；可連結例如 [範例概念](../concepts/example.md)
+- 概念或術語 — 簡短說明；可連結例如 [概念](../concepts/....md)
 
 ## Entities
 
-- 系統或產品 — 簡短說明；可連結例如 [範例實體](../entities/example.md)
+- 系統或產品 — 簡短說明；可連結例如 [實體](../entities/....md)
 
 ## Notable Claims
 
