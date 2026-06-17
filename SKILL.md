@@ -1,29 +1,28 @@
 ---
-name: llm-wiki-example
-description: 以來源為根據的 LLM Wiki 部門範本。fork 上手、目錄規約或不知用哪個操作時使用；五大操作請用子 Skill（/ingest、/query、/lint、/faq、/graph）。
+name: llm-wiki-example-readme
+description: 內部說明；可安裝 Skill 見 skills/ 目錄。
+metadata:
+  internal: true
 ---
 
-# llm-wiki-example（總覽 Skill）
+# Skill 安裝說明
 
-## 子 Skill（薄觸發；步驟在 PROMPTS 單一來源）
+可安裝的 Skill 位於 **[skills/](skills/)**（[vercel-labs/skills](https://www.npmjs.com/package/skills) 標準格式）。
 
-| 觸發 | Skill 路徑 | 提示詞章節 |
-|------|------------|------------|
-| `/ingest` | [.cursor/skills/llm-wiki-ingest/SKILL.md](.cursor/skills/llm-wiki-ingest/SKILL.md) | [docs/PROMPTS.md § Ingest](docs/PROMPTS.md) |
-| `/query` | [.cursor/skills/llm-wiki-query/SKILL.md](.cursor/skills/llm-wiki-query/SKILL.md) | [docs/PROMPTS.md § Query](docs/PROMPTS.md) |
-| `/lint` | [.cursor/skills/llm-wiki-lint/SKILL.md](.cursor/skills/llm-wiki-lint/SKILL.md) | [docs/PROMPTS.md § Lint](docs/PROMPTS.md) |
-| `/faq` | [.cursor/skills/llm-wiki-faq/SKILL.md](.cursor/skills/llm-wiki-faq/SKILL.md) | [docs/PROMPTS.md § FAQ](docs/PROMPTS.md) |
-| `/graph` | [.cursor/skills/llm-wiki-graph/SKILL.md](.cursor/skills/llm-wiki-graph/SKILL.md) | [docs/PROMPTS.md § Graph](docs/PROMPTS.md) |
+```bash
+# Cursor + Claude Code + Codex（本專案）
+npx skills add <owner>/llm-wiki-example -a cursor -a claude-code -a codex -y
 
-**維護原則**：操作步驟只改 [docs/PROMPTS.md](docs/PROMPTS.md)；規約只改 [AGENTS.md](AGENTS.md)。子 Skill 勿複製長步驟。
+# 全域（本機所有專案）
+npx skills add <owner>/llm-wiki-example -a cursor -a claude-code -a codex -g -y
 
-## 三步（任何操作）
+# 本 repo 全部 Skill → 所有偵測到的 Agent
+npx skills add <owner>/llm-wiki-example --all -y
 
-1. [AGENTS.md](AGENTS.md) — 硬約束與操作定義  
-2. [docs/PROMPTS.md](docs/PROMPTS.md) — 對應章節全文執行  
-3. `wiki/index.md`（若適用）+ append `wiki/log.md`
+# 本地開發（於 repo 根目錄）
+npx skills add . --all -a cursor -y
+```
 
-## 其他
+總覽與觸發表見 [skills/llm-wiki-example/SKILL.md](skills/llm-wiki-example/SKILL.md) 與 [README.md](README.md#cursor-skill-用法)。
 
-- 上手：[docs/onboarding.md](docs/onboarding.md) · 採用：[README.md](README.md) · OKF：[docs/okf.md](docs/okf.md)（[SPEC](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)）
-- 本倉含 **虛構示範頁**（`範例` 標籤）；fork 後請刪除或覆寫
+Fork 後亦可直接使用 [.cursor/skills/](.cursor/skills/)（與 `skills/` 內容同步）。
