@@ -401,6 +401,8 @@ source_count: 1
 
 ## 步驟
 
+**空 wiki**：若尚無可掃描的 Concept 頁，勿虛構題目、勿寫入 `wiki/faq/`；append `wiki/log.md` 記 **no-op**（詳見 [**docs/PROMPTS.md**](docs/PROMPTS.md) → FAQ 提示詞）。
+
 1. 讀取 `wiki/index.md`
 2. 掃描：
 
@@ -491,7 +493,9 @@ tags: ["faq"]
 
 # 🧠 操作：Graph
 
-建立知識關係：
+建立知識關係。
+
+**空 wiki**：若尚無 Concept 頁可遍歷，勿產出 `wiki/graph/*`；append `wiki/log.md` 記 **no-op**（詳見 [**docs/PROMPTS.md**](docs/PROMPTS.md) → Graph 提示詞）。
 
 1. 遍歷所有頁面
 2. 抽取連結
