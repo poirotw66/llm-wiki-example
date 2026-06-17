@@ -1,4 +1,1 @@
 **/.DS_Store
-
-# Local graphify outputs (this repo does not ship graphify artifacts; see README)
-graphify-out/

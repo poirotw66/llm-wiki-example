@@ -1,40 +1,30 @@
 # LLM Wiki（llm-wiki-example）
 
-Persistent, LLM-maintained knowledge base in markdown（空骨架）；本 repo 根目錄即主工作區。
+`wiki/` 為知識庫本體（目前為**空骨架**）。各部門請 **fork／Template** 專用 repo 後再寫入內容。
 
-## Folder Layout
+## 目錄結構
 
 ```text
 raw/
-  sources/    # archived sources（新增歸檔；既有檔不就地修改）
-  assets/     # images / attachments（選用）
+  sources/    # 歸檔來源（新增檔；既有檔不就地修改）
+  assets/     # 圖片／附件（選用）
 wiki/
   sources/
-  entities/
   concepts/
+  entities/
   queries/
   faq/
   lint/
-  graph/
-  index.md
-  log.md
-AGENTS.md     # repo 根目錄規約，以此為準
+  graph/      # 選用
+  index.md    # 總目錄
+  log.md      # 操作日誌（僅 append）
 ```
 
-## Quick Start
+## 進一步閱讀
 
-1. 提供 **指定**來源檔或將稿件 **歸檔**為 `raw/sources/` 下之 **新檔** `*.md`。  
-2. 依 **AGENTS.md** 執行 Ingest（wiki/sources、concepts、entities、index、log）。  
-3. 確認 `wiki/index.md` 已列出條目，`wiki/log.md` 已 append。
-
-## Naming Suggestions
-
-- Source page: `wiki/sources/<source-slug>.md`
-- Entity page: `wiki/entities/<entity-name>.md`
-- Concept page: `wiki/concepts/<concept-name>.md`
-- Query page: `wiki/queries/<query-slug>.md`
-- FAQ page: `wiki/faq/<faq-slug>.md`
-
-## Editing Discipline
-
-- Do not change **existing** files under `raw/` in place; add new archives during Ingest.
+| 需求 | 檔案 |
+|------|------|
+| 採用與 fork | 根目錄 [README.md](../README.md) |
+| 第一輪 Ingest 假資料流程 | [docs/onboarding.md](../docs/onboarding.md) |
+| 規約、命名、連結、操作與 Agent 提示 | [AGENTS.md](../AGENTS.md) |
+| `wiki/sources/*` 起稿版型 | [docs/templates/page-template-source.md](../docs/templates/page-template-source.md) |

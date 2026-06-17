@@ -28,6 +28,8 @@ Build a **self-evolving knowledge base** that:
 
 * `raw/`: immutable **existing** sources (❗ do not edit in place). **New** files may be **archived** into `raw/sources/` as step 2 of Ingest.
 
+* `raw/assets/`: optional images / attachments referenced from sources or wiki pages (not parsed as knowledge pages; add new files during Ingest or maintenance as needed).
+
 * `wiki/`: LLM-managed knowledge base
 
 * `wiki/index.md`: canonical catalog
@@ -40,9 +42,9 @@ Build a **self-evolving knowledge base** that:
 
 * `wiki/entities/`: concrete systems (Vue, Spring Boot, JDBC)
 
-* `wiki/queries/`: reusable Q&A knowledge
+* `wiki/queries/`: reusable **single** Q&A pages (one question → one persisted answer)
 
-* `wiki/faq/`: structured FAQ pages
+* `wiki/faq/`: structured **FAQ collections** (8–15 questions per page; frontmatter `type: query` with `tags: ["faq"]` — the `type` value reflects page shape, not the `wiki/queries/` folder)
 
 * `wiki/lint/`: diagnostics
 
@@ -50,9 +52,11 @@ Build a **self-evolving knowledge base** that:
 
 * `docs/` (**supporting files**, not part of the wiki knowledge corpus):
 
-  * `docs/templates/page-template.md` — index of templates; choose **page-template-source.md** for `wiki/sources/*` or **page-template-concept.md** for other wiki types. MUST still match **Required Frontmatter** below and, for `wiki/sources/*`, the **Source Page Schema** section headings exactly.
+  * `docs/templates/page-template-source.md` — scaffold for **`wiki/sources/*`** only; section headings MUST match **Source Page Schema** below exactly.
 
-  * `docs/OPERATIONS.md` — canonical **copy-paste English prompts** and numbered procedural checklists for Ingest / Query / Lint / FAQ / Graph agents; maintain prompts here as the single source of truth.
+  * `docs/onboarding.md` — **non-wiki** walkthrough with fictional sample paths; includes inline examples for concept / entity pages.
+
+  * **Operations Prompts (Copy-Paste)** — English agent prompts for Ingest / Query / Lint / FAQ / Graph live in **this file** under **Operations Prompts (Copy-Paste)** below; maintain them here as the single source of truth.
 
 ---
 
@@ -105,6 +109,16 @@ tags: []
 * Every page MUST link to ≥1 page
 * Every new page MUST be referenced
 * Prefer bidirectional links
+
+### Wiki link convention
+
+* In wiki prose, use wiki-style links without the `wiki/` prefix, e.g. `[[sources/example]]`, `[[concepts/api]]`, `[[entities/spring-boot]]`.
+* Resolve paths relative to `wiki/` (the file is `wiki/sources/example.md`, etc.).
+* When linking to the catalog or support docs from a wiki page, `[[../index]]` (i.e. `wiki/index.md`) and pointers to repo-root **`AGENTS.md`** or **`docs/onboarding.md`** are valid targets.
+
+### Cold start (empty wiki)
+
+* Before the first knowledge pages exist, the skeleton has no wiki pages to cross-link. After the **first Ingest**, every new page should link to at least one other wiki page (typically `wiki/index.md` via `[[../index]]` or reciprocal links among source / concept / entity pages).
 
 ---
 
@@ -184,7 +198,51 @@ Each `wiki/sources/*` must include:
 ## Limitations / Gaps
 ```
 
-Starter layouts: **`docs/templates/page-template-source.md`** (`wiki/sources/*`); **`docs/templates/page-template-concept.md`** (concept / entity / query / lint). See **`docs/templates/page-template.md`** for the index.
+Starter scaffold for source pages: **`docs/templates/page-template-source.md`**.
+
+---
+
+# 📄 Concept / Entity / Query / Lint Pages (suggested scaffold)
+
+For **`wiki/concepts/*`**, **`wiki/entities/*`**, **`wiki/queries/*`**, and **`wiki/lint/*`**: use **Required Frontmatter**; section names below are **suggested** (not as strict as **Source Page Schema**). Set `type` to `concept` | `entity` | `query` | `lint`. Cite sources for grounded claims.
+
+```yaml
+---
+title: "<Page title>"
+type: concept
+status: draft
+updated: "YYYY-MM-DD"
+source_count: 1
+tags: []
+---
+```
+
+```md
+# <Page title>
+
+## Summary
+
+One paragraph overview.
+
+## Key Points
+
+- Point with citation [[sources/...]]
+
+## Evidence
+
+- Grounded claim → [[sources/...]] or `raw/sources/*`
+
+## Relationships
+
+- related_to: [[concepts/...]]
+- implemented_by: [[entities/...]]
+
+## Open Questions
+
+- Optional follow-ups
+```
+
+FAQ pages under `wiki/faq/` use **FAQ Page Format** below (not this scaffold). A worked example for concept / entity paths: **`docs/onboarding.md`** step 3.
 
 ---
 
@@ -203,7 +261,7 @@ The canonical catalog is **`wiki/index.md`** (single file). Do **not** assume a 
 ## FAQ
 ```
 
-* **`## Overview`**: Short orientation only (scope, how to use this wiki, pointers to repo-root **`AGENTS.md`** and **`wiki/README.md`** when present). Use a few bullets; do not duplicate the full taxonomy—**Concepts** onward hold the linked catalog.
+* **`## Overview`**: Short orientation only (scope, how to use this wiki, pointers to repo-root **`AGENTS.md`** and **`wiki/README.md`** when present). Use a few bullets; do not duplicate the full taxonomy—**Concepts** onward hold the linked catalog. **Maintenance artifacts** (e.g. `wiki/lint/*` summaries, `wiki/graph/knowledge-map.md`) are also linked here as **link + one-line description** bullets when the team wants them in the catalog—there is no separate `## Lint` / `## Graph` index section by default.
 * **`## Concepts` … `## FAQ`**: Each entry = **link + one-line description** (per section).
 
 ---
@@ -231,12 +289,12 @@ The canonical catalog is **`wiki/index.md`** (single file). Do **not** assume a 
 3. Synthesize answer
 4. Cite sources
 5. Mark uncertainty
-6. Persist if reusable
-7. Update index + log
+6. If the answer is reusable, persist under `wiki/queries/*` and update `wiki/index.md` (**Queries** section).
+7. **Always** append `wiki/log.md` for this run (use **pass** / **no-op** when the session was answer-only with no new or updated wiki pages).
 
 ## Query Resolution Rule (MANDATORY)
 
-1. Check `wiki/` summary pages first (`faq`, `concepts`, `entities`).
+1. Check `wiki/` summary pages first (`faq`, `concepts`, `entities`, `queries`).
 2. If summary information is sufficient and non-conflicting, answer directly.
 3. If summary information is insufficient, ambiguous, or conflicting, verify with `raw/sources/*`.
 4. Final answers MUST include traceable locations (at minimum file paths; include section/line anchors when needed).
@@ -333,7 +391,7 @@ Detect:
 
 Output → `wiki/lint/`
 
-When you **add or materially change** persisted lint artifacts under `wiki/lint/`, update `wiki/index.md` if the catalog should surface them (e.g. link a lint summary page).
+When you **add or materially change** persisted lint artifacts under `wiki/lint/`, update `wiki/index.md` (**Overview** section: link + one-line description) if the catalog should surface them (e.g. link a lint summary page).
 
 Append `wiki/log.md` for **every** Lint run (including when no new files were written — record pass / short summary).
 
@@ -347,7 +405,7 @@ Build knowledge relationships:
 2. Extract links
 3. Infer relationships
 4. Generate graph summary
-5. When you add or materially change persisted graph artifacts, update `wiki/index.md` (e.g. link `wiki/graph/knowledge-map.md` or the chosen output)
+5. When you add or materially change persisted graph artifacts, update `wiki/index.md` (**Overview** section: link + one-line description) (e.g. link `wiki/graph/knowledge-map.md` or the chosen output)
 6. Append `wiki/log.md` — do this for every Graph run, including when output is optional or unchanged (record pass / no-op)
 
 Optional output:
@@ -388,14 +446,111 @@ Append only:
 
 ---
 
+# 📋 Operations Prompts (Copy-Paste)
+
+Canonical English prompts for Ingest / Query / Lint / FAQ / Graph agents. Logging: every run of an operation defined in this document must append `wiki/log.md` (use **pass** or **no-op** when no files changed). Update `wiki/index.md` when the operation creates, deletes, or materially changes wiki pages or catalog-listed artifacts (narrower rules per operation above).
+
+---
+
+## Ingest Prompt
+
+Use this repository as a source-grounded wiki system.
+
+Follow this document (`AGENTS.md`) strictly:
+1. Read the specified source file.
+2. Archive it into `raw/sources/*.md` (new file only; do not modify existing files under `raw/`).
+3. Create or update `wiki/sources/*` from the archived source using the **Source Page Schema** headings (`Summary`, `Key Concepts`, `Entities`, `Notable Claims`, `Limitations / Gaps`). Scaffold: `docs/templates/page-template-source.md`.
+4. Extract and update related `wiki/concepts/*` and `wiki/entities/*`.
+5. Add bidirectional links where relevant.
+6. Update `wiki/index.md`.
+7. Append `wiki/log.md`.
+8. Mark uncertainty explicitly when needed and cite sources for all claims.
+
+---
+
+## Query Prompt
+
+Answer the user question using a traceable, source-grounded workflow.
+
+Follow this order:
+1. Check `wiki/` summary pages first (`faq`, `concepts`, `entities`, `queries`).
+2. If summary information is sufficient and non-conflicting, answer directly.
+3. If summary information is insufficient, ambiguous, or conflicting, verify with `raw/sources/*`.
+4. Final answers must include traceable locations (at minimum file paths; include section/line anchors when needed).
+5. Cite sources and mark uncertainty (`（確定）`, `（推測）`, `（未知）`) when applicable.
+6. If the answer is reusable, persist a new or updated page under `wiki/queries/*` and update `wiki/index.md` (**Queries** section: link + one-line description).
+7. **Always** append `wiki/log.md` for this run — including answer-only sessions with no persistence (record **pass** or **no-op** per **Wiki log append** below).
+
+---
+
+## Lint Prompt
+
+Run a wiki quality lint pass and report findings with evidence.
+
+Follow **Operation: Lint** above.
+
+Check for:
+- contradictions
+- stale information
+- orphan pages
+- missing pages
+- duplicate concepts
+- pages without sources
+- outdated pages
+
+Output results to `wiki/lint/` and include actionable fixes with file-level references. When you add or materially change persisted lint artifacts under `wiki/lint/`, update `wiki/index.md` (**Overview** section: link + one-line description) if the catalog should surface them.
+
+**Always** append `wiki/log.md` for this run (even if no new lint files were written): one line summary, e.g. `pass` or `no issues` or short findings.
+
+---
+
+## FAQ Prompt
+
+Generate reusable FAQ knowledge from the existing wiki.
+
+Follow **Operation: FAQ** and **FAQ Page Format** / **FAQ Rules** above.
+
+1. Read `wiki/index.md`.
+2. Scan sources, concepts, entities, and queries pages.
+3. Detect repeated patterns, confusing topics, workflows, and cross-page relationships.
+4. Produce 8–15 questions (beginner through advanced, including at least one cross-page synthesis question). Do not invent questions with no basis in the wiki.
+5. Persist new or updated FAQ pages under `wiki/faq/` using the required frontmatter (`type: query`, `tags: ["faq"]`, etc.) and the Scope / FAQ / Short Answer / Detailed Answer / Related Pages structure.
+6. Update `wiki/index.md` (FAQ section: each entry = link + one-line description).
+7. Append `wiki/log.md`.
+
+---
+
+## Graph Prompt
+
+Build or refresh knowledge relationships for this wiki.
+
+Follow **Operation: Graph** above.
+
+1. Traverse wiki pages (respect link and relationship rules in this document).
+2. Extract links and infer relationships where appropriate.
+3. Generate or update a graph summary (optional artifact example: `wiki/graph/knowledge-map.md`).
+4. If you add or materially change persisted graph artifacts, update `wiki/index.md` (**Overview** section: link + one-line description) to link them (e.g. knowledge map).
+5. **Always** append `wiki/log.md` for this run — including when output is optional or **unchanged** (record `pass`, `no-op`, or one-line summary).
+
+---
+
+## Wiki log append (pass / no-op)
+
+Use after any operation in this document when file edits were unnecessary but a trace is still required (e.g. Lint/Graph pass with no new artifacts).
+
+1. Append a new dated section to `wiki/log.md` using the format: `## [YYYY-MM-DD] <operation> | <title>`.
+2. One or two bullets: state **pass**, **no-op**, or brief outcome; name the operation (lint / graph / faq / ingest / query persist / etc.).
+3. Do not rewrite or delete prior log sections.
+
+---
+
 # ⚡ Example Commands
 
 ```md
-- Ingest: specified path → archive to raw/sources/*.md → wiki (per Ingest steps)
+- Ingest: specified path → archive to raw/sources/*.md → wiki (per Ingest steps; use Ingest Prompt above)
 - Ingest all files already under raw/sources/ (one pass each; update index + log)
-- Generate FAQ from current wiki (8–15 questions, no fabricated Qs)
-- Answer: <question> with citations and uncertainty markers
-- Lint the wiki
-- Build knowledge graph (e.g. wiki/graph/knowledge-map.md)
-- Copy-paste agent prompts from docs/OPERATIONS.md
+- Generate FAQ from current wiki (8–15 questions, no fabricated Qs; use FAQ Prompt above)
+- Answer: <question> with citations and uncertainty markers (use Query Prompt above)
+- Lint the wiki (use Lint Prompt above)
+- Build knowledge graph (e.g. wiki/graph/knowledge-map.md; use Graph Prompt above)
 ```
