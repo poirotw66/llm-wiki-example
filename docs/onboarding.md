@@ -2,7 +2,7 @@
 
 本檔為 **支援文件**（不計入 `wiki/` 知識本體），示範同事從空白範例 repo 完成 **第一輪 Ingest** 時，檔案會如何出現。以下路徑與內容皆為 **虛構範例**；請在 **你們部門自己的 repo** 裡依真實來源操作，勿將假資料提交回本範例倉。
 
-規約與 Agent 複製提示：[AGENTS.md](../AGENTS.md)（**Operations Prompts (Copy-Paste)**）
+規約與 Agent 複製提示：[AGENTS.md](../AGENTS.md)（**Operations Prompts（複製貼上）**）
 
 ---
 
@@ -149,7 +149,7 @@ Query 僅回答、不寫入 wiki 時，仍須 **append `wiki/log.md`**（`pass` 
 
 ## 給 Agent 的一句話
 
-> Ingest the file at `<path>` per AGENTS.md: archive to `raw/sources/`, update `wiki/sources`, extract concepts/entities, update `wiki/index.md`, append `wiki/log.md`. Use the **Ingest Prompt** in AGENTS.md **Operations Prompts (Copy-Paste)**.
+> 依 AGENTS.md Ingest 指定路徑 `<path>`：歸檔至 `raw/sources/`、更新 `wiki/sources`、抽取 concepts／entities、更新 `wiki/index.md`、append `wiki/log.md`。使用 AGENTS.md **Operations Prompts（複製貼上）** 中的 **Ingest 提示詞**。
 
 ---
 

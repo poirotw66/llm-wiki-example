@@ -12,7 +12,7 @@
 
 1. **建立部門專用 repo** — 使用 **Use this template** 或 fork 後改名；**勿**在本 example 倉寫部門內容。  
 2. **客製化** — 編輯 [`wiki/index.md`](wiki/index.md) 的 **Overview**（部門、範圍、維護者）；必要時微調 [**AGENTS.md**](AGENTS.md)。  
-3. **第一次 Ingest** — 先讀 [**docs/onboarding.md**](docs/onboarding.md)（虛構流程，不寫入本倉 `wiki/`）；實作時依 **AGENTS.md** 的 **Operations Prompts (Copy-Paste)** 請 Agent 執行。
+3. **第一次 Ingest** — 先讀 [**docs/onboarding.md**](docs/onboarding.md)（虛構流程，不寫入本倉 `wiki/`）；實作時依 **AGENTS.md** 的 **Operations Prompts（複製貼上）** 請 Agent 執行。
 
 ### 日常在做什麼
 
