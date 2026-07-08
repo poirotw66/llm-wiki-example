@@ -6,8 +6,10 @@
 
 ```text
 raw/                          # repo 擴充：不可變歸檔（非 bundle 本體）
-  sources/
-  assets/                     # 圖片／附件
+  inbox/                      # 待處理原件
+  originals/                  # 非 MD 原件
+  sources/                    # canonical Markdown
+  assets/                     # 視覺附件
 wiki/                         # OKF bundle 根
   index.md                    # okf_version + 總目錄（§6）
   log.md                      # 變更／操作 log（§7 + 本倉擴充）
@@ -27,6 +29,7 @@ wiki/                         # OKF bundle 根
 | OKF 對照與互通 | [docs/okf.md](../docs/okf.md) |
 | 採用與 fork | [README.md](../README.md) |
 | 第一輪 Ingest | [docs/onboarding.md](../docs/onboarding.md) |
+| Ingest 12 步管線 | [docs/ingest-pipeline.md](../docs/ingest-pipeline.md) |
 | 規約 | [AGENTS.md](../AGENTS.md) |
 | Agent 提示詞 | [docs/PROMPTS.md](../docs/PROMPTS.md) |
 | Skill 總覽 | [skills/llm-wiki-example/](../skills/llm-wiki-example/SKILL.md) |

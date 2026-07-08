@@ -44,9 +44,15 @@
 
 # 📁 目錄契約
 
-* `raw/`：既有來源的 **不可變** 區（❗ 不可就地修改）。**Ingest** 第二步可將 **新** 檔 **歸檔** 至 `raw/sources/`。來源修訂時 **另建新歸檔檔**（勿改寫既有 `raw/` 檔）；slug 慣例見 [**docs/okf.md**](docs/okf.md) → **resource 語意**。
+* `raw/`：既有來源的 **不可變** 區（❗ 不可就地修改）。Ingest 依 [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) 寫入新檔。來源修訂時 **另建新歸檔檔**（勿改寫既有 `raw/` 檔）；slug 慣例見 [**docs/okf.md**](docs/okf.md) → **resource 語意**。
 
-* `raw/assets/`：選用之圖片／附件，由來源或 wiki 頁引用（不解析為知識頁；Ingest 或維護時視需要新增）。
+* `raw/inbox/`：使用者提供、**待處理** 之原件（PDF、Office、圖片、MD 等）；Ingest 可從此讀取。
+
+* `raw/originals/`：轉檔後 **保留之非 Markdown 原件**（新檔歸檔；不可變）。
+
+* `raw/sources/`：**canonical Markdown** 歸檔（**盡可能詳盡還原**，非 wiki 級精簡）；`wiki/sources/` 為摘要頁，`resource` slug 主要對應歸檔 slug。
+
+* `raw/assets/`：自視覺萃取之圖片／附件；由歸檔稿或 wiki 頁引用（不解析為知識頁）。
 
 * `wiki/`：**OKF Knowledge Bundle**（由 LLM／人類維護的知識本體）
 
@@ -73,6 +79,10 @@
   * `docs/templates/page-template-source.md` — 僅供 **`wiki/sources/*`** 起稿；區塊標題須與下方 **來源頁 Schema** 完全一致。
 
   * `docs/templates/page-template-concept.md` — 供 **`wiki/concepts/*`**、**`wiki/entities/*`**、**`wiki/queries/*`** 起稿（建議骨架）。
+
+  * `docs/ingest-pipeline.md` — **Ingest 12 步合併管線**（現行 8 步 + BU 10 步 + 多模態 triage）；對照表與支援檔型。
+
+  * `docs/visual-source-conversion.md` — 含資訊性視覺時之轉換與 Visual Evidence Block。
 
   * `docs/onboarding.md` — 第一輪 Ingest 解說；對照 **docs/templates/** 版型。
 
@@ -356,19 +366,44 @@ source_count: 1
 
 ---
 
+---
+
+# 🗂 來源轉換政策（階段 1）
+
+每次 Ingest **必須** 以 **detect／triage** 開頭（借鑑 Graphify 分流；落地為 BU + OKF 管線，詳見 [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md)）。
+
+## 轉換規則
+
+* 非 Markdown 或含不可讀視覺之來源 → 先轉 **結構化 Markdown**，再歸檔 `raw/sources/`（**詳盡還原稿**，見 **docs/visual-source-conversion.md**）。
+* 支援類型：`.md`、`.txt`、`.docx`、`.pdf`、`.ppt`/`.pptx`、`.xlsx`、常見圖片格式（見 ingest-pipeline 表）。
+* 含流程圖、架構圖、截圖、ER、掃描頁等 → 依 [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md)；資產入 `raw/assets/`。**文字層極短但頁面有架構圖時，必須 vision 寫層／節點盤點，禁止只抄標題。**
+* 無資訊性視覺 → log 或歸檔稿註明「視覺轉換閘：未適用」。
+* 視覺無法辨識 → 保留資產（若可）、標 `（未知）`、寫入 **Limitations / Gaps**。
+* 資產檔名頁碼須與「來源位置」標註一致；修訂歸檔時 **另建新檔**（如 `YYYYMMDD_<slug>.md`），勿改寫既有 `raw/sources/`。
+
+## 歸檔檔名
+
+* 預設 **`<slug>.md`**（與 `resource` 一致）。
+* 修訂版可選 **`YYYYMMDD_<slug>.md`** 或新 slug；**勿**改寫既有 `raw/sources/` 檔。
+
+---
+
 # 🛠 操作：Ingest
 
-1. 讀取 **指定** 來源檔（本次 ingest 提供之路徑或 artifact）。
-2. **歸檔** 至 `raw/sources/*.md`（僅新檔；檔名依團隊慣例；遵循 **檔案與路徑命名**）。**勿**覆寫或就地修改 `raw/` 既有檔，除非已明確核准。
-3. 依 `raw/sources/` 歸檔稿建立或更新 `wiki/sources/`。
-4. 抽取：
+合併 **12 步**（對照 [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md)）：
 
-   * concepts
-   * entities
-5. 更新相關頁面
-6. 建立連結
-7. 更新 index
-8. Append log
+1. 讀取 **指定** 來源（路徑、`raw/inbox/` 或批次）。
+2. **Detect／Triage**（檔型、是否需轉檔、是否含資訊性視覺）。
+3. 必要時 **轉 Markdown**（含視覺閘）。
+4. 非 MD 原件歸檔 **`raw/originals/`**（若適用）。
+5. 視覺資產寫入 **`raw/assets/`**（若適用）。
+6. **新增** 歸檔 **`raw/sources/<slug>.md`**（僅新檔；遵循命名規約）。
+7. 建立或更新 **`wiki/sources/`**（來源頁 Schema）。
+8. 抽取 **concepts**、**entities**。
+9. 更新相關頁並 **雙向連結**（相對路徑）。
+10. 補齊 **OKF 建議 frontmatter**（`description`、`resource`、`timestamp`）。
+11. 更新 **`wiki/index.md`**。
+12. **Append** `wiki/log.md`（含 triage／轉檔摘要）。
 
 ---
 

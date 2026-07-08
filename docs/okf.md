@@ -11,8 +11,10 @@
 ```text
 repo/
 ├── raw/                    # 本倉擴充：不可變歸檔（不在 OKF bundle 內）
-│   ├── sources/
-│   └── assets/             # 圖片／附件（.gitkeep 佔位）
+│   ├── inbox/              # 待處理原件
+│   ├── originals/          # 非 Markdown 原件歸檔
+│   ├── sources/            # canonical Markdown 歸檔
+│   └── assets/             # 視覺萃取附件
 └── wiki/                   # OKF Knowledge Bundle 根
     ├── index.md            # OKF 保留檔：目錄（§6）
     ├── log.md              # OKF 保留檔：變更 log（§7）

@@ -7,6 +7,7 @@
 | 規約與五大操作 | [**AGENTS.md**](AGENTS.md) |
 | OKF 對照 | [**docs/okf.md**](docs/okf.md) |
 | Agent 提示詞（步驟單一來源） | [**docs/PROMPTS.md**](docs/PROMPTS.md) |
+| **Ingest 12 步管線** | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) |
 | 第一輪 Ingest | [**docs/onboarding.md**](docs/onboarding.md) |
 | 頁面版型 | [**docs/templates/**](docs/templates/) |
 | npx skills 安裝 | [**SKILL.md**](SKILL.md) |
@@ -17,13 +18,16 @@
 
 ```text
 raw/                    # 不可變歸檔（非 OKF bundle 本體）
-  sources/              # 文字來源歸檔（Ingest 寫入）
-  assets/               # 圖片／附件（選用）
+  inbox/                # 待處理原件（PDF、Office、圖片…）
+  originals/            # 非 MD 原件歸檔
+  sources/              # canonical Markdown（Ingest 依據）
+  assets/               # 視覺萃取附件
 wiki/                   # OKF Knowledge Bundle（fork 後以 Ingest 填入）
   index.md              # 總目錄（okf_version + catalog）
   log.md                # 操作日誌（append only）
   sources/ concepts/ entities/ queries/ faq/ lint/ graph/
 docs/                   # 支援文件（非 wiki 知識本體）
+  ingest-pipeline.md  visual-source-conversion.md
   onboarding.md  okf.md  PROMPTS.md  templates/
 skills/                 # npx skills 標準格式（維護單一來源）
 .cursor/skills/         # 與 skills/ 同步（Cursor fork 內建）
@@ -47,7 +51,7 @@ AGENTS.md  SKILL.md  README.md
 
 | 操作 | 何時用 | 空白 wiki 時 |
 |------|--------|----------------|
-| **Ingest** | 新文件／規格要納入 wiki | ✅ 第一步 |
+| **Ingest** | 新文件／規格要納入 wiki（**含 PDF、Office、圖片**） | ✅ 第一步 |
 | **Query** | 向 wiki 提問 | 可答「尚無內容」；可寫入 `wiki/queries/` |
 | **Lint** | 定期或 PR 前檢查品質 | ✅ 可跑（多為 pass） |
 | **FAQ** | 主題夠多、要題組頁 | ⚠️ 須先有內容；否則 **no-op** |
@@ -132,6 +136,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 
 ```text
 /ingest ./docs/內部規格.md
+/ingest raw/inbox/某規格.pdf
 /query <你的問題>
 /lint
 /faq
@@ -164,6 +169,8 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | [**AGENTS.md**](AGENTS.md) | OKF 主軸、目錄契約、頁面格式、五大操作 |
 | [**docs/okf.md**](docs/okf.md) | OKF v0.1 對照、合規、匯出／匯入 |
 | [**docs/PROMPTS.md**](docs/PROMPTS.md) | Agent 提示詞（**步驟單一來源**） |
+| [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) | Ingest 12 步（多模態合併版） |
+| [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md) | 視覺來源轉換 |
 | [**docs/onboarding.md**](docs/onboarding.md) | 第一輪 Ingest 解說 |
 | [**docs/templates/page-template-source.md**](docs/templates/page-template-source.md) | `wiki/sources/*` 版型 |
 | [**docs/templates/page-template-concept.md**](docs/templates/page-template-concept.md) | `wiki/concepts/*`、`entities/*`、`queries/*` 版型 |

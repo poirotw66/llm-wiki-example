@@ -34,4 +34,4 @@ npx skills add <owner>/llm-wiki-example --all -a cursor -y
 ## 其他
 
 - 上手：docs/onboarding.md · 採用：README.md · OKF：docs/okf.md · 版型：docs/templates/
-- `wiki/` 內容留白 — fork 後以 `/ingest` 納入第一份真實來源
+- `wiki/` 內容留白 — fork 後以 `/ingest` 納入第一份真實來源；`raw/sources/` 寫 **詳盡還原**，`wiki/sources/` 寫 **摘要**

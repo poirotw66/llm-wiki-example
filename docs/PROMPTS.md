@@ -8,18 +8,24 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 
 ## Ingest 提示詞
 
-將本 repository 作為以來源為根據的 wiki 系統。
+將本 repository 作為以來源為根據的 wiki 系統。完整對照表見 [**docs/ingest-pipeline.md**](./ingest-pipeline.md)。
 
-嚴格遵循 **AGENTS.md**：
-1. 讀取指定來源檔。
-2. 歸檔至 `raw/sources/*.md`（僅新檔；勿修改 `raw/` 既有檔）。
-3. 依歸檔稿建立或更新 `wiki/sources/*`，區塊標題須符合 **來源頁 Schema**。版型：`docs/templates/page-template-source.md`。
-4. 抽取並更新 `wiki/concepts/*`、`wiki/entities/*`。
-5. 每個新建或更新的 **Concept** frontmatter 補齊 **OKF v0.1 建議欄位**：`description`、`resource`（**歸檔 slug** 如 `my-api-intro` → `raw/sources/my-api-intro.md`，或 **HTTPS URL**）、`timestamp`（ISO 8601）；對照 [**docs/okf.md**](./okf.md) → **resource 語意**。
-6. 視需要建立雙向連結（**markdown 相對路徑**，如 `../sources/foo.md`；勿用 `/path.md`，見 **AGENTS.md** → 連結規則）。
-7. 更新 `wiki/index.md`。
-8. Append `wiki/log.md`。
-9. 必要時標記不確定性；所有主張須引用來源。
+嚴格遵循 **AGENTS.md** → **操作：Ingest**（12 步）：
+
+1. 讀取指定來源（路徑、`raw/inbox/` 或批次）；未提供時向使用者索取。
+2. **Detect／Triage**：副檔名、是否需轉 Markdown、是否含資訊性視覺（見 ingest-pipeline 支援類型表）。
+3. 必要時轉為結構化 Markdown；含視覺則依 [**docs/visual-source-conversion.md**](./visual-source-conversion.md)。**硬閘**：若頁面幾乎只有標題但含架構圖／流程圖／表格，必須以 ≥2x 解析度匯出該頁並 vision 對圖寫「層／節點盤點」；禁止只抄標題結案；資產頁碼須與來源標註一致。
+4. 非 Markdown 原件歸檔 `raw/originals/`（新檔；勿改寫既有 `raw/` 檔）。
+5. 視覺資產寫入 `raw/assets/`（若適用）。
+6. **新增** canonical 歸檔 `raw/sources/<slug>.md`（僅新檔；遵循命名規約；修訂另建新檔）。**歸檔稿須盡可能詳盡還原原文，非精簡版**：逐頁／逐段（簡報每張投影片一節）、保留 OCR 文字層、圖內標籤／表格／流程須 vision 寫入正文＋Visual Evidence；**禁止**僅抄標題或幾句摘要；歸檔稿可遠長於 wiki 摘要頁。
+7. 依歸檔稿建立或更新 `wiki/sources/*`（**摘要**，非歸檔全文複製），區塊標題須符合 **來源頁 Schema**。版型：`docs/templates/page-template-source.md`。
+8. 抽取並更新 `wiki/concepts/*`、`wiki/entities/*`。
+9. 更新相關頁；建立雙向連結（**markdown 相對路徑**；勿用 `/path.md`）。
+10. 每個新建或更新的 **Concept** frontmatter 補齊 **OKF v0.1 建議欄位**：`description`、`resource`（**歸檔 slug** 如 `my-api-intro` → `raw/sources/my-api-intro.md`，或 **HTTPS URL**）、`timestamp`（ISO 8601）；對照 [**docs/okf.md**](./okf.md) → **resource 語意**。
+11. 更新 `wiki/index.md`。
+12. Append `wiki/log.md`（含 triage／轉檔摘要，或註明視覺閘未適用）。
+
+所有可驗證主張須引用來源；必要時標記不確定性（`（確定）`、`（推測）`、`（未知）`）。
 
 ---
 
@@ -100,7 +106,8 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 
 ```md
 - /ingest <路徑>（或 Cursor 薄 Skill；步驟見本檔 Ingest 提示詞）
-- Ingest：指定路徑 → 歸檔 raw/sources/*.md → wiki（用上方 Ingest 提示詞）
+- /ingest raw/inbox/某規格.pdf
+- Ingest：指定路徑 → triage → raw/sources/*.md → wiki（用上方 Ingest 提示詞）
 - Ingest raw/sources/ 下既有檔（每檔一輪；更新 index + log）
 - 自現有 wiki 產生 FAQ（8–15 題、勿虛構；用 FAQ 提示詞）
 - 回答：<問題>（附引用與不確定性；用 Query 提示詞）
