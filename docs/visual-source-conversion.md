@@ -3,7 +3,7 @@
 當 Ingest triage 判定來源含 **資訊性視覺**（流程圖、架構圖、截圖、掃描頁、ER、簡報圖、表格圖等），**必須** 在寫入 `raw/sources/` 前依本檔處理。  
 使用者只需說「Ingest 這個檔」或將檔案置於 `raw/inbox/`，**無須** 另下視覺轉換指令。
 
-規約見 [AGENTS.md](../AGENTS.md) → **來源轉換政策**；管線步驟見 [ingest-pipeline.md](./ingest-pipeline.md)。
+規約見 [AGENTS.md](../AGENTS.md) → **來源轉換政策**；管線步驟見 [ingest-pipeline.md](./ingest-pipeline.md)。**PDF** 專用步驟與資產命名見 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)。
 
 ---
 
@@ -46,7 +46,7 @@
 
 ## 產出要求
 
-1. **萃取資產** — 可辨識之圖寫入 `raw/assets/`，檔名建議 `<slug>-<頁碼>.png`（**頁碼須與 PDF／簡報實際頁碼一致**，勿錯頁）。
+1. **萃取資產** — 可辨識之圖寫入 `raw/assets/`。命名見 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)：**`<base-slug>-p<NN>.png`**（`<NN>` 為 PDF／簡報**實際頁碼**；資產一律用 `<base-slug>`，不用 `<archive-slug>`）。
 2. **Visual Evidence Block** — 在 `raw/sources/<slug>.md` 內以結構化區塊記錄視覺內容文字化結果。
 3. **不確定性** — 無法辨識處標 `（未知）`；推測處標 `（推測）`。
 4. **Limitations** — 在來源頁 `## Limitations / Gaps` 列出無法讀取之圖、模糊欄位。
@@ -76,8 +76,8 @@
 
 ### [圖1] <簡短標題>
 
-- **資產**：../assets/<slug>-05.png
-- **來源位置**：PDF／投影片 5
+- **資產**：../assets/<base-slug>-p05.png
+- **來源位置**：PDF 第 5 頁
 - **關係概要**：（確定）A → B → C……
 - **層／節點盤點**：（確定）用表格或 bullet 列出圖中可見標籤
 - **限制**：（未知）／（推測）……

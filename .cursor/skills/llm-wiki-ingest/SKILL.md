@@ -1,6 +1,6 @@
 ---
 name: llm-wiki-ingest
-description: LLM Wiki Ingest。使用者輸入 /ingest、ingest、歸檔、收斂來源、納入 wiki 時使用。含多模態 triage／轉檔（見 docs/ingest-pipeline.md；視覺硬閘見 docs/visual-source-conversion.md）；步驟見 docs/PROMPTS.md；規約見 AGENTS.md。
+description: LLM Wiki Ingest。使用者輸入 /ingest、ingest、歸檔、收斂來源、納入 wiki 時使用。含多模態 triage／轉檔（見 docs/ingest-pipeline.md；PDF 見 docs/pdf-ingest-sop.md；視覺硬閘見 docs/visual-source-conversion.md）；步驟見 docs/PROMPTS.md；規約見 AGENTS.md。
 ---
 
 # /ingest
@@ -19,15 +19,19 @@ description: LLM Wiki Ingest。使用者輸入 /ingest、ingest、歸檔、收�
 
 | 產物 | 粒度 | 禁止 |
 |------|------|------|
-| **`raw/sources/<slug>.md`** | **盡可能詳盡還原**（canonical 歸檔稿） | 用 wiki 級摘要、幾句標語或「Slide Notes 精簡版」代替 |
+| **`raw/sources/<archive-slug>.md`** | **盡可能詳盡還原**（canonical 歸檔稿） | 用 wiki 級摘要、幾句標語或「Slide Notes 精簡版」代替 |
 | **`wiki/sources/*`** | **摘要**（OKF 來源頁 Schema） | 把整份投影片逐頁抄進 wiki 頁 |
 
 **歸檔稿必須**（見 **docs/visual-source-conversion.md**）：
 
 - **逐頁／逐段**還原：簡報每張投影片一節；PDF 保留可抽取文字層與頁碼標記。
 - **圖內資訊寫入正文**：架構圖、流程圖、對照表、KPI 區塊須 vision 文字化（層／節點、箭頭、表格儲格），不可只寫標題。
-- **Visual Evidence**：每頁有資訊性視覺時須有對應區塊；資產 `raw/assets/<slug>-<頁碼>.png` 頁碼須一致。
-- **可長**：歸檔稿允許遠長於 `wiki/sources/`；修訂時 **另建新檔**（如 `YYYYMMDD_<slug>.md`），勿改寫既有 `raw/`。
+- **Visual Evidence**：每頁有資訊性視覺時須有對應區塊；資產 **`raw/assets/<base-slug>-p<NN>.png`**（見 **docs/pdf-ingest-sop.md**），頁碼須一致。
+- **可長**：歸檔稿允許遠長於 `wiki/sources/`；修訂時 **另建新檔**（如 `YYYYMMDD_<base-slug>.md`），勿改寫既有 `raw/`。
+
+## PDF
+
+依 **docs/pdf-ingest-sop.md**：`pdfinfo` → `pdftotext` → `pdftoppm`（144／288 DPI）→ vision；`<base-slug>` 與 `<archive-slug>` 分工見該檔。
 
 **wiki 頁**從歸檔稿 **抽取摘要**；若使用者抱怨「歸檔太簡」，優先 **補厚 `raw/sources/`**，而非只改 wiki 一句話。
 

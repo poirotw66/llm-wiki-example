@@ -7,6 +7,7 @@
 - OKF 對照：[docs/okf.md](./okf.md)
 - Agent 提示詞：[docs/PROMPTS.md](./PROMPTS.md)
 - 視覺轉換：[visual-source-conversion.md](./visual-source-conversion.md)
+- PDF 轉譯 SOP：[pdf-ingest-sop.md](./pdf-ingest-sop.md)
 - Skill 入口：[skills/llm-wiki-example/](../skills/llm-wiki-example/SKILL.md)
 
 ---
@@ -30,7 +31,7 @@
 | 階段 | 做什麼 | 產物 |
 |------|--------|------|
 | **輸入** | Triage 檔型；必要時轉 Markdown、處理視覺 | `raw/originals/`、`raw/assets/` |
-| **歸檔** | 寫入 canonical Markdown | `raw/sources/<slug>.md` |
+| **歸檔** | 寫入 canonical Markdown | `raw/sources/<archive-slug>.md` |
 | **wiki** | 來源頁 + 抽取概念／實體 + 連結 | `wiki/sources/`、`concepts/`、`entities/` |
 | **收尾** | 更新目錄與日誌 | `wiki/index.md`、`wiki/log.md` |
 
@@ -41,12 +42,12 @@
 ## 步驟 A：丟檔與歸檔（`raw/`）
 
 1. （可選）將原件放入 `raw/inbox/`。
-2. Agent 執行 **Detect／Triage**；非 MD 轉檔後：
+2. Agent 執行 **Detect／Triage**；**PDF** 依 [pdf-ingest-sop.md](./pdf-ingest-sop.md)；非 MD 轉檔後：
    - 原件 → `raw/originals/`
-   - 圖片 → `raw/assets/`
-   - 正文 → **`raw/sources/<slug>.md`**（新檔；修訂另建新檔）
+   - 圖片 → `raw/assets/<base-slug>-p<NN>.png`（PDF）
+   - 正文 → **`raw/sources/<archive-slug>.md`**（新檔；修訂另建新檔）
 
-命名：繁體字面或英文 slug（見 **AGENTS.md**）；範例 `my-api-intro`。
+命名：`<base-slug>`（資產用）、`<archive-slug>`（歸檔檔名與 `resource`）；全檔／部分頁／修訂規則見 **pdf-ingest-sop.md** 與 **AGENTS.md**。
 
 ---
 

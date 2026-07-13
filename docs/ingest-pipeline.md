@@ -43,7 +43,7 @@
 | 可否直達 Ingest | `.md` 且內容已結構化 → 可跳過轉檔 |
 
 **3. 多模態轉 Markdown**（非 `.md` 或 `.md` 內嵌不可讀視覺時）  
-依類型轉為 **結構化繁體中文 Markdown**（技術詞保留英文）。含資訊性視覺時 **必須** 依 [**visual-source-conversion.md**](./visual-source-conversion.md) 處理（含 **硬閘**：文字層極短但有架構圖時，須 vision 對圖寫層／節點盤點，嚴禁只寫標題）。使用者無須另下「請轉視覺」指令。
+依類型轉為 **結構化繁體中文 Markdown**（技術詞保留英文）。**PDF** 依 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)（`pdfinfo` → `pdftotext` → `pdftoppm` → vision）。含資訊性視覺時 **必須** 依 [**visual-source-conversion.md**](./visual-source-conversion.md)（含 **硬閘**）。使用者無須另下「請轉視覺」指令。
 
 ### B. 不可變歸檔（BU + OKF）
 
@@ -51,12 +51,12 @@
 將 PDF、DOCX、PPTX 等 **原始檔** 複製至 `raw/originals/`（新檔；勿改寫既有檔）。檔名建議保留原識別名或加日期前綴。
 
 **5. 視覺資產**（若步驟 3 有萃取）  
-圖片、截圖、簡報頁匯出等寫入 `raw/assets/`，並在 Markdown 中以相對路徑引用。
+圖片、截圖、簡報頁匯出等寫入 `raw/assets/`（PDF 命名：**`<base-slug>-p<NN>.png`**，見 **pdf-ingest-sop.md**），並在 Markdown 中以相對路徑引用。
 
 **6. 歸檔 canonical Markdown**  
 **新增** `raw/sources/<slug>.md`（僅新檔；遵循 **檔案與路徑命名**）。  
 - **粒度**：**盡可能詳盡還原**（非 wiki 級精簡）；逐頁／逐段、圖內標籤與表格須寫入正文（見 **visual-source-conversion.md** → **`raw/sources/` 與 `wiki/sources/` 分工**）。  
-- **slug**：繁體字面或英文識別名（見 **docs/okf.md** → resource 語意）。  
+- **slug**（`<archive-slug>`）：全檔／部分頁／修訂規則見 **docs/pdf-ingest-sop.md** 與 **docs/okf.md** → resource 語意。  
 - **修訂**：來源改版時 **另建新檔**（可選 `YYYYMMDD_<slug>.md` 或新 slug），勿就地改寫舊歸檔。  
 - 在歸檔稿文末或 log 簡述：triage 結果、是否執行視覺轉換、轉換限制。
 
@@ -90,7 +90,7 @@
 | Markdown | `.md` | 可直接歸檔；內嵌視覺仍走視覺閘 |
 | 純文字 | `.txt` | 轉 Markdown 標題結構 |
 | Word | `.docx` | 轉 Markdown（標題、表格、列表） |
-| PDF | `.pdf` | 轉 Markdown（保留頁碼／章節；圖表走視覺閘） |
+| PDF | `.pdf` | 依 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)：文字層 + 逐頁匯出 + 視覺閘；支援全檔或頁面範圍 |
 | 簡報 | `.ppt` `.pptx` | 每張投影片一節（投影片編號、標題、表格、圖） |
 | 試算表 | `.xlsx` | 每工作表一節或表格 |
 | 圖片 | `.png` `.jpg` `.webp` | 視覺閘 → 文字描述 + `raw/assets/` |
@@ -130,4 +130,5 @@ raw/
 - [PROMPTS.md](./PROMPTS.md) — Ingest 提示詞（複製貼上）
 - [onboarding.md](./onboarding.md) — 第一輪上手
 - [visual-source-conversion.md](./visual-source-conversion.md) — 視覺內容轉換
+- [pdf-ingest-sop.md](./pdf-ingest-sop.md) — PDF 轉譯 SOP 與資產命名
 - [okf.md](./okf.md) — `resource` slug、連結、匯出

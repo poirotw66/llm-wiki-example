@@ -71,10 +71,11 @@ OKF `resource` 為底層資產識別。本倉採兩種填法：
 
 | `resource` 值 | 意義 | 範例 |
 |---------------|------|------|
-| **歸檔 slug** | 對應 `raw/sources/<slug>.md`（不含路徑、不含 `.md`） | `my-api-intro` → `raw/sources/my-api-intro.md` |
+| **歸檔 slug**（`<archive-slug>`） | 對應 `raw/sources/<archive-slug>.md`（不含路徑、不含 `.md`） | `my-api-intro`；部分頁 `my-api-intro-頁1至5` |
 | **HTTPS URL** | 外部 canonical URI | `https://api.example.internal/v1` |
 
-* **來源頁**（`type: source`）與綁定實體的 **entity** 頁：優先填歸檔 slug（與歸檔檔名一致，不含副檔名）。
+* **來源頁**（`type: source`）與綁定實體的 **entity** 頁：優先填 **`<archive-slug>`**（與歸檔檔名一致）。
+* **視覺資產**（`raw/assets/`）使用 **`<base-slug>-p<NN>.png`**，**不**使用 `<archive-slug>`；見 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)。
 * **抽象 concept** 頁：通常省略 `resource`，或填外部標準文件 URL。
 * **Citations** 正文仍寫實際路徑 `../../raw/sources/<slug>.md`（自 `wiki/sources/`），與 frontmatter slug 對照。
 

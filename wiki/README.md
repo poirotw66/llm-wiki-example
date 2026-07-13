@@ -30,6 +30,7 @@ wiki/                         # OKF bundle 根
 | 採用與 fork | [README.md](../README.md) |
 | 第一輪 Ingest | [docs/onboarding.md](../docs/onboarding.md) |
 | Ingest 12 步管線 | [docs/ingest-pipeline.md](../docs/ingest-pipeline.md) |
+| PDF 轉譯 SOP | [docs/pdf-ingest-sop.md](../docs/pdf-ingest-sop.md) |
 | 規約 | [AGENTS.md](../AGENTS.md) |
 | Agent 提示詞 | [docs/PROMPTS.md](../docs/PROMPTS.md) |
 | Skill 總覽 | [skills/llm-wiki-example/](../skills/llm-wiki-example/SKILL.md) |
