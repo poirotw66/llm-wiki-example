@@ -294,6 +294,10 @@ source_count: 0
 
 ## Notable Claims
 
+## Visual Assets
+
+> 來源含資訊性視覺時必填；無則省略。須 `![]()` embed `../../raw/assets/<base-slug>-p<NN>.png`（見 **visual-source-conversion.md**）。
+
 ## Limitations / Gaps
 ```
 
@@ -426,6 +430,7 @@ source_count: 1
 2. 摘要足夠且無衝突 → 直接回答。
 3. 不足、模糊或衝突 → 回到 `raw/sources/*` 核對。
 4. 最終答案須含可追溯位置（至少檔案路徑；必要時到章節／行）。
+5. 若答案涉及架構圖、流程圖等資訊性視覺，**必須**附上 `raw/assets/` 原圖的 Markdown embed 或連至含 **`## Visual Assets`** 的來源頁；**禁止**僅文字描述而不給原圖（見 **visual-source-conversion.md** → **可檢索原圖**）。
 
 ---
 
@@ -520,6 +525,7 @@ tags: ["faq"]
 * 超過 30 天未更新
 * **斷鏈**（`/path.md` 目標不存在於 `wiki/`）
 * **`/path.md` 根路徑連結**（在嵌於 repo 的 `wiki/` 內會斷鏈；應改相對路徑）
+* **視覺資產缺口**：`raw/assets/` 有對應資產，但 `wiki/sources/*` 缺 **`## Visual Assets`**、缺 `![]()` embed，或 embed 路徑與 `<base-slug>-p<NN>.png` 不一致
 
 輸出 → `wiki/lint/`
 

@@ -56,9 +56,9 @@
 依 [page-template-source.md](./templates/page-template-source.md) 建立 `wiki/sources/<slug>.md`：
 
 - `type: source`、`resource: "<slug>"`
-- Summary、Key Concepts、Entities、Notable Claims、Limitations / Gaps
+- Summary、Key Concepts、Entities、Notable Claims、**Visual Assets**（有圖時 embed 原圖）、Limitations / Gaps
 - Citations：`../../raw/sources/<slug>.md`
-- 含視覺時參考歸檔稿 **Visual Evidence** 區塊
+- 含視覺時：`## Visual Assets` 須 `![]()` 指向 `../../raw/assets/<base-slug>-p<NN>.png`；詳見 **visual-source-conversion.md**
 
 ---
 

@@ -32,6 +32,14 @@ source_count: 1
 
 - 可驗證主張，附引用 [本來源頁](./<slug>.md) 或 `../../raw/sources/<slug>.md`
 
+## Visual Assets
+
+> 來源含架構圖、流程圖等資訊性視覺時 **必填**；無視覺資產時可省略整節。路徑自 `wiki/sources/` 指向 `raw/assets/`（見 **docs/visual-source-conversion.md**）。
+
+- [圖說（PDF 第 N 頁）](../../raw/assets/<base-slug>-p<NN>.png)
+
+![圖說](../../raw/assets/<base-slug>-p<NN>.png)
+
 ## Limitations / Gaps
 
 - 來源未涵蓋之處、模糊之處或後續待辦。

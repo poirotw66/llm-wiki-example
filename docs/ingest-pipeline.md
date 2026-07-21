@@ -63,7 +63,7 @@
 ### C. OKF Knowledge Bundle（現行主幹）
 
 **7. 建立／更新 `wiki/sources/<slug>.md`**  
-**摘要頁**（從步驟 6 歸檔稿抽取，非全文複製）；區塊標題須符合 **來源頁 Schema**；版型：**page-template-source.md**。  
+**摘要頁**（從步驟 6 歸檔稿抽取，非全文複製）；區塊標題須符合 **來源頁 Schema**（含 **`## Visual Assets`**：有圖時 embed `../../raw/assets/<base-slug>-p<NN>.png`）；版型：**page-template-source.md**。  
 `resource` 指向歸檔 slug（修訂稿則指向新 slug）。
 
 **8. 抽取 `wiki/concepts/*`、`wiki/entities/*`**  

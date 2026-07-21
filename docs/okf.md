@@ -75,7 +75,7 @@ OKF `resource` 為底層資產識別。本倉採兩種填法：
 | **HTTPS URL** | 外部 canonical URI | `https://api.example.internal/v1` |
 
 * **來源頁**（`type: source`）與綁定實體的 **entity** 頁：優先填 **`<archive-slug>`**（與歸檔檔名一致）。
-* **視覺資產**（`raw/assets/`）使用 **`<base-slug>-p<NN>.png`**，**不**使用 `<archive-slug>`；見 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)。
+* **視覺資產**（`raw/assets/`）使用 **`<base-slug>-p<NN>.png`**，**不**使用 `<archive-slug>`；見 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)。`wiki/sources/*` 以 **`## Visual Assets`** + `![]()` 指向 `../../raw/assets/...` 供檢索時顯示原圖（見 **visual-source-conversion.md**）。
 * **抽象 concept** 頁：通常省略 `resource`，或填外部標準文件 URL。
 * **Citations** 正文仍寫實際路徑 `../../raw/sources/<slug>.md`（自 `wiki/sources/`），與 frontmatter slug 對照。
 

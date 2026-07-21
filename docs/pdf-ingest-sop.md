@@ -1,6 +1,15 @@
 # PDF 轉譯 SOP 與命名規約
 
-本檔為 **PDF Ingest** 的步驟與命名 **單一來源**。視覺硬閘、Visual Evidence 格式見 [**visual-source-conversion.md**](./visual-source-conversion.md)；管線總表見 [**ingest-pipeline.md**](./ingest-pipeline.md)。
+本檔為 **PDF Ingest** 的 CLI 步驟與命名 **單一來源**。Vision **怎麼寫**（RAG 轉譯、資訊圖／裝飾圖、Visual Evidence）見 [**visual-source-conversion.md**](./visual-source-conversion.md)；管線總表見 [**ingest-pipeline.md**](./ingest-pipeline.md)。
+
+### 本檔與 visual-source-conversion 分工
+
+| 主題 | pdf-ingest-sop（本檔） | visual-source-conversion |
+|------|------------------------|---------------------------|
+| pdfinfo、pdftotext、pdftoppm、DPI | **單一來源** | — |
+| `<base-slug>`／`<archive-slug>` 命名 | **單一來源** | 引用本檔（資產檔名） |
+| RAG 轉譯、資訊圖／裝飾圖、Agent 提示詞 | 引用 visual-source-conversion | **單一來源** |
+| Visual Evidence、embed、Visual Assets | 引用 visual-source-conversion | **單一來源** |
 
 ---
 
@@ -122,14 +131,14 @@ pdftoppm -f 1 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
 
 `pdftoppm` 輸出檔名可能為 `-1.png` 或 `-01.png`；**重新命名時以 PDF 實際頁碼為準**，對齊 `<base-slug>-p<NN>.png`。
 
-### 5. Vision 文字化
+### 5. Vision 文字化（逐頁轉譯）
 
-對需視覺閘的每一頁：
+對需視覺閘的每一頁，依 [**visual-source-conversion.md** → **Vision 文字化原則（RAG 導向）**](./visual-source-conversion.md#vision-文字化原則rag-導向) 執行：
 
-1. 讀匯出圖與同頁文字層
-2. 將圖內標籤、表格、箭頭、層級寫入該頁正文
-3. 撰寫 Visual Evidence（見 visual-source-conversion.md）
-4. 文字層與 vision 衝突時，**以圖為準**並標 `（推測）` 或 `（確定）`
+1. 讀匯出圖與同頁 `pdftotext` 文字層（文字層作初稿，**不以文字層單獨結案**）。
+2. 將**資訊圖**轉為結構化 Markdown；**忽略裝飾圖**（見 visual-source-conversion）。
+3. 撰寫 Visual Evidence；**每節須含 `![]()` embed 原圖**。
+4. 衝突時以圖為準，標 `（確定）`／`（推測）`／`（未知）`。
 
 ### 6. 寫入歸檔稿
 
@@ -152,7 +161,7 @@ pdftoppm -f 1 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
 
 ### 7. 後續 wiki 步驟
 
-依 [PROMPTS.md](./PROMPTS.md) § Ingest 步驟 7–12：`wiki/sources/` 摘要、`concepts`／`entities`、連結、index、log。
+依 [PROMPTS.md](./PROMPTS.md) § Ingest 步驟 7–12：`wiki/sources/` 摘要（含 **`## Visual Assets`** 與原圖 embed）、`concepts`／`entities`、連結、index、log。
 
 ---
 
@@ -163,8 +172,10 @@ pdftoppm -f 1 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
 - [ ] 原件已入 `raw/originals/`，且 SHA-256 已記錄
 - [ ] 每個處理頁有 `### 第 N 頁` 節
 - [ ] 資產檔名為 `<base-slug>-p<NN>.png`，且 `NN` 與「來源位置」一致
-- [ ] 有資訊性視覺的頁面皆有 Visual Evidence
+- [ ] 有資訊性視覺的頁面皆有 Visual Evidence，且歸檔稿內有 `![]()` embed
+- [ ] `wiki/sources/*` 含 **`## Visual Assets`**，embed 路徑為 `../../raw/assets/<base-slug>-p<NN>.png`
 - [ ] 架構圖／對照表已表格化或層級盤點，非僅標題
+- [ ] 符合 [visual-source-conversion.md → Vision 文字化原則](./visual-source-conversion.md#vision-文字化原則rag-導向)（無配色噪音、裝飾圖未寫入、表格完整）
 - [ ] 部分 ingest 已標未涵蓋頁
 - [ ] `resource` 使用 `<archive-slug>`，與 `raw/sources/` 檔名一致
 
@@ -176,7 +187,8 @@ pdftoppm -f 1 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
 |------|----------|
 | 資產用 `<archive-slug>-p05` | 資產一律 `<base-slug>-p05` |
 | 第 4 頁圖檔卻標「第 5 頁」 | 檔名、來源位置、正文三者頁碼一致 |
-| 架構頁只抄標題 | vision 後補層級表 + 資料流 + Visual Evidence |
+| 架構頁只抄標題 | vision 後補層級表 + 資料流 + Visual Evidence（見 visual-source-conversion） |
+| 描述「藍色方塊」「現代感設計」 | 見 visual-source-conversion → Vision 文字化原則 |
 | 部分 ingest 卻用全檔 `<archive-slug>` | slug 加 `-頁<start>至<end>` |
 | 把 wiki 摘要貼進 `raw/sources/` | 歸檔詳盡、wiki 摘要分離 |
 
