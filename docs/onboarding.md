@@ -1,7 +1,7 @@
 # 部門 Wiki 上手（Ingest 流程）
 
 本檔說明 **第一輪 Ingest**。本 repo 的 `wiki/` **刻意留白** — 請以你們自己的第一份文件走完流程。  
-**階段 1** 支援 **一鍵多模態**（PDF、Office、圖片等）；完整 12 步對照見 [**ingest-pipeline.md**](./ingest-pipeline.md)。
+**階段 1** 支援 **一鍵多模態**（PDF、Office、圖片等）；完整 13 步對照見 [**ingest-pipeline.md**](./ingest-pipeline.md)。
 
 - 規約：[AGENTS.md](../AGENTS.md)（**OKF 主軸**、**來源轉換政策**）
 - OKF 對照：[docs/okf.md](./okf.md)
@@ -26,7 +26,7 @@
 
 ---
 
-## 快速流程（對照 12 步）
+## 快速流程（對照 13 步）
 
 | 階段 | 做什麼 | 產物 |
 |------|--------|------|
@@ -44,8 +44,9 @@
 1. （可選）將原件放入 `raw/inbox/`。
 2. Agent 執行 **Detect／Triage**；**PDF** 依 [pdf-ingest-sop.md](./pdf-ingest-sop.md)；非 MD 轉檔後：
    - 原件 → `raw/originals/`
-   - 圖片 → `raw/assets/<base-slug>-p<NN>.png`（PDF）
+   - 圖片 → `raw/assets/<base-slug>/p<NN>.png`（PDF）
    - 正文 → **`raw/sources/<archive-slug>.md`**（新檔；修訂另建新檔）
+3. 歸檔成功後 **刪除** `raw/inbox/` 或 repo 根目錄的輸入副本（原件已在 `raw/`；見 **ingest-pipeline** 步驟 12）。
 
 命名：`<base-slug>`（資產用）、`<archive-slug>`（歸檔檔名與 `resource`）；全檔／部分頁／修訂規則見 **pdf-ingest-sop.md** 與 **AGENTS.md**。
 
@@ -58,7 +59,7 @@
 - `type: source`、`resource: "<slug>"`
 - Summary、Key Concepts、Entities、Notable Claims、**Visual Assets**（有圖時 embed 原圖）、Limitations / Gaps
 - Citations：`../../raw/sources/<slug>.md`
-- 含視覺時：`## Visual Assets` 須 `![]()` 指向 `../../raw/assets/<base-slug>-p<NN>.png`；詳見 **visual-source-conversion.md**
+- 含視覺時：`## Visual Assets` 須 `![]()` 指向 `../../raw/assets/<base-slug>/p<NN>.png`；詳見 **visual-source-conversion.md**
 
 ---
 
@@ -94,7 +95,7 @@
 
 ## 檢查清單（第一輪完成後）
 
-- [ ] triage／轉檔已記錄（log 或歸檔稿註記）
+- [ ] 輸入原件已清理（inbox／根目錄副本已刪，若適用）
 - [ ] `raw/sources/` 有新歸檔，且未就地改寫舊檔
 - [ ] 非 MD 原件在 `raw/originals/`（若適用）
 - [ ] 每個新 wiki 頁有 frontmatter 與 ≥1 連結

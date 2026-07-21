@@ -10,22 +10,23 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 
 將本 repository 作為以來源為根據的 wiki 系統。完整對照表見 [**docs/ingest-pipeline.md**](./ingest-pipeline.md)。
 
-嚴格遵循 **AGENTS.md** → **操作：Ingest**（12 步）：
+嚴格遵循 **AGENTS.md** → **操作：Ingest**（13 步）：
 
 1. 讀取指定來源（路徑、`raw/inbox/` 或批次）；未提供時向使用者索取。
 2. **Detect／Triage**：副檔名、是否需轉 Markdown、是否含資訊性視覺（見 ingest-pipeline 支援類型表）。
-3. 必要時轉為結構化 Markdown。**PDF** 依 [**docs/pdf-ingest-sop.md**](./pdf-ingest-sop.md)（`pdfinfo` → `pdftotext` → `pdftoppm` → vision；資產 **`<base-slug>-p<NN>.png`**）。含視覺則依 [**docs/visual-source-conversion.md**](./visual-source-conversion.md)。**硬閘**：若頁面幾乎只有標題但含架構圖／流程圖／表格，必須以 ≥144 DPI（不足則 288）匯出該頁並 vision 對圖寫「層／節點盤點」；禁止只抄標題結案；資產頁碼須與來源標註一致。
+3. 必要時轉為結構化 Markdown。**PDF** 依 [**docs/pdf-ingest-sop.md**](./pdf-ingest-sop.md)（`pdfinfo` → `pdftotext` → `pdftoppm` → vision；資產 **`raw/assets/<base-slug>/p<NN>.png`**）。含視覺則依 [**docs/visual-source-conversion.md**](./visual-source-conversion.md)。**硬閘**：若頁面幾乎只有標題但含架構圖／流程圖／表格，必須以 ≥144 DPI（不足則 288）匯出該頁並 vision 對圖寫「層／節點盤點」；禁止只抄標題結案；資產頁碼須與來源標註一致。
 4. 非 Markdown 原件歸檔 `raw/originals/`（新檔；勿改寫既有 `raw/` 檔）。
 5. 視覺資產寫入 `raw/assets/`（若適用；PDF 命名見 **pdf-ingest-sop.md**）。
 6. **新增** canonical 歸檔 `raw/sources/<archive-slug>.md`（僅新檔；`<archive-slug>` 見 **pdf-ingest-sop.md**／**okf.md**；修訂另建新檔）。**歸檔稿須盡可能詳盡還原原文，非精簡版**：逐頁／逐段（簡報每張投影片一節）、保留 OCR 文字層、圖內標籤／表格／流程須 vision 寫入正文＋Visual Evidence（含 `![]()` embed 原圖）；**禁止**僅抄標題或幾句摘要；歸檔稿可遠長於 wiki 摘要頁。
-7. 依歸檔稿建立或更新 `wiki/sources/*`（**摘要**，非歸檔全文複製），區塊標題須符合 **來源頁 Schema**（含 **`## Visual Assets`**：有資訊性視覺時 **必須** `![]()` embed `../../raw/assets/<base-slug>-p<NN>.png`）。版型：`docs/templates/page-template-source.md`。
+7. 依歸檔稿建立或更新 `wiki/sources/*`（**摘要**，非歸檔全文複製），區塊標題須符合 **來源頁 Schema**（含 **`## Visual Assets`**：有資訊性視覺時 **必須** `![]()` embed `../../raw/assets/<base-slug>/p<NN>.png`）。版型：`docs/templates/page-template-source.md`。
 8. 抽取並更新 `wiki/concepts/*`、`wiki/entities/*`。
 9. 更新相關頁；建立雙向連結（**markdown 相對路徑**；勿用 `/path.md`）。
 10. 每個新建或更新的 **Concept** frontmatter 補齊 **OKF v0.1 建議欄位**：`description`、`resource`（**歸檔 slug** 如 `my-api-intro` → `raw/sources/my-api-intro.md`，或 **HTTPS URL**）、`timestamp`（ISO 8601）；對照 [**docs/okf.md**](./okf.md) → **resource 語意**。
 11. 更新 `wiki/index.md`。
-12. Append `wiki/log.md`（含 triage／轉檔摘要，或註明視覺閘未適用）。
+12. **輸入原件清理**：步驟 4（非 MD）與步驟 6（MD 直達歸檔）成功後，若輸入路徑在 `raw/inbox/`、repo 根目錄等**非** `raw/originals/`／`raw/sources/`／`raw/assets/` 位置，**刪除該輸入檔**。**禁止**刪 `raw/` 歸檔本體。
+13. Append `wiki/log.md`（含 triage／轉檔摘要，或註明視覺閘未適用；步驟 12 有刪檔時註明路徑）。
 
-所有可驗證主張須引用來源；必要時標記不確定性（`（確定）`、`（推測）`、`（未知）`）。
+所有可驗證主張須引用來源；不確定時標記（`（推測）`、`（未知）`）；有根據的主張不需另加標記。
 
 ---
 
@@ -38,8 +39,8 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 2. 摘要足夠且無衝突 → 直接回答。
 3. 不足、模糊或衝突 → 核對 `raw/sources/*`（含 **Visual Evidence** 與 `raw/assets/`）。
 4. 答案須含可追溯位置（至少檔案路徑；必要時章節／行）。
-5. 引用來源並標記不確定性（`（確定）`、`（推測）`、`（未知）`）。
-6. **視覺答案（強制）**：若問題涉及架構圖、流程圖、對照表等資訊性視覺，答案 **必須** 附上對應 `raw/assets/` 原圖的 Markdown embed（自當前回答脈絡選路徑：聊天中引用 wiki 頁時用 `../../raw/assets/<base-slug>-p<NN>.png` 或連至含 embed 的 [來源頁](../sources/....md)），並標明 PDF／投影片頁碼。**禁止**只描述圖內容而不給原圖。
+5. 引用來源；不確定時標記（`（推測）`、`（未知）`）；有根據的主張不需另加標記。
+6. **視覺答案（強制）**：若問題涉及架構圖、流程圖、對照表等資訊性視覺，答案 **必須** 附上對應 `raw/assets/` 原圖的 Markdown embed（自當前回答脈絡選路徑：聊天中引用 wiki 頁時用 `../../raw/assets/<base-slug>/p<NN>.png` 或連至含 embed 的 [來源頁](../sources/....md)），並標明 PDF／投影片頁碼。**禁止**只描述圖內容而不給原圖。
 7. 若可重用，持久化至 `wiki/queries/*` 並更新 `wiki/index.md`（**Queries** 區：連結 + 一行說明）；持久化答案亦須保留步驟 6 的 embed。
 8. **一律** append `wiki/log.md` — 含僅回答、未持久化（記 **pass** 或 **no-op**，見下方 **Wiki log append**）。
 
@@ -51,7 +52,10 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 
 遵循 **AGENTS.md** → **操作：Lint**。
 
-檢查：矛盾、過時資訊、孤兒頁、缺頁、重複概念、無來源頁、過時頁面、**斷鏈**（相對路徑目標不存在）、**`/path.md` 根路徑**（嵌於 repo 時必斷）、**`[[...]]` 混用**（見 **AGENTS.md** → 連結規則）、**視覺資產缺口**（`raw/assets/` 有圖但對應 `wiki/sources/*` 缺 **`## Visual Assets`** 或缺 `![]()` embed；或 embed 路徑與資產檔名不一致）。
+1. **先執行** `python scripts/wiki-lint.py`；依 stderr 修正後重跑至 exit 0。
+2. 再執行 Agent 深度檢查（見下方清單）。
+
+檢查：矛盾、過時資訊、孤兒頁、缺頁、重複概念、無來源頁、過時頁面、**斷鏈**（相對路徑目標不存在）、**`/path.md` 根路徑**（嵌於 repo 時必斷）、**`[[...]]` 混用**（見 **AGENTS.md** → 連結規則）、**視覺資產缺口**（`raw/assets/<base-slug>/` 有圖但對應 `wiki/sources/*` 缺 **`## Visual Assets`** 或缺 `![]()` embed；或 embed 路徑與 `raw/assets/<base-slug>/p<NN>.png` 不一致）。
 
 結果輸出至 `wiki/lint/`，附可執行修正與檔案級引用。**新增或實質變更** lint 產物時，若目錄需露出，更新 `wiki/index.md`（**Overview** 區：連結 + 一行說明）。
 

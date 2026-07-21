@@ -38,13 +38,13 @@
 
 | 產物 | 路徑基準 | Markdown embed 範例 |
 |------|----------|---------------------|
-| **`raw/sources/<archive-slug>.md`** | 相對 `raw/sources/` | `![圖說](../assets/<base-slug>-p05.png)` |
-| **`wiki/sources/<archive-slug>.md`** | 相對 `wiki/sources/` | `![圖說](../../raw/assets/<base-slug>-p05.png)` |
-| **`wiki/queries/*` 答案** | 相對 `wiki/queries/` | `![圖說](../../raw/assets/<base-slug>-p05.png)` |
+| **`raw/sources/<archive-slug>.md`** | 相對 `raw/sources/` | `![圖說](../assets/<base-slug>/p05.png)` |
+| **`wiki/sources/<archive-slug>.md`** | 相對 `wiki/sources/` | `![圖說](../../raw/assets/<base-slug>/p05.png)` |
+| **`wiki/queries/*` 答案** | 相對 `wiki/queries/` | `![圖說](../../raw/assets/<base-slug>/p05.png)` |
 
 規則：
 
-- 資產檔名一律 **`<base-slug>-p<NN>.png`**（見 **pdf-ingest-sop.md**）。
+- 資產路徑 **`raw/assets/<base-slug>/p<NN>.png`**（目錄 = `<base-slug>`，檔名 = `p<NN>.png`；見 **pdf-ingest-sop.md**）。
 - 每張資訊性視覺至少：**連結一行 + `![]()` 一行**；可再加簡短圖說與 PDF 頁碼。
 - **禁止**僅寫 `- **資產**：../assets/...` 而不 embed（文字路徑保留給 Agent／Lint；embed 給人類閱讀）。
 - PNG 留在 `raw/assets/`；**勿**複製進 `wiki/`（維持不可變歸檔與單一 canonical 資產）。
@@ -154,7 +154,7 @@ PDF 執行時機與 CLI 見 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md) §5；�
 
 ## 產出要求
 
-1. **萃取資產** — 可辨識之圖寫入 `raw/assets/`。命名見 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)：**`<base-slug>-p<NN>.png`**（`<NN>` 為 PDF／簡報**實際頁碼**；資產一律用 `<base-slug>`，不用 `<archive-slug>`）。
+1. **萃取資產** — 可辨識之圖寫入 `raw/assets/<base-slug>/`。命名見 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)：**`p<NN>.png`**（`<NN>` 為 PDF／簡報**實際頁碼**；目錄一律用 `<base-slug>`，不用 `<archive-slug>`）。
 2. **Visual Evidence Block** — 在 `raw/sources/<slug>.md` 內以結構化區塊記錄視覺內容文字化結果。
 3. **不確定性** — 無法辨識處標 `（未知）`；推測處標 `（推測）`。
 4. **Limitations** — 在來源頁 `## Limitations / Gaps` 列出無法讀取之圖、模糊欄位。
@@ -186,9 +186,9 @@ PDF 執行時機與 CLI 見 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md) §5；�
 
 ### [圖1] <簡短標題>
 
-![<簡短標題>](../assets/<base-slug>-p05.png)
+![<簡短標題>](../assets/<base-slug>/p05.png)
 
-- **資產**：../assets/<base-slug>-p05.png
+- **資產**：../assets/<base-slug>/p05.png
 - **來源位置**：PDF 第 5 頁
 - **關係概要**：（確定）A → B → C……
 - **層／節點盤點**：（確定）用表格或 bullet 列出圖中可見標籤

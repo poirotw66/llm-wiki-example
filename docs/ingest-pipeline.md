@@ -22,11 +22,12 @@
 | **9** 更新相關頁與連結 | ⑤⑥ 更新＋連結 | ⑦⑧ Link | — |
 | **10** OKF frontmatter | （併入 PROMPTS 5） | — | — |
 | **11** 更新 `wiki/index.md` | ⑦ 更新 index | ⑨ Update index | `--wiki` 僅參考，非本管線產物 |
-| **12** append `wiki/log.md` | ⑧ Append log | ⑩ Append log | — |
+| **12** 輸入原件清理 | — | — | 歸檔後刪 inbox／根目錄輸入副本 |
+| **13** append `wiki/log.md` | ⑧ Append log | ⑩ Append log | — |
 
 ---
 
-## 合併後 12 步（階段 1 標準）
+## 合併後 13 步（階段 1 標準）
 
 ### A. 輸入與分流（借鑑 Graphify + BU）
 
@@ -51,7 +52,7 @@
 將 PDF、DOCX、PPTX 等 **原始檔** 複製至 `raw/originals/`（新檔；勿改寫既有檔）。檔名建議保留原識別名或加日期前綴。
 
 **5. 視覺資產**（若步驟 3 有萃取）  
-圖片、截圖、簡報頁匯出等寫入 `raw/assets/`（PDF 命名：**`<base-slug>-p<NN>.png`**，見 **pdf-ingest-sop.md**），並在 Markdown 中以相對路徑引用。
+圖片、截圖、簡報頁匯出等寫入 `raw/assets/<base-slug>/`（PDF 檔名 **`p<NN>.png`**，見 **pdf-ingest-sop.md**），並在 Markdown 中以相對路徑引用。
 
 **6. 歸檔 canonical Markdown**  
 **新增** `raw/sources/<slug>.md`（僅新檔；遵循 **檔案與路徑命名**）。  
@@ -63,7 +64,7 @@
 ### C. OKF Knowledge Bundle（現行主幹）
 
 **7. 建立／更新 `wiki/sources/<slug>.md`**  
-**摘要頁**（從步驟 6 歸檔稿抽取，非全文複製）；區塊標題須符合 **來源頁 Schema**（含 **`## Visual Assets`**：有圖時 embed `../../raw/assets/<base-slug>-p<NN>.png`）；版型：**page-template-source.md**。  
+**摘要頁**（從步驟 6 歸檔稿抽取，非全文複製）；區塊標題須符合 **來源頁 Schema**（含 **`## Visual Assets`**：有圖時 embed `../../raw/assets/<base-slug>/p<NN>.png`）；版型：**page-template-source.md**。  
 `resource` 指向歸檔 slug（修訂稿則指向新 slug）。
 
 **8. 抽取 `wiki/concepts/*`、`wiki/entities/*`**  
@@ -78,8 +79,11 @@
 **11. 更新 `wiki/index.md`**  
 於 **Sources**、**Concepts**、**Entities** 等區加 **連結 + 一行說明**。
 
-**12. append `wiki/log.md`**  
-格式：`## [YYYY-MM-DD] ingest | <title>`；含 triage／轉檔摘要（或註明「無需視覺轉換」）。
+**12. 輸入原件清理**  
+步驟 4（非 Markdown）與步驟 6（Markdown 直達歸檔）成功後：若本次 **輸入路徑** 在 `raw/inbox/`、repo 根目錄等 **非** `raw/originals/`、`raw/sources/`、`raw/assets/` 的位置，**刪除該輸入檔**（原件已歸檔）。**禁止**刪除 `raw/` 內歸檔本體。
+
+**13. append `wiki/log.md`**  
+格式：`## [YYYY-MM-DD] ingest | <title>`；含 triage／轉檔摘要（或註明「無需視覺轉換」）；步驟 12 有刪檔時註明路徑。
 
 ---
 

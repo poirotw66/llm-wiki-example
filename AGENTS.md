@@ -46,13 +46,13 @@
 
 * `raw/`：既有來源的 **不可變** 區（❗ 不可就地修改）。Ingest 依 [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) 寫入新檔。來源修訂時 **另建新歸檔檔**（勿改寫既有 `raw/` 檔）；slug 慣例見 [**docs/okf.md**](docs/okf.md) → **resource 語意**。
 
-* `raw/inbox/`：使用者提供、**待處理** 之原件（PDF、Office、圖片、MD 等）；Ingest 可從此讀取。
+* `raw/inbox/`：使用者提供、**待處理** 之原件（PDF、Office、圖片、MD 等）；Ingest 可從此讀取。**成功歸檔後刪除** inbox／repo 根目錄等輸入副本（見 **操作：Ingest** 步驟 12）。
 
 * `raw/originals/`：轉檔後 **保留之非 Markdown 原件**（新檔歸檔；不可變）。
 
 * `raw/sources/`：**canonical Markdown** 歸檔（**盡可能詳盡還原**，非 wiki 級精簡）；`wiki/sources/` 為摘要頁，`resource` slug 主要對應歸檔 slug。
 
-* `raw/assets/`：自視覺萃取之圖片／附件；由歸檔稿或 wiki 頁引用（不解析為知識頁）。
+* `raw/assets/`：自視覺萃取之圖片／附件；**依 `<base-slug>` 分子目錄**（`raw/assets/<base-slug>/p<NN>.png`，見 **docs/pdf-ingest-sop.md**）；由歸檔稿或 wiki 頁引用（不解析為知識頁）。
 
 * `wiki/`：**OKF Knowledge Bundle**（由 LLM／人類維護的知識本體）
 
@@ -80,7 +80,7 @@
 
   * `docs/templates/page-template-concept.md` — 供 **`wiki/concepts/*`**、**`wiki/entities/*`**、**`wiki/queries/*`** 起稿（建議骨架）。
 
-  * `docs/ingest-pipeline.md` — **Ingest 12 步合併管線**（現行 8 步 + BU 10 步 + 多模態 triage）；對照表與支援檔型。
+  * `docs/ingest-pipeline.md` — **Ingest 13 步合併管線**（現行 8 步 + BU 10 步 + 多模態 triage）；對照表與支援檔型。
 
   * `docs/visual-source-conversion.md` — 含資訊性視覺時之轉換與 Visual Evidence Block。
 
@@ -274,9 +274,10 @@ source_count: 0
 
 # ⚠️ 不確定性標記
 
-* （確定）
-* （推測）
-* （未知）
+有根據的主張**不需標記**；僅在以下情況加標記：
+
+* （推測）— 有合理依據但未直接確認
+* （未知）— 無法從現有來源判斷
 
 ---
 
@@ -296,7 +297,7 @@ source_count: 0
 
 ## Visual Assets
 
-> 來源含資訊性視覺時必填；無則省略。須 `![]()` embed `../../raw/assets/<base-slug>-p<NN>.png`（見 **visual-source-conversion.md**）。
+> 來源含資訊性視覺時必填；無則省略。須 `![]()` embed `../../raw/assets/<base-slug>/p<NN>.png`（見 **visual-source-conversion.md**、**pdf-ingest-sop.md**）。
 
 ## Limitations / Gaps
 ```
@@ -385,7 +386,7 @@ source_count: 1
 * 含流程圖、架構圖、截圖、ER、掃描頁等 → 依 [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md)；資產入 `raw/assets/`。**PDF** 步驟與命名見 [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md)。**文字層極短但頁面有架構圖時，必須 vision 寫層／節點盤點，禁止只抄標題。**
 * 無資訊性視覺 → log 或歸檔稿註明「視覺轉換閘：未適用」。
 * 視覺無法辨識 → 保留資產（若可）、標 `（未知）`、寫入 **Limitations / Gaps**。
-* 資產檔名為 **`<base-slug>-p<NN>.png`**（見 **docs/pdf-ingest-sop.md**）；頁碼須與「來源位置」一致；修訂歸檔時 **另建新檔**（如 `YYYYMMDD_<base-slug>.md`），勿改寫既有 `raw/sources/`。
+* 資產路徑為 **`raw/assets/<base-slug>/p<NN>.png`**（見 **docs/pdf-ingest-sop.md**）；頁碼須與「來源位置」一致；修訂歸檔時 **另建新檔**（如 `YYYYMMDD_<base-slug>.md`），勿改寫既有 `raw/sources/`。
 
 ## 歸檔檔名（`<archive-slug>`）
 
@@ -397,7 +398,7 @@ source_count: 1
 
 # 🛠 操作：Ingest
 
-合併 **12 步**（對照 [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md)）：
+合併 **13 步**（對照 [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md)）：
 
 1. 讀取 **指定** 來源（路徑、`raw/inbox/` 或批次）。
 2. **Detect／Triage**（檔型、是否需轉檔、是否含資訊性視覺）。
@@ -410,7 +411,8 @@ source_count: 1
 9. 更新相關頁並 **雙向連結**（相對路徑）。
 10. 補齊 **OKF 建議 frontmatter**（`description`、`resource`、`timestamp`）。
 11. 更新 **`wiki/index.md`**。
-12. **Append** `wiki/log.md`（含 triage／轉檔摘要）。
+12. **輸入原件清理**：歸檔成功後，若本次 **輸入路徑** 位於 `raw/inbox/`、repo 根目錄或其他 **非** `raw/originals/`／`raw/sources/`／`raw/assets/` 位置，**刪除該輸入檔**（原件已在 `raw/`）。**禁止**刪除 `raw/` 歸檔本體。
+13. **Append** `wiki/log.md`（含 triage／轉檔摘要；步驟 12 有刪檔時註明路徑）。
 
 ---
 
@@ -514,6 +516,8 @@ tags: ["faq"]
 
 # 🧪 操作：Lint
 
+**自動檢查（優先）**：執行 `python scripts/wiki-lint.py`（斷鏈、`resource` ↔ `raw/sources/`、frontmatter `type`、視覺資產 embed）。exit code 非 0 時依輸出修正後再跑 Agent 深度 Lint。
+
 偵測：
 
 * 矛盾
@@ -525,7 +529,7 @@ tags: ["faq"]
 * 超過 30 天未更新
 * **斷鏈**（`/path.md` 目標不存在於 `wiki/`）
 * **`/path.md` 根路徑連結**（在嵌於 repo 的 `wiki/` 內會斷鏈；應改相對路徑）
-* **視覺資產缺口**：`raw/assets/` 有對應資產，但 `wiki/sources/*` 缺 **`## Visual Assets`**、缺 `![]()` embed，或 embed 路徑與 `<base-slug>-p<NN>.png` 不一致
+* **視覺資產缺口**：`raw/assets/` 有對應資產，但 `wiki/sources/*` 缺 **`## Visual Assets`**、缺 `![]()` embed，或 embed 路徑與 `raw/assets/<base-slug>/p<NN>.png` 不一致
 
 輸出 → `wiki/lint/`
 

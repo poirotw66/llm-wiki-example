@@ -17,7 +17,7 @@
 
 | 術語 | 用途 | 範例 |
 |------|------|------|
-| **`<base-slug>`** | 來源穩定識別名；**資產檔名**一律用它 | `260701-金融業生成式AI平台工程-Justin` |
+| **`<base-slug>`** | 來源穩定識別名；**資產目錄名**一律用它 | `260701-金融業生成式AI平台工程-Justin` |
 | **`<archive-slug>`** | `raw/sources/` 與 wiki `resource` 的歸檔 slug | 見下方表 |
 | **頁碼 `<NN>`** | PDF **實際頁碼**（非投影片邏輯序的重新編號） | 第 5 頁 → `05` |
 
@@ -33,31 +33,59 @@
 * `<base-slug>` 取自原件檔名（去副檔名）或團隊約定識別名；**勿**含日期前綴或頁面範圍。
 * 修訂時 **另建新檔**；勿改寫既有 `raw/` 檔。
 
-### 視覺資產命名（強制）
+### 視覺資產目錄與命名（強制）
+
+視覺資產依 **`<base-slug>` 分目錄**存放；檔名僅含頁碼，**不重複** base-slug 前綴。
 
 ```text
-raw/assets/<base-slug>-p<NN>.png
+raw/assets/<base-slug>/p<NN>.png
 ```
 
-| 規則 | 說明 |
-|------|------|
-| 前綴 | 一律 **`<base-slug>`**，**不是** `<archive-slug>` |
-| 頁碼 | `-p` + **實際 PDF 頁碼**；2 位補零（`01`…`99`），≥100 頁用 3 位 |
-| 禁止 | `-頁1至5-05`、`-05`（缺 `p`）、用投影片序號取代 PDF 頁碼 |
-| 部分 ingest | 只匯出範圍內頁面，檔名仍用實際頁碼（例：處理 1–5 頁 → `-p01`…`-p05`） |
+| 層級 | 規則 | 範例 |
+|------|------|------|
+| **目錄** | `raw/assets/<base-slug>/`；`<base-slug>` 與原件識別名一致 | `raw/assets/260701-金融業生成式AI平台工程-Justin/` |
+| **檔名** | `p` + **PDF 實際頁碼** + `.png` | `p01.png`、`p05.png` |
+| **頁碼 `<NN>`** | 2 位補零（`01`…`99`）；≥100 頁用 3 位 | 第 5 頁 → `p05.png` |
+| **禁止** | 扁平檔名 `<base-slug>-p05.png`、`-05.png`（缺 `p`）、未補零 `p1.png`、用 `<archive-slug>` 作目錄名 | — |
+
+**`<base-slug>` vs `<archive-slug>`**
+
+| 用途 | 用哪個 slug |
+|------|-------------|
+| `raw/assets/` **目錄名** | **`<base-slug>`**（固定，不含日期／頁面範圍） |
+| `raw/sources/` 檔名、wiki `resource` | **`<archive-slug>`**（可含 `-頁1至5`、`YYYYMMDD_` 前綴） |
+| 部分 ingest 匯出 | 只匯出範圍內頁面，**目錄仍用 `<base-slug>`**，檔名仍用實際 PDF 頁碼（例：處理 1–5 頁 → `p01.png`…`p05.png`） |
 
 **範例**（`base-slug = 260701-金融業生成式AI平台工程-Justin`，ingest 第 1–5 頁）：
 
 ```text
-raw/assets/260701-金融業生成式AI平台工程-Justin-p01.png
-raw/assets/260701-金融業生成式AI平台工程-Justin-p05.png
+raw/assets/260701-金融業生成式AI平台工程-Justin/p01.png
+raw/assets/260701-金融業生成式AI平台工程-Justin/p05.png
 raw/sources/260701-金融業生成式AI平台工程-Justin-頁1至5.md
 ```
 
-歸檔稿內引用：
+**匯出後重新命名**（`pdftoppm` 產出可能為 `-1.png` 或 `-01.png`）：
+
+```bash
+mkdir -p "raw/assets/<base-slug>"
+# 將 /tmp/<base-slug>-page-05.png → raw/assets/<base-slug>/p05.png
+mv "/tmp/<base-slug>-page-05.png" "raw/assets/<base-slug>/p05.png"
+```
+
+**各產物引用路徑**
+
+| 產物 | embed／連結路徑（相對該檔案） |
+|------|------------------------------|
+| `raw/sources/<archive-slug>.md` | `../assets/<base-slug>/p<NN>.png` |
+| `wiki/sources/<archive-slug>.md` | `../../raw/assets/<base-slug>/p<NN>.png` |
+| `wiki/queries/*.md` | `../../raw/assets/<base-slug>/p<NN>.png` |
+
+歸檔稿 Visual Evidence 範例：
 
 ```md
-- **資產**：../assets/260701-金融業生成式AI平台工程-Justin-p05.png
+![Cloud Native AI Runtime 架構](../assets/260701-金融業生成式AI平台工程-Justin/p05.png)
+
+- **資產**：`../assets/260701-金融業生成式AI平台工程-Justin/p05.png`
 - **來源位置**：PDF 第 5 頁
 ```
 
@@ -119,17 +147,17 @@ pdftotext -f 1 -l 5 -layout "<path>.pdf" -
 
 ```bash
 pdftoppm -f 5 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
-# 產出 …-05.png → 重新命名為 raw/assets/<base-slug>-p05.png
+# 產出 …-05.png → mkdir -p raw/assets/<base-slug> && mv … raw/assets/<base-slug>/p05.png
 ```
 
 範圍（例：1–5）：
 
 ```bash
 pdftoppm -f 1 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
-# …-01.png …-05.png → raw/assets/<base-slug>-p01.png …-p05.png
+# …-01.png …-05.png → raw/assets/<base-slug>/p01.png … p05.png
 ```
 
-`pdftoppm` 輸出檔名可能為 `-1.png` 或 `-01.png`；**重新命名時以 PDF 實際頁碼為準**，對齊 `<base-slug>-p<NN>.png`。
+`pdftoppm` 輸出檔名可能為 `-1.png` 或 `-01.png`；**重新命名時以 PDF 實際頁碼為準**，對齊 `raw/assets/<base-slug>/p<NN>.png`。
 
 ### 5. Vision 文字化（逐頁轉譯）
 
@@ -161,7 +189,7 @@ pdftoppm -f 1 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
 
 ### 7. 後續 wiki 步驟
 
-依 [PROMPTS.md](./PROMPTS.md) § Ingest 步驟 7–12：`wiki/sources/` 摘要（含 **`## Visual Assets`** 與原圖 embed）、`concepts`／`entities`、連結、index、log。
+依 [PROMPTS.md](./PROMPTS.md) § Ingest 步驟 7–13：`wiki/sources/` 摘要（含 **`## Visual Assets`** 與原圖 embed）、`concepts`／`entities`、連結、index、**輸入原件清理**（inbox／根目錄副本）、log。
 
 ---
 
@@ -171,13 +199,14 @@ pdftoppm -f 1 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
 
 - [ ] 原件已入 `raw/originals/`，且 SHA-256 已記錄
 - [ ] 每個處理頁有 `### 第 N 頁` 節
-- [ ] 資產檔名為 `<base-slug>-p<NN>.png`，且 `NN` 與「來源位置」一致
+- [ ] 資產目錄為 `raw/assets/<base-slug>/`，檔名 `p<NN>.png`，且 `NN` 與「來源位置」一致
 - [ ] 有資訊性視覺的頁面皆有 Visual Evidence，且歸檔稿內有 `![]()` embed
-- [ ] `wiki/sources/*` 含 **`## Visual Assets`**，embed 路徑為 `../../raw/assets/<base-slug>-p<NN>.png`
+- [ ] `wiki/sources/*` 含 **`## Visual Assets`**，embed 路徑為 `../../raw/assets/<base-slug>/p<NN>.png`
 - [ ] 架構圖／對照表已表格化或層級盤點，非僅標題
 - [ ] 符合 [visual-source-conversion.md → Vision 文字化原則](./visual-source-conversion.md#vision-文字化原則rag-導向)（無配色噪音、裝飾圖未寫入、表格完整）
 - [ ] 部分 ingest 已標未涵蓋頁
 - [ ] `resource` 使用 `<archive-slug>`，與 `raw/sources/` 檔名一致
+- [ ] 輸入原件（`raw/inbox/` 或 repo 根目錄）已於歸檔成功後刪除（步驟 12）
 
 ---
 
@@ -185,7 +214,9 @@ pdftoppm -f 1 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
 
 | 錯誤 | 正確做法 |
 |------|----------|
-| 資產用 `<archive-slug>-p05` | 資產一律 `<base-slug>-p05` |
+| 資產扁平檔名 `<base-slug>-p05.png` | 目錄 `raw/assets/<base-slug>/p05.png` |
+| 目錄用 `<archive-slug>` | 目錄一律 `<base-slug>` |
+| 頁碼未補零 `p1.png` | `p01.png`（2 位補零） |
 | 第 4 頁圖檔卻標「第 5 頁」 | 檔名、來源位置、正文三者頁碼一致 |
 | 架構頁只抄標題 | vision 後補層級表 + 資料流 + Visual Evidence（見 visual-source-conversion） |
 | 描述「藍色方塊」「現代感設計」 | 見 visual-source-conversion → Vision 文字化原則 |
@@ -197,5 +228,5 @@ pdftoppm -f 1 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
 ## 相關文件
 
 - [visual-source-conversion.md](./visual-source-conversion.md) — 視覺硬閘、Visual Evidence 格式
-- [ingest-pipeline.md](./ingest-pipeline.md) — 12 步管線
+- [ingest-pipeline.md](./ingest-pipeline.md) — 13 步管線
 - [okf.md](./okf.md) — `resource` slug 語意

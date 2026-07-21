@@ -13,7 +13,7 @@ description: LLM Wiki Ingest。使用者輸入 /ingest、ingest、歸檔、收�
 
 1. 遵循工作區根目錄 **AGENTS.md**（含 **操作：Ingest**、硬約束、`raw/` 不可變）。
 2. **依全文執行** 工作區根目錄 **docs/PROMPTS.md** 的 **## Ingest 提示詞** — 勿在本 Skill 改寫或省略步驟。
-3. 完成後確認 `wiki/index.md` 已更新（若適用）、`wiki/log.md` 已 append。
+3. 完成後確認 `wiki/index.md` 已更新（若適用）、輸入原件已清理（步驟 12）、`wiki/log.md` 已 append。
 
 ## `raw/sources/` vs `wiki/`（強制）
 
@@ -26,7 +26,7 @@ description: LLM Wiki Ingest。使用者輸入 /ingest、ingest、歸檔、收�
 
 - **逐頁／逐段**還原：簡報每張投影片一節；PDF 保留可抽取文字層與頁碼標記。
 - **圖內資訊寫入正文**：架構圖、流程圖、對照表、KPI 區塊須 vision 文字化（層／節點、箭頭、表格儲格），不可只寫標題。
-- **Visual Evidence**：每頁有資訊性視覺時須有對應區塊；資產 **`raw/assets/<base-slug>-p<NN>.png`**（見 **docs/pdf-ingest-sop.md**），頁碼須一致；歸檔稿與 **`wiki/sources/*` 的 `## Visual Assets`** 須 **`![]()` embed 原圖**（見 **docs/visual-source-conversion.md**）。
+- **Visual Evidence**：每頁有資訊性視覺時須有對應區塊；資產 **`raw/assets/<base-slug>/p<NN>.png`**（見 **docs/pdf-ingest-sop.md**），頁碼須一致；歸檔稿與 **`wiki/sources/*` 的 `## Visual Assets`** 須 **`![]()` embed 原圖**（見 **docs/visual-source-conversion.md**）。
 - **可長**：歸檔稿允許遠長於 `wiki/sources/`；修訂時 **另建新檔**（如 `YYYYMMDD_<base-slug>.md`），勿改寫既有 `raw/`。
 
 ## PDF

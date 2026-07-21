@@ -7,7 +7,8 @@
 | 規約與五大操作 | [**AGENTS.md**](AGENTS.md) |
 | OKF 對照 | [**docs/okf.md**](docs/okf.md) |
 | Agent 提示詞（步驟單一來源） | [**docs/PROMPTS.md**](docs/PROMPTS.md) |
-| **Ingest 12 步管線** | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) |
+| **Ingest 13 步管線** | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) |
+| **Wiki lint 腳本** | `python scripts/wiki-lint.py` |
 | **PDF 轉譯 SOP** | [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) |
 | 第一輪 Ingest | [**docs/onboarding.md**](docs/onboarding.md) |
 | 頁面版型 | [**docs/templates/**](docs/templates/) |
@@ -30,6 +31,7 @@ wiki/                   # OKF Knowledge Bundle（fork 後以 Ingest 填入）
 docs/                   # 支援文件（非 wiki 知識本體）
   ingest-pipeline.md  visual-source-conversion.md  pdf-ingest-sop.md
   onboarding.md  okf.md  PROMPTS.md  templates/
+scripts/                # 維護腳本（wiki-lint.py）
 skills/                 # npx skills 標準格式（維護單一來源）
 .cursor/skills/         # 與 skills/ 同步（Cursor fork 內建）
 AGENTS.md  SKILL.md  README.md
@@ -170,7 +172,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | [**AGENTS.md**](AGENTS.md) | OKF 主軸、目錄契約、頁面格式、五大操作 |
 | [**docs/okf.md**](docs/okf.md) | OKF v0.1 對照、合規、匯出／匯入 |
 | [**docs/PROMPTS.md**](docs/PROMPTS.md) | Agent 提示詞（**步驟單一來源**） |
-| [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) | Ingest 12 步（多模態合併版） |
+| [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) | Ingest 13 步（多模態合併版） |
 | [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) | PDF 轉譯 SOP 與資產命名 |
 | [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md) | 視覺來源轉換 |
 | [**docs/onboarding.md**](docs/onboarding.md) | 第一輪 Ingest 解說 |

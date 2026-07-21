@@ -36,9 +36,9 @@ source_count: 1
 
 > 來源含架構圖、流程圖等資訊性視覺時 **必填**；無視覺資產時可省略整節。路徑自 `wiki/sources/` 指向 `raw/assets/`（見 **docs/visual-source-conversion.md**）。
 
-- [圖說（PDF 第 N 頁）](../../raw/assets/<base-slug>-p<NN>.png)
+- [圖說（PDF 第 N 頁）](../../raw/assets/<base-slug>/p<NN>.png)
 
-![圖說](../../raw/assets/<base-slug>-p<NN>.png)
+![圖說](../../raw/assets/<base-slug>/p<NN>.png)
 
 ## Limitations / Gaps
 
