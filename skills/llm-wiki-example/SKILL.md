@@ -29,7 +29,7 @@ description: 以來源為根據的 LLM Wiki 部門範本。fork 上手、目錄�
 npx skills add <owner>/llm-wiki-example --all -a cursor -y
 ```
 
-本 repo 原始檔位於 `skills/`；亦可 fork 後直接使用 `.cursor/skills/`。
+本 repo 原始檔位於 `skills/`（**Git 單一來源**）。fork 後請用上方 `npx skills add` 安裝；本機 `.cursor/skills/` 可選、不進 Git。見 [README.md](../../README.md#cursor-skill-用法)。
 
 ## 其他
 

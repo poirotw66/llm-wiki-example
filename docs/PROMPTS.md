@@ -2,7 +2,7 @@
 
 Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md**](../AGENTS.md)。日誌：每次操作須 append `wiki/log.md`（無檔案變更時用 **pass** 或 **no-op**）。若操作新增／刪除／實質變更 wiki 頁或目錄所列產物，更新 `wiki/index.md`。
 
-**Cursor**：可用薄 Skill `/ingest`、`/query`、`/lint`、`/faq`、`/graph`（[`.cursor/skills/`](../.cursor/skills/)）觸發；Skill 委派本檔對應章節，**勿在 Skill 內複製步驟**。
+**Cursor**：可用薄 Skill `/ingest`、`/query`、`/lint`、`/faq`、`/graph`（定義見 [`skills/`](../skills/)；以 `npx skills add` 安裝，見 [README](../README.md#cursor-skill-用法)）觸發；Skill 委派本檔對應章節，**勿在 Skill 內複製步驟**。`.cursor/` 為本機可選副本，**不進 Git**。
 
 ---
 

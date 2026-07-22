@@ -1,6 +1,6 @@
 # llm-wiki-example（OKF Knowledge Bundle 範本）
 
-供各部門 **fork／GitHub Template** 後自建 wiki 的 **起步 repo**。`wiki/` 為 **[OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) Knowledge Bundle**（**內容留白**，以 Ingest 填入）；`raw/` 為不可變歸檔擴充；薄 Skill 見 [`skills/`](skills/)（與 [`.cursor/skills/`](.cursor/skills/) 同步）。
+供各部門 **fork／GitHub Template** 後自建 wiki 的 **起步 repo**。`wiki/` 為 **[OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) Knowledge Bundle**（**內容留白**，以 Ingest 填入）；`raw/` 為不可變歸檔擴充；薄 Skill 見 [`skills/`](skills/)（**Git 追蹤的單一來源**；`.cursor/` 已 gitignore，不進遠端）。
 
 | 需求 | 檔案 |
 |------|------|
@@ -34,10 +34,11 @@ docs/                   # 支援文件（非 wiki 知識本體）
   ingest-pipeline.md  visual-source-conversion.md  pdf-ingest-sop.md
   onboarding.md  okf.md  PROMPTS.md  templates/
 scripts/                # 維護腳本（wiki-lint、ingest-cleanup、docling-pdf）
-skills/                 # npx skills 標準格式（維護單一來源）
-.cursor/skills/         # 與 skills/ 同步（Cursor fork 內建）
-AGENTS.md  SKILL.md  README.md
+skills/                 # 薄 Skill 單一來源（npx / 本機同步）
+AGENTS.md  SKILL.md  README.md  requirements-pdf.txt
 ```
+
+`.cursor/`（含本機 `skills` 副本）**不進 Git**；見 [`.gitignore`](.gitignore)。
 
 ---
 
@@ -49,8 +50,7 @@ AGENTS.md  SKILL.md  README.md
 
 1. **建立部門專用 repo** — 使用 **Use this template** 或 fork 後改名；**勿**在本 example 倉寫部門內容。
 2. **客製化** — 編輯 [`wiki/index.md`](wiki/index.md) 的 **Overview**（部門名稱、範圍）；必要時微調 [**AGENTS.md**](AGENTS.md)。
-3. **第一次 Ingest** — 參考 [docs/onboarding.md](docs/onboarding.md) 與 [docs/templates/](docs/templates/)；在 Cursor 輸入 **`/ingest <路徑>`**（詳見下方 **Cursor Skill 用法**）。
-   - **Skill**：fork 後可直接用內建 [`.cursor/skills/`](.cursor/skills/)；若要裝到 Claude Code／Codex 或本機全域，見 **[npx skills 安裝](#npx-skills-安裝可選)**。
+3. **安裝 Skill 並第一次 Ingest** — 參考 [docs/onboarding.md](docs/onboarding.md) 與 [docs/templates/](docs/templates/)；先裝 Skill（下方 **npx skills 安裝**），再在 Cursor 輸入 **`/ingest <路徑>`**。
 
 ### 日常在做什麼
 
@@ -68,22 +68,22 @@ AGENTS.md  SKILL.md  README.md
 
 ## Cursor Skill 用法
 
-本 repo 內建 **薄 Skill**（[`.cursor/skills/`](.cursor/skills/) 與 [`skills/`](skills/) 同步）。在 **Cursor Agent** 輸入觸發詞；Agent 讀 [AGENTS.md](AGENTS.md) 並依 [docs/PROMPTS.md](docs/PROMPTS.md) 對應章節執行（**步驟只維護在 PROMPTS**，Skill 不重複全文）。
+薄 Skill 定義在 [`skills/`](skills/)。在 **Cursor Agent** 輸入觸發詞；Agent 讀 [AGENTS.md](AGENTS.md) 並依 [docs/PROMPTS.md](docs/PROMPTS.md) 對應章節執行（**步驟只維護在 PROMPTS**，Skill 不重複全文）。
 
-**維護 Skill 時**：以 [`skills/`](skills/) 為單一來源，修改後同步至 [`.cursor/skills/`](.cursor/skills/)（五個操作 Skill；總覽僅在 `skills/llm-wiki-example/`）。
+**維護 Skill 時**：只改 [`skills/`](skills/)（五個操作 Skill + 總覽 `skills/llm-wiki-example/`）。本機若需 Cursor 專案副本，可自行同步到 `.cursor/skills/`（該目錄已 gitignore）。
 
-### npx skills 安裝（可選）
+### npx skills 安裝（建議）
 
-使用 [vercel-labs/skills](https://www.npmjs.com/package/skills) CLI，從 GitHub repo 安裝到 Cursor、Claude Code、Codex 等。`npx skills add` 掃描 `skills/<name>/SKILL.md`，共 **6 個**（總覽 + 五個操作）。
+使用 [vercel-labs/skills](https://www.npmjs.com/package/skills) CLI，從 GitHub repo 的 `skills/` 安裝到 Cursor、Claude Code、Codex 等。`npx skills add` 掃描 `skills/<name>/SKILL.md`，共 **6 個**（總覽 + 五個操作）。
 
 #### 何時需要
 
 | 情境 | 建議 |
 |------|------|
-| 已 fork，用 Cursor 開 wiki repo | **不必**跑 npx；內建 `.cursor/skills/` 即可 |
+| 已 fork，用 Cursor 開 wiki repo | **建議**跑 `npx skills add`（repo **不含** `.cursor/skills/`） |
 | 要裝到 **Claude Code** 或 **Codex** | 用下方 `npx skills add` |
 | 希望 **本機所有專案** 都能觸發 `/ingest` 等 | 加 `-g` 全域安裝 |
-| 在本 repo **開發／驗證** Skill | `npx skills add . ...` |
+| 在本 repo **開發／驗證** Skill | `npx skills add . ...`，或手動把 `skills/*` 同步到 `.cursor/skills/` |
 
 #### 前置條件
 
@@ -121,7 +121,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 
 #### 安裝後
 
-- **Cursor（專案）**：通常寫入 `.agents/skills/`（與 `.cursor/skills/` 並存）
+- **Cursor（專案）**：通常寫入 `.agents/skills/`（本機亦可另有 `.cursor/skills/`，皆不強制進 Git）
 - **Cursor（全域 `-g`）**：`~/.cursor/skills/`
 - 請以 **wiki repo 為工作區根** 開啟（Skill 依根目錄 `AGENTS.md`、`docs/PROMPTS.md` 執行）
 
@@ -175,7 +175,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | [**docs/okf.md**](docs/okf.md) | OKF v0.1 對照、合規、匯出／匯入 |
 | [**docs/PROMPTS.md**](docs/PROMPTS.md) | Agent 提示詞（**步驟單一來源**） |
 | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) | Ingest 13 步（多模態合併版） |
-| [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) | PDF 轉譯 SOP 與資產命名 |
+| [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) | PDF 轉譯 SOP（Docling 預設 + 視覺閘） |
 | [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md) | 視覺來源轉換 |
 | [**docs/onboarding.md**](docs/onboarding.md) | 第一輪 Ingest 解說 |
 | [**docs/templates/page-template-source.md**](docs/templates/page-template-source.md) | `wiki/sources/*` 版型 |
@@ -183,8 +183,9 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | [**wiki/index.md**](wiki/index.md) | OKF bundle 總目錄 |
 | [**wiki/README.md**](wiki/README.md) | `wiki/` 目錄樹與連結 |
 | [**SKILL.md**](SKILL.md) | npx skills 安裝說明 |
-| [**skills/**](skills/) | 薄 Skill（npx 來源） |
-| [**.cursor/skills/**](.cursor/skills/) | 與 `skills/` 同步（Cursor 內建） |
+| [**skills/**](skills/) | 薄 Skill（**唯一 Git 來源**） |
+| [**requirements-pdf.txt**](requirements-pdf.txt) | Docling／torch 可選依賴（含 Intel Mac 註解） |
+| [**scripts/**](scripts/) | `wiki-lint`、`ingest-cleanup`、`docling-pdf` |
 
 ---
 

@@ -94,7 +94,7 @@
 
   * `SKILL.md`（repo 根）— 總覽 Skill；指向子 Skill 與三步流程。
 
-  * `.cursor/skills/llm-wiki-{ingest,query,lint,faq,graph}/` — **薄 Skill**（觸發 `/ingest` 等）；委派 `docs/PROMPTS.md` 對應章節，勿複製長步驟。
+  * `skills/llm-wiki-{ingest,query,lint,faq,graph}/` — **薄 Skill**（觸發 `/ingest` 等；**Git 單一來源**）；委派 `docs/PROMPTS.md` 對應章節，勿複製長步驟。本機 Cursor 副本可放 `.cursor/skills/`（已 gitignore，見 [README](README.md#cursor-skill-用法)／`npx skills add`）。
 
 ### 目錄設計：型別式子目錄（OKF 相容）
 
@@ -598,4 +598,4 @@ wiki/graph/knowledge-map.md
 
 * **複製貼上提示詞**、**Wiki log append**、**範例指令** → [**docs/PROMPTS.md**](docs/PROMPTS.md)（**步驟單一來源**）
 * **總覽 Skill** → [**SKILL.md**](SKILL.md)
-* **薄 Skill 觸發**（`/ingest`、`/query`、`/lint`、`/faq`、`/graph`）→ [`.cursor/skills/`](.cursor/skills/)（委派 PROMPTS；規約仍見本檔）
+* **薄 Skill**（`/ingest`、`/query`、`/lint`、`/faq`、`/graph`）→ [`skills/`](skills/)（委派 PROMPTS；規約仍見本檔）。Cursor 請以 `npx skills add` 安裝；`.cursor/` 不進 Git。

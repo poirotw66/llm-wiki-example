@@ -25,4 +25,4 @@ npx skills add . --all -a cursor -y
 
 總覽與觸發表見 [skills/llm-wiki-example/SKILL.md](skills/llm-wiki-example/SKILL.md) 與 [README.md](README.md#cursor-skill-用法)。
 
-Fork 後亦可直接使用 [.cursor/skills/](.cursor/skills/)（與 `skills/` 內容同步）。
+Skill **以 [`skills/`](skills/) 為 Git 單一來源**。fork 後請用上方 `npx skills add` 安裝到 Cursor／Claude Code／Codex；本機可選副本 `.cursor/skills/` **不進遠端**（見 [`.gitignore`](.gitignore)）。

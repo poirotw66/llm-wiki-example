@@ -35,6 +35,6 @@ wiki/                         # OKF bundle 根
 | 規約 | [AGENTS.md](../AGENTS.md) |
 | Agent 提示詞 | [docs/PROMPTS.md](../docs/PROMPTS.md) |
 | Skill 總覽 | [skills/llm-wiki-example/](../skills/llm-wiki-example/SKILL.md) |
-| 薄 Skill（`/ingest` …） | [skills/](../skills/) 或 [.cursor/skills/](../.cursor/skills/) |
+| 薄 Skill（`/ingest` …） | [skills/](../skills/)（Git 來源；Cursor 用 `npx skills add`，見 [README](../README.md#cursor-skill-用法)） |
 | 來源頁版型 | [page-template-source.md](../docs/templates/page-template-source.md) |
 | 概念／實體／Query 版型 | [page-template-concept.md](../docs/templates/page-template-concept.md) |
