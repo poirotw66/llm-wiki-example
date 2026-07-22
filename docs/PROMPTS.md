@@ -23,7 +23,7 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 9. 更新相關頁；建立雙向連結（**markdown 相對路徑**；勿用 `/path.md`）。
 10. 每個新建或更新的 **Concept** frontmatter 補齊 **OKF v0.1 建議欄位**：`description`、`resource`（**歸檔 slug** 如 `my-api-intro` → `raw/sources/my-api-intro.md`，或 **HTTPS URL**）、`timestamp`（ISO 8601）；對照 [**docs/okf.md**](./okf.md) → **resource 語意**。
 11. 更新 `wiki/index.md`。
-12. **輸入原件清理**：步驟 4（非 MD）與步驟 6（MD 直達歸檔）成功後，若輸入路徑在 `raw/inbox/`、repo 根目錄等**非** `raw/originals/`／`raw/sources/`／`raw/assets/` 位置，**刪除該輸入檔**。**禁止**刪 `raw/` 歸檔本體。
+12. **輸入原件清理**：步驟 4（非 MD）與步驟 6（MD 直達歸檔）成功後，若輸入路徑在 `raw/inbox/`、repo 根目錄等**非** `raw/originals/`／`raw/sources/`／`raw/assets/` 位置，執行 `python scripts/ingest-cleanup.py "<input-path>" --archive "<archive-path>" [--archive "<archive-path>"]` 刪除輸入副本。**禁止**刪 `raw/` 歸檔本體。
 13. Append `wiki/log.md`（含 triage／轉檔摘要，或註明視覺閘未適用；步驟 12 有刪檔時註明路徑）。
 
 所有可驗證主張須引用來源；不確定時標記（`（推測）`、`（未知）`）；有根據的主張不需另加標記。
