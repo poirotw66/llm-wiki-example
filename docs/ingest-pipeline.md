@@ -44,7 +44,7 @@
 | 可否直達 Ingest | `.md` 且內容已結構化 → 可跳過轉檔 |
 
 **3. 多模態轉 Markdown**（非 `.md` 或 `.md` 內嵌不可讀視覺時）  
-依類型轉為 **結構化繁體中文 Markdown**（技術詞保留英文）。**PDF** 依 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)（`pdfinfo` → `pdftotext` → `pdftoppm` → vision）。含資訊性視覺時 **必須** 依 [**visual-source-conversion.md**](./visual-source-conversion.md)（含 **硬閘**）。使用者無須另下「請轉視覺」指令。
+依類型轉為 **結構化繁體中文 Markdown**（技術詞保留英文）。**PDF** 依 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)：`scripts/docling-pdf.py`（Docling 初稿 + 頁級分流）→ 文字／表格直入；**僅**資訊圖／短文字頁 `pdftoppm` + vision／VLM。含資訊性視覺時 **必須** 依 [**visual-source-conversion.md**](./visual-source-conversion.md)（含 **硬閘**）。使用者無須另下「請轉視覺」指令。
 
 ### B. 不可變歸檔（BU + OKF）
 
@@ -94,7 +94,7 @@
 | Markdown | `.md` | 可直接歸檔；內嵌視覺仍走視覺閘 |
 | 純文字 | `.txt` | 轉 Markdown 標題結構 |
 | Word | `.docx` | 轉 Markdown（標題、表格、列表） |
-| PDF | `.pdf` | 依 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)：文字層 + 逐頁匯出 + 視覺閘；支援全檔或頁面範圍 |
+| PDF | `.pdf` | 依 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)：Docling 預設 + 頁級視覺閘；支援全檔或頁面範圍 |
 | 簡報 | `.ppt` `.pptx` | 每張投影片一節（投影片編號、標題、表格、圖） |
 | 試算表 | `.xlsx` | 每工作表一節或表格 |
 | 圖片 | `.png` `.jpg` `.webp` | 視覺閘 → 文字描述 + `raw/assets/` |

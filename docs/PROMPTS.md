@@ -14,10 +14,10 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 
 1. 讀取指定來源（路徑、`raw/inbox/` 或批次）；未提供時向使用者索取。
 2. **Detect／Triage**：副檔名、是否需轉 Markdown、是否含資訊性視覺（見 ingest-pipeline 支援類型表）。
-3. 必要時轉為結構化 Markdown。**PDF** 依 [**docs/pdf-ingest-sop.md**](./pdf-ingest-sop.md)（`pdfinfo` → `pdftotext` → `pdftoppm` → vision；資產 **`raw/assets/<base-slug>/p<NN>.png`**）。含視覺則依 [**docs/visual-source-conversion.md**](./visual-source-conversion.md)。**硬閘**：若頁面幾乎只有標題但含架構圖／流程圖／表格，必須以 ≥144 DPI（不足則 288）匯出該頁並 vision 對圖寫「層／節點盤點」；禁止只抄標題結案；資產頁碼須與來源標註一致。
+3. 必要時轉為結構化 Markdown。**PDF** 依 [**docs/pdf-ingest-sop.md**](./pdf-ingest-sop.md)：**Docling 預設**（`python scripts/docling-pdf.py`）→ 結構化 MD 初稿；頁級分流後，文字／表格夠則直入歸檔；**僅**架構圖／流程圖／對照表／文字層極短頁再 `pdftoppm` + vision／VLM（資產 **`raw/assets/<base-slug>/p<NN>.png`**）。含視覺則依 [**docs/visual-source-conversion.md**](./visual-source-conversion.md)。**硬閘**：資訊圖頁禁止只抄標題；須寫「層／節點盤點」+ Visual Evidence；資產頁碼須與來源標註一致。
 4. 非 Markdown 原件歸檔 `raw/originals/`（新檔；勿改寫既有 `raw/` 檔）。
 5. 視覺資產寫入 `raw/assets/`（若適用；PDF 命名見 **pdf-ingest-sop.md**）。
-6. **新增** canonical 歸檔 `raw/sources/<archive-slug>.md`（僅新檔；`<archive-slug>` 見 **pdf-ingest-sop.md**／**okf.md**；修訂另建新檔）。**歸檔稿須盡可能詳盡還原原文，非精簡版**：逐頁／逐段（簡報每張投影片一節）、保留 OCR 文字層、圖內標籤／表格／流程須 vision 寫入正文＋Visual Evidence（含 `![]()` embed 原圖）；**禁止**僅抄標題或幾句摘要；歸檔稿可遠長於 wiki 摘要頁。
+6. **新增** canonical 歸檔 `raw/sources/<archive-slug>.md`（僅新檔；`<archive-slug>` 見 **pdf-ingest-sop.md**／**okf.md**；修訂另建新檔）。**歸檔稿須盡可能詳盡還原原文，非精簡版**：合併 Docling 初稿與視覺閘補寫；逐頁／逐段；文字／表格頁以 Docling 為主；**資訊圖頁**須 vision／VLM 寫入正文＋Visual Evidence（含 `![]()` embed 原圖）；**禁止**僅抄標題或幾句摘要；歸檔稿可遠長於 wiki 摘要頁。
 7. 依歸檔稿建立或更新 `wiki/sources/*`（**摘要**，非歸檔全文複製），區塊標題須符合 **來源頁 Schema**（含 **`## Visual Assets`**：有資訊性視覺時 **必須** `![]()` embed `../../raw/assets/<base-slug>/p<NN>.png`）。版型：`docs/templates/page-template-source.md`。
 8. 抽取並更新 `wiki/concepts/*`、`wiki/entities/*`。
 9. 更新相關頁；建立雙向連結（**markdown 相對路徑**；勿用 `/path.md`）。

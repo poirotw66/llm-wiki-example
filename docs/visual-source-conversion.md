@@ -11,7 +11,7 @@
 |------|----------------------------------|----------------|
 | Vision **怎麼寫**（RAG、資訊圖／裝飾圖、轉譯指令） | **單一來源** | 引用本檔 |
 | Visual Evidence、embed 原圖、wiki Visual Assets | **單一來源** | 引用本檔 |
-| PDF **怎麼跑**（pdfinfo、pdftotext、pdftoppm、slug） | 引用 pdf-ingest-sop | **單一來源** |
+| PDF **怎麼跑**（Docling、頁級分流、pdftoppm、slug） | 引用 pdf-ingest-sop | **單一來源** |
 
 ---
 
@@ -63,7 +63,7 @@
 
 本節為 **所有含資訊性視覺來源**（PDF、PPTX、截圖等）的 vision 轉譯品質標準。產出寫入 `raw/sources/<archive-slug>.md`，供 RAG／檢索使用；目標是 **最大化事實密度、最小化描述性噪音**。
 
-PDF 執行時機與 CLI 見 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md) §5；本節定義 **寫什麼、怎麼寫**。
+PDF 執行時機與 CLI 見 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)（Docling 預設；**僅**視覺閘候選頁進本節）；本節定義 **寫什麼、怎麼寫**。
 
 ### 角色與目標
 

@@ -1,0 +1,15 @@
+# PDF Docling path (see docs/pdf-ingest-sop.md)
+#
+# Intel macOS (x86_64): PyTorch stopped at 2.2.2 — do NOT require torch>=2.4.
+# Apple Silicon / Linux: torch>=2.4 is fine if available.
+#
+# Install (Intel Mac recommended):
+#   pip install -r requirements-pdf.txt
+#
+docling>=2.0
+torch==2.2.2; platform_system=="Darwin" and platform_machine=="x86_64"
+torchvision==0.17.2; platform_system=="Darwin" and platform_machine=="x86_64"
+torch>=2.4; platform_system!="Darwin" or platform_machine!="x86_64"
+torchvision; platform_system!="Darwin" or platform_machine!="x86_64"
+numpy<2.0.0; platform_system=="Darwin" and platform_machine=="x86_64"
+transformers>=4.42.0,<5.0.0; platform_system=="Darwin" and platform_machine=="x86_64"

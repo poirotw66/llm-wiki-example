@@ -2,11 +2,13 @@
 
 本檔為 **PDF Ingest** 的 CLI 步驟與命名 **單一來源**。Vision **怎麼寫**（RAG 轉譯、資訊圖／裝飾圖、Visual Evidence）見 [**visual-source-conversion.md**](./visual-source-conversion.md)；管線總表見 [**ingest-pipeline.md**](./ingest-pipeline.md)。
 
+**預設路徑**：[Docling](https://github.com/docling-project/docling) 產出結構化 Markdown 初稿；**僅**頁級 triage 判定需視覺閘之頁再跑 `pdftoppm` + vision／VLM。helper：`python scripts/docling-pdf.py`。
+
 ### 本檔與 visual-source-conversion 分工
 
 | 主題 | pdf-ingest-sop（本檔） | visual-source-conversion |
 |------|------------------------|---------------------------|
-| pdfinfo、pdftotext、pdftoppm、DPI | **單一來源** | — |
+| Docling、頁級 triage、`pdftoppm`、DPI、slug | **單一來源** | — |
 | `<base-slug>`／`<archive-slug>` 命名 | **單一來源** | 引用本檔（資產檔名） |
 | RAG 轉譯、資訊圖／裝飾圖、Agent 提示詞 | 引用 visual-source-conversion | **單一來源** |
 | Visual Evidence、embed、Visual Assets | 引用 visual-source-conversion | **單一來源** |
@@ -72,6 +74,12 @@ mkdir -p "raw/assets/<base-slug>"
 mv "/tmp/<base-slug>-page-05.png" "raw/assets/<base-slug>/p05.png"
 ```
 
+或由 helper 僅匯出視覺閘候選頁：
+
+```bash
+python scripts/docling-pdf.py "<path>.pdf" --export-vision-assets
+```
+
 **各產物引用路徑**
 
 | 產物 | embed／連結路徑（相對該檔案） |
@@ -91,13 +99,30 @@ mv "/tmp/<base-slug>-page-05.png" "raw/assets/<base-slug>/p05.png"
 
 ---
 
-## PDF 類型分流（Triage）
+## 混合管線（Docling 預設 + 視覺閘例外）
+
+```text
+PDF
+ ├─ Docling（預設）→ 結構化 MD 初稿 + 表格／版面
+ ├─ 頁級分流：文字／表格夠 → 整理進 raw/sources
+ └─ 僅「架構圖／流程圖／對照表／文字層極短」頁
+       → pdftoppm + vision（或 Docling VLM）補 Visual Evidence
+```
 
 | 類型 | 判斷 | 主路徑 |
 |------|------|--------|
-| **文字型** | `pdftotext` 可抽出完整段落 | 文字層為主；有圖表仍走視覺閘 |
-| **簡報型** | 每頁一屏、文字層短、大圖多 | 逐頁匯出 + vision（本 SOP 預設） |
-| **掃描型** | 幾乎無可抽取文字 | 逐頁匯出 + OCR／vision；標 Limitations |
+| **文字／表格型** | Docling／文字層段落完整，無資訊圖硬閘 | Docling 初稿 → 直接整理進 `raw/sources/` |
+| **資訊圖頁** | 架構圖、流程圖、對照表、KPI；或文字層極短 | Docling 保留文字；**另** `pdftoppm` + vision／VLM |
+| **掃描型** | 幾乎無可抽取文字 | Docling OCR 優先；不足再 vision；標 Limitations |
+
+**前置**：`pip install -r requirements-pdf.txt`（或見該檔註解）。Python ≥ 3.10。
+
+| 平台 | torch | 說明 |
+|------|-------|------|
+| **Intel macOS (x86_64)** | **`torch==2.2.2`**（PyTorch 最後支援版）+ `numpy<2` + `transformers<5` | **不需要 GPU**；CPU 可跑，首次會下載模型較慢 |
+| **Apple Silicon／Linux** | 可用 `torch>=2.4` | 有 GPU／MPS 會更快，非必須 |
+
+若 Docling 仍失敗，`scripts/docling-pdf.py` 會 **自動後備** 為逐頁 `pdftotext`（stdout `engine: pdftotext-fallback`）；仍須對視覺閘頁跑 vision。另需 `pdfinfo`／`pdftotext`／`pdftoppm`（poppler）；大圖偵測建議有 `pdfimages`。
 
 ---
 
@@ -115,62 +140,66 @@ cp "<path>.pdf" "raw/originals/<原件檔名>.pdf"
 
 記錄：總頁數、PDF 版本、SHA-256。
 
-### 2. 抽出文字層
-
-全檔：
+### 2. Docling 初稿 + 頁級分流
 
 ```bash
-pdftotext -layout "<path>.pdf" -
+# 初稿 + 分流 JSON（stdout）；draft 預設寫入 /tmp/<base-slug>-docling-draft.md
+python scripts/docling-pdf.py "<path>.pdf" --base-slug "<base-slug>"
+
+# 僅看哪些頁需 vision（不跑 Docling）
+python scripts/docling-pdf.py "<path>.pdf" --triage-only
+
+# 部分頁
+python scripts/docling-pdf.py "<path>.pdf" --page-from 1 --page-to 5
 ```
 
-部分頁（例：1–5）：
+腳本會：
 
-```bash
-pdftotext -f 1 -l 5 -layout "<path>.pdf" -
-```
+1. 以 **Docling** 產出結構化 Markdown 初稿（表格／閱讀順序優先走本機，降低雲端 vision token）。
+2. 以每頁 `pdftotext` 字元數與關鍵詞做 **頁級 triage**（預設字元閾值 200）。
+3. 在 stdout 印出 `vision_pages` 清單供 Agent 使用。
 
-保留 `-layout` 輸出；歸檔稿以 `### 第 N 頁` 分節，並保留可見頁碼標記。
+**文字／表格夠的頁**：以 Docling 初稿為主整理進歸檔，**不必**逐頁送雲端 vision。
 
-### 3. 判定每頁是否需視覺閘
+### 3. 判定視覺閘（硬閘）
 
-下列任一成立 → **必須** 匯出該頁圖並 vision：
+下列任一成立 → **必須** 匯出該頁圖並 vision／VLM（即使 Docling 已有標題）：
 
 - 架構圖、流程圖、對照表、KPI 區塊
-- 文字層極短但版面有大塊圖形
-- 掃描頁或 OCR 明顯不足
+- 文字層極短但版面有大塊圖形（`docling-pdf` 的 `short_text`／keyword 候選）
+- 掃描頁或 OCR／Docling 明顯不足
 
-### 4. 匯出頁面圖（≥2×）
+**禁止**只抄標題結案。Agent 應覆核 `vision_pages`：可剔除誤報；若漏報資訊圖頁，**手動加入**。
+
+### 4. 僅匯出視覺閘頁面圖
 
 預設 **144 DPI**；vision 不足時重試 **288 DPI**，並在歸檔 metadata 註明。
 
-單頁：
-
 ```bash
+# 只匯出 triage 候選頁 → raw/assets/<base-slug>/p<NN>.png
+python scripts/docling-pdf.py "<path>.pdf" --base-slug "<base-slug>" --export-vision-assets --triage-only
+
+# 或手動單頁
 pdftoppm -f 5 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
-# 產出 …-05.png → mkdir -p raw/assets/<base-slug> && mv … raw/assets/<base-slug>/p05.png
+# …-05.png → raw/assets/<base-slug>/p05.png
 ```
 
-範圍（例：1–5）：
+`pdftoppm` 輸出檔名可能為 `-1.png` 或 `-01.png`；**重新命名時以 PDF 實際頁碼為準**。
 
-```bash
-pdftoppm -f 1 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
-# …-01.png …-05.png → raw/assets/<base-slug>/p01.png … p05.png
-```
-
-`pdftoppm` 輸出檔名可能為 `-1.png` 或 `-01.png`；**重新命名時以 PDF 實際頁碼為準**，對齊 `raw/assets/<base-slug>/p<NN>.png`。
-
-### 5. Vision 文字化（逐頁轉譯）
+### 5. Vision／VLM 文字化（僅候選頁）
 
 對需視覺閘的每一頁，依 [**visual-source-conversion.md** → **Vision 文字化原則（RAG 導向）**](./visual-source-conversion.md#vision-文字化原則rag-導向) 執行：
 
-1. 讀匯出圖與同頁 `pdftotext` 文字層（文字層作初稿，**不以文字層單獨結案**）。
-2. 將**資訊圖**轉為結構化 Markdown；**忽略裝飾圖**（見 visual-source-conversion）。
+1. 讀匯出圖、同頁文字層，以及 Docling 初稿對應段落（初稿可作骨架，**資訊圖不以初稿單獨結案**）。
+2. 將**資訊圖**轉為結構化 Markdown（層／節點盤點）；**忽略裝飾圖**。
 3. 撰寫 Visual Evidence；**每節須含 `![]()` embed 原圖**。
-4. 衝突時以圖為準，標 `（確定）`／`（推測）`／`（未知）`。
+4. 衝突時以圖為準，標 `（推測）`／`（未知）`。
+
+可選：本機 Docling VLM（例 GraniteDocling）代替雲端 vision；品質不足時仍回退 Agent vision。
 
 ### 6. 寫入歸檔稿
 
-新增 `raw/sources/<archive-slug>.md`（詳盡還原，非 wiki 摘要）。文首建議含：
+合併 **Docling 初稿**（文字／表格頁）與 **vision 補寫**（資訊圖頁），新增 `raw/sources/<archive-slug>.md`（詳盡還原，非 wiki 摘要）。文首建議含：
 
 ```md
 ## 來源資訊
@@ -180,16 +209,16 @@ pdftoppm -f 1 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
 - 原件：`../originals/<檔名>.pdf`
 - 頁面範圍：第 1–5 頁（全檔共 14 頁）／或「全檔」
 - 原件 SHA-256：`…`
-- 文字層：pdftotext -layout
-- 頁面匯出：pdftoppm -png -r 144（或 288）
-- triage：簡報型 PDF；視覺轉換閘：已適用／未適用
+- 轉檔：Docling（結構化 MD 初稿）
+- 視覺閘頁：`[5, 6, 8, 12]`（pdftoppm -png -r 144 + vision）
+- triage：文字／表格頁直入；資訊圖頁視覺閘已適用／未適用
 ```
 
 部分 ingest **必須** 在 `## Limitations / Gaps` 註明未涵蓋頁碼。
 
 ### 7. 後續 wiki 步驟
 
-依 [PROMPTS.md](./PROMPTS.md) § Ingest 步驟 7–13：`wiki/sources/` 摘要（含 **`## Visual Assets`** 與原圖 embed）、`concepts`／`entities`、連結、index、**輸入原件清理**（inbox／根目錄副本）、log。
+依 [PROMPTS.md](./PROMPTS.md) § Ingest 步驟 7–13：`wiki/sources/` 摘要（含 **`## Visual Assets`** 與原圖 embed）、`concepts`／`entities`、連結、index、**輸入原件清理**（`scripts/ingest-cleanup.py`）、log。
 
 ---
 
@@ -198,15 +227,16 @@ pdftoppm -f 1 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
 完成 PDF ingest 前確認：
 
 - [ ] 原件已入 `raw/originals/`，且 SHA-256 已記錄
-- [ ] 每個處理頁有 `### 第 N 頁` 節
-- [ ] 資產目錄為 `raw/assets/<base-slug>/`，檔名 `p<NN>.png`，且 `NN` 與「來源位置」一致
-- [ ] 有資訊性視覺的頁面皆有 Visual Evidence，且歸檔稿內有 `![]()` embed
-- [ ] `wiki/sources/*` 含 **`## Visual Assets`**，embed 路徑為 `../../raw/assets/<base-slug>/p<NN>.png`
+- [ ] 已跑 `scripts/docling-pdf.py`（或同等 Docling 轉檔）並保留／合併初稿
+- [ ] 每個處理頁有 `### 第 N 頁`（或等效分節）
+- [ ] 非視覺閘頁未無謂送雲端 vision
+- [ ] 視覺閘頁資產在 `raw/assets/<base-slug>/p<NN>.png`，且有 Visual Evidence + `![]()` embed
+- [ ] `wiki/sources/*` 含 **`## Visual Assets`**（有資訊圖時），embed 路徑正確
 - [ ] 架構圖／對照表已表格化或層級盤點，非僅標題
-- [ ] 符合 [visual-source-conversion.md → Vision 文字化原則](./visual-source-conversion.md#vision-文字化原則rag-導向)（無配色噪音、裝飾圖未寫入、表格完整）
+- [ ] 符合 [visual-source-conversion.md → Vision 文字化原則](./visual-source-conversion.md#vision-文字化原則rag-導向)
 - [ ] 部分 ingest 已標未涵蓋頁
 - [ ] `resource` 使用 `<archive-slug>`，與 `raw/sources/` 檔名一致
-- [ ] 輸入原件（`raw/inbox/` 或 repo 根目錄）已於歸檔成功後刪除（步驟 12）
+- [ ] 輸入原件已於歸檔成功後清理（步驟 12）
 
 ---
 
@@ -214,14 +244,16 @@ pdftoppm -f 1 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
 
 | 錯誤 | 正確做法 |
 |------|----------|
+| 全檔每頁都送雲端 vision | Docling 預設；僅 `vision_pages`／硬閘頁 vision |
+| 有架構圖卻只採用 Docling 標題 | 該頁進視覺閘，補層級表 + Visual Evidence |
 | 資產扁平檔名 `<base-slug>-p05.png` | 目錄 `raw/assets/<base-slug>/p05.png` |
 | 目錄用 `<archive-slug>` | 目錄一律 `<base-slug>` |
 | 頁碼未補零 `p1.png` | `p01.png`（2 位補零） |
 | 第 4 頁圖檔卻標「第 5 頁」 | 檔名、來源位置、正文三者頁碼一致 |
-| 架構頁只抄標題 | vision 後補層級表 + 資料流 + Visual Evidence（見 visual-source-conversion） |
 | 描述「藍色方塊」「現代感設計」 | 見 visual-source-conversion → Vision 文字化原則 |
 | 部分 ingest 卻用全檔 `<archive-slug>` | slug 加 `-頁<start>至<end>` |
 | 把 wiki 摘要貼進 `raw/sources/` | 歸檔詳盡、wiki 摘要分離 |
+| 未安裝 docling／相容 torch 就略過轉檔 | `pip install -r requirements-pdf.txt`（Intel Mac 勿強裝 torch≥2.4） |
 
 ---
 
@@ -230,3 +262,4 @@ pdftoppm -f 1 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
 - [visual-source-conversion.md](./visual-source-conversion.md) — 視覺硬閘、Visual Evidence 格式
 - [ingest-pipeline.md](./ingest-pipeline.md) — 13 步管線
 - [okf.md](./okf.md) — `resource` slug 語意
+- [Docling](https://github.com/docling-project/docling) — 本機文件解析
