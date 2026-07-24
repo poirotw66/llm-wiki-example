@@ -7,8 +7,8 @@
 ```text
 raw/                          # repo 擴充：不可變歸檔（非 bundle 本體）
   inbox/                      # 待處理原件
-  originals/                  # 非 MD 原件
-  sources/                    # canonical Markdown
+  originals/                  # 所有輸入原件（含 MD）
+  sources/                    # canonical Markdown 歸檔稿
   assets/                     # 視覺附件
 wiki/                         # OKF bundle 根
   index.md                    # okf_version + 總目錄（§6）

@@ -12,8 +12,8 @@
 repo/
 ├── raw/                    # 本倉擴充：不可變歸檔（不在 OKF bundle 內）
 │   ├── inbox/              # 待處理原件
-│   ├── originals/          # 非 Markdown 原件歸檔
-│   ├── sources/            # canonical Markdown 歸檔
+│   ├── originals/          # 所有輸入原件（含 MD）
+│   ├── sources/            # canonical Markdown 歸檔稿
 │   └── assets/             # 視覺萃取附件
 └── wiki/                   # OKF Knowledge Bundle 根
     ├── index.md            # OKF 保留檔：目錄（§6）

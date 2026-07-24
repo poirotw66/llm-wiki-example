@@ -48,18 +48,19 @@
 
 ### B. 不可變歸檔（BU + OKF）
 
-**4. 原件歸檔**（若輸入非純文字 Markdown）  
-將 PDF、DOCX、PPTX 等 **原始檔** 複製至 `raw/originals/`（新檔；勿改寫既有檔）。檔名建議保留原識別名或加日期前綴。
+**4. 原件歸檔**（**一律**，含 Markdown）  
+將本次 **輸入原件**（`.md`／PDF／DOCX／PPTX／圖片等）**位元複製**至 `raw/originals/`（新檔；勿改寫既有檔）。檔名建議保留原識別名。**不可**因輸入已是 Markdown 而跳過本步。
 
 **5. 視覺資產**（若步驟 3 有萃取）  
 圖片、截圖、簡報頁匯出等寫入 `raw/assets/<base-slug>/`（PDF 檔名 **`p<NN>.png`**，見 **pdf-ingest-sop.md**），並在 Markdown 中以相對路徑引用。
 
 **6. 歸檔 canonical Markdown**  
 **新增** `raw/sources/<slug>.md`（僅新檔；遵循 **檔案與路徑命名**）。  
+- **來源**：自 `raw/originals/` 轉寫、清理或補強（MD 可剝 HTML／補 metadata；PDF 等經 Docling／vision）。  
 - **粒度**：**盡可能詳盡還原**（非 wiki 級精簡）；逐頁／逐段、圖內標籤與表格須寫入正文（見 **visual-source-conversion.md** → **`raw/sources/` 與 `wiki/sources/` 分工**）。  
 - **slug**（`<archive-slug>`）：全檔／部分頁／修訂規則見 **docs/pdf-ingest-sop.md** 與 **docs/okf.md** → resource 語意。  
 - **修訂**：來源改版時 **另建新檔**（可選 `YYYYMMDD_<slug>.md` 或新 slug），勿就地改寫舊歸檔。  
-- 在歸檔稿文末或 log 簡述：triage 結果、是否執行視覺轉換、轉換限制。
+- 在歸檔稿文末或 log 簡述：triage 結果、是否執行視覺轉換、轉換限制；並註明對應 `raw/originals/` 檔名。
 
 ### C. OKF Knowledge Bundle（現行主幹）
 
@@ -80,7 +81,7 @@
 於 **Sources**、**Concepts**、**Entities** 等區加 **連結 + 一行說明**。
 
 **12. 輸入原件清理**  
-步驟 4（非 Markdown）與步驟 6（Markdown 直達歸檔）成功後：若本次 **輸入路徑** 在 `raw/inbox/`、repo 根目錄等 **非** `raw/originals/`、`raw/sources/`、`raw/assets/` 的位置，**刪除該輸入檔**（原件已歸檔）。**禁止**刪除 `raw/` 內歸檔本體。
+步驟 4（`raw/originals/`）與步驟 6（`raw/sources/`）成功後：若本次 **輸入路徑** 在 `raw/inbox/`、repo 根目錄等 **非** `raw/originals/`、`raw/sources/`、`raw/assets/` 的位置，**刪除該輸入檔**（原件已在 `raw/originals/`）。**禁止**刪除 `raw/` 內歸檔本體。
 
 **13. append `wiki/log.md`**  
 格式：`## [YYYY-MM-DD] ingest | <title>`；含 triage／轉檔摘要（或註明「無需視覺轉換」）；步驟 12 有刪檔時註明路徑。
@@ -91,7 +92,7 @@
 
 | 類型 | 副檔名 | 處理 |
 |------|--------|------|
-| Markdown | `.md` | 可直接歸檔；內嵌視覺仍走視覺閘 |
+| Markdown | `.md` | **先**入 `raw/originals/`；再寫 canonical 至 `raw/sources/`（可清理／補強）；內嵌視覺仍走視覺閘 |
 | 純文字 | `.txt` | 轉 Markdown 標題結構 |
 | Word | `.docx` | 轉 Markdown（標題、表格、列表） |
 | PDF | `.pdf` | 依 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)：Docling 預設 + 頁級視覺閘；支援全檔或頁面範圍 |
@@ -108,8 +109,8 @@ HTML、程式碼庫批次等：階段 1 可逐檔處理或列為 **Limitations**
 ```text
 raw/
   inbox/       # 使用者丟入待處理原件（可含 PDF、Office、圖片）
-  originals/   # 處理後保留之非 Markdown 原件（不可變）
-  sources/     # canonical Markdown 歸檔（Ingest 主要依據）
+  originals/   # 所有輸入原件副本（含 MD；不可變）
+  sources/     # canonical Markdown 歸檔稿（Ingest／wiki 主要依據）
   assets/      # 自視覺萃取之圖片／附件
 ```
 

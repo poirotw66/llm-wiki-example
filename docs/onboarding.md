@@ -30,8 +30,8 @@
 
 | 階段 | 做什麼 | 產物 |
 |------|--------|------|
-| **輸入** | Triage 檔型；必要時轉 Markdown、處理視覺 | `raw/originals/`、`raw/assets/` |
-| **歸檔** | 寫入 canonical Markdown | `raw/sources/<archive-slug>.md` |
+| **輸入** | Triage；**一律**複本至 originals（含 MD）；必要時轉檔／視覺 | `raw/originals/`、`raw/assets/` |
+| **歸檔** | 寫入 canonical Markdown 歸檔稿 | `raw/sources/<archive-slug>.md` |
 | **wiki** | 來源頁 + 抽取概念／實體 + 連結 | `wiki/sources/`、`concepts/`、`entities/` |
 | **收尾** | 更新目錄與日誌 | `wiki/index.md`、`wiki/log.md` |
 
@@ -42,11 +42,11 @@
 ## 步驟 A：丟檔與歸檔（`raw/`）
 
 1. （可選）將原件放入 `raw/inbox/`。
-2. Agent 執行 **Detect／Triage**；**PDF** 依 [pdf-ingest-sop.md](./pdf-ingest-sop.md)；非 MD 轉檔後：
-   - 原件 → `raw/originals/`
-   - 圖片 → `raw/assets/<base-slug>/p<NN>.png`（PDF）
-   - 正文 → **`raw/sources/<archive-slug>.md`**（新檔；修訂另建新檔）
-3. 歸檔成功後 **刪除** `raw/inbox/` 或 repo 根目錄的輸入副本（原件已在 `raw/`；見 **ingest-pipeline** 步驟 12）。
+2. Agent 執行 **Detect／Triage**；**PDF** 依 [pdf-ingest-sop.md](./pdf-ingest-sop.md)。**所有輸入**（含 `.md`）先：
+   - 原件 → `raw/originals/`（位元副本）
+   - 圖片（若有）→ `raw/assets/<base-slug>/p<NN>.png`
+   - canonical 正文 → **`raw/sources/<archive-slug>.md`**（新檔；修訂另建新檔）
+3. 歸檔成功後 **刪除** `raw/inbox/` 或 repo 根目錄的輸入副本（原件已在 `raw/originals/`；見 **ingest-pipeline** 步驟 12）。
 
 命名：`<base-slug>`（資產用）、`<archive-slug>`（歸檔檔名與 `resource`）；全檔／部分頁／修訂規則見 **pdf-ingest-sop.md** 與 **AGENTS.md**。
 
@@ -97,7 +97,8 @@
 
 - [ ] 輸入原件已清理（inbox／根目錄副本已刪，若適用）
 - [ ] `raw/sources/` 有新歸檔，且未就地改寫舊檔
-- [ ] 非 MD 原件在 `raw/originals/`（若適用）
+- [ ] 輸入原件已在 `raw/originals/`（**含** Markdown）
+- [ ] canonical 歸檔稿在 `raw/sources/`
 - [ ] 每個新 wiki 頁有 frontmatter 與 ≥1 連結
 - [ ] 可驗證敘述有來源引用（相對路徑）
 - [ ] bundle 內連結為 **相對路徑**（勿用 `/path.md`）

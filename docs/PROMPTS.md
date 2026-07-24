@@ -15,15 +15,15 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 1. 讀取指定來源（路徑、`raw/inbox/` 或批次）；未提供時向使用者索取。
 2. **Detect／Triage**：副檔名、是否需轉 Markdown、是否含資訊性視覺（見 ingest-pipeline 支援類型表）。
 3. 必要時轉為結構化 Markdown。**PDF** 依 [**docs/pdf-ingest-sop.md**](./pdf-ingest-sop.md)：**Docling 預設**（`python scripts/docling-pdf.py`）→ 結構化 MD 初稿；頁級分流後，文字／表格夠則直入歸檔；**僅**架構圖／流程圖／對照表／文字層極短頁再 `pdftoppm` + vision／VLM（資產 **`raw/assets/<base-slug>/p<NN>.png`**）。含視覺則依 [**docs/visual-source-conversion.md**](./visual-source-conversion.md)。**硬閘**：資訊圖頁禁止只抄標題；須寫「層／節點盤點」+ Visual Evidence；資產頁碼須與來源標註一致。
-4. 非 Markdown 原件歸檔 `raw/originals/`（新檔；勿改寫既有 `raw/` 檔）。
+4. **一律** 將輸入原件複製至 `raw/originals/`（**含 Markdown**、PDF、Office、圖片等；新檔；勿改寫既有 `raw/` 檔；保留原始檔名／位元）。
 5. 視覺資產寫入 `raw/assets/`（若適用；PDF 命名見 **pdf-ingest-sop.md**）。
-6. **新增** canonical 歸檔 `raw/sources/<archive-slug>.md`（僅新檔；`<archive-slug>` 見 **pdf-ingest-sop.md**／**okf.md**；修訂另建新檔）。**歸檔稿須盡可能詳盡還原原文，非精簡版**：合併 Docling 初稿與視覺閘補寫；逐頁／逐段；文字／表格頁以 Docling 為主；**資訊圖頁**須 vision／VLM 寫入正文＋Visual Evidence（含 `![]()` embed 原圖）；**禁止**僅抄標題或幾句摘要；歸檔稿可遠長於 wiki 摘要頁。
+6. **新增** canonical 歸檔 `raw/sources/<archive-slug>.md`（僅新檔；`<archive-slug>` 見 **pdf-ingest-sop.md**／**okf.md**；修訂另建新檔）。自 `raw/originals/` 轉寫／清理／補強；**不可**以「輸入已是 MD」為由跳過步驟 4。**歸檔稿須盡可能詳盡還原原文，非精簡版**：合併 Docling 初稿與視覺閘補寫；逐頁／逐段；文字／表格頁以 Docling 為主；**資訊圖頁**須 vision／VLM 寫入正文＋Visual Evidence（含 `![]()` embed 原圖）；**禁止**僅抄標題或幾句摘要；歸檔稿可遠長於 wiki 摘要頁。
 7. 依歸檔稿建立或更新 `wiki/sources/*`（**摘要**，非歸檔全文複製），區塊標題須符合 **來源頁 Schema**（含 **`## Visual Assets`**：有資訊性視覺時 **必須** `![]()` embed `../../raw/assets/<base-slug>/p<NN>.png`）。版型：`docs/templates/page-template-source.md`。
 8. 抽取並更新 `wiki/concepts/*`、`wiki/entities/*`。
 9. 更新相關頁；建立雙向連結（**markdown 相對路徑**；勿用 `/path.md`）。
 10. 每個新建或更新的 **Concept** frontmatter 補齊 **OKF v0.1 建議欄位**：`description`、`resource`（**歸檔 slug** 如 `my-api-intro` → `raw/sources/my-api-intro.md`，或 **HTTPS URL**）、`timestamp`（ISO 8601）；對照 [**docs/okf.md**](./okf.md) → **resource 語意**。
 11. 更新 `wiki/index.md`。
-12. **輸入原件清理**：步驟 4（非 MD）與步驟 6（MD 直達歸檔）成功後，若輸入路徑在 `raw/inbox/`、repo 根目錄等**非** `raw/originals/`／`raw/sources/`／`raw/assets/` 位置，執行 `python scripts/ingest-cleanup.py "<input-path>" --archive "<archive-path>" [--archive "<archive-path>"]` 刪除輸入副本。**禁止**刪 `raw/` 歸檔本體。
+12. **輸入原件清理**：步驟 4（`raw/originals/`）與步驟 6（`raw/sources/`）成功後，若輸入路徑在 `raw/inbox/`、repo 根目錄等**非** `raw/originals/`／`raw/sources/`／`raw/assets/` 位置，執行 `python scripts/ingest-cleanup.py "<input-path>" --archive "<archive-path>" [--archive "<archive-path>"]` 刪除輸入副本（`--archive` 至少含 originals 與 sources 路徑）。**禁止**刪 `raw/` 歸檔本體。
 13. Append `wiki/log.md`（含 triage／轉檔摘要，或註明視覺閘未適用；步驟 12 有刪檔時註明路徑）。
 
 所有可驗證主張須引用來源；不確定時標記（`（推測）`、`（未知）`）；有根據的主張不需另加標記。

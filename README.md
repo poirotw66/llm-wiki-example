@@ -24,8 +24,8 @@
 ```text
 raw/                    # 不可變歸檔（非 OKF bundle 本體）
   inbox/                # 待處理原件（PDF、Office、圖片…）
-  originals/            # 非 MD 原件歸檔
-  sources/              # canonical Markdown（Ingest 依據）
+  originals/            # 所有輸入原件（含 MD）
+  sources/              # canonical Markdown 歸檔稿
   assets/               # 視覺萃取附件
 wiki/                   # OKF Knowledge Bundle（fork 後以 Ingest 填入）
   index.md              # 總目錄（okf_version + catalog）

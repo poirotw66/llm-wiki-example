@@ -48,9 +48,9 @@
 
 * `raw/inbox/`：使用者提供、**待處理** 之原件（PDF、Office、圖片、MD 等）；Ingest 可從此讀取。**成功歸檔後刪除** inbox／repo 根目錄等輸入副本（見 **操作：Ingest** 步驟 12）。
 
-* `raw/originals/`：轉檔後 **保留之非 Markdown 原件**（新檔歸檔；不可變）。
+* `raw/originals/`：**所有輸入原件**之不可變副本（**含 Markdown**、PDF、Office、圖片等；新檔歸檔；勿改寫既有檔）。保留原始檔名與位元內容（或與輸入一致之副檔名）。
 
-* `raw/sources/`：**canonical Markdown** 歸檔（**盡可能詳盡還原**，非 wiki 級精簡）；`wiki/sources/` 為摘要頁，`resource` slug 主要對應歸檔 slug。
+* `raw/sources/`：**canonical Markdown** 歸檔稿（**盡可能詳盡還原**，非 wiki 級精簡；可由原件轉寫、清理或補強）；`wiki/sources/` 為摘要頁，`resource` slug 主要對應歸檔 slug。
 
 * `raw/assets/`：自視覺萃取之圖片／附件；**依 `<base-slug>` 分子目錄**（`raw/assets/<base-slug>/p<NN>.png`，見 **docs/pdf-ingest-sop.md**）；由歸檔稿或 wiki 頁引用（不解析為知識頁）。
 
@@ -381,7 +381,8 @@ source_count: 1
 
 ## 轉換規則
 
-* 非 Markdown 或含不可讀視覺之來源 → 先轉 **結構化 Markdown**，再歸檔 `raw/sources/`（**詳盡還原稿**，見 **docs/visual-source-conversion.md**）。
+* **一律**先將輸入原件複製至 `raw/originals/`（**含 Markdown**）。
+* 非 Markdown 或含不可讀視覺之來源 → 轉 **結構化 Markdown** 後寫入 `raw/sources/`（**詳盡還原稿**，見 **docs/visual-source-conversion.md**）；純 MD 輸入亦須另寫 canonical 至 `raw/sources/`（可清理／補強，不可省略 originals）。
 * 支援類型：`.md`、`.txt`、`.docx`、`.pdf`、`.ppt`/`.pptx`、`.xlsx`、常見圖片格式（見 ingest-pipeline 表）。
 * 含流程圖、架構圖、截圖、ER、掃描頁等 → 依 [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md)；資產入 `raw/assets/`。**PDF** 預設 [Docling](https://github.com/docling-project/docling)（`scripts/docling-pdf.py`）→ 結構化初稿；**僅**資訊圖／文字層極短頁再 vision／VLM（見 [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md)）。**文字層極短但頁面有架構圖時，必須 vision 寫層／節點盤點，禁止只抄標題。**
 * 無資訊性視覺 → log 或歸檔稿註明「視覺轉換閘：未適用」。
@@ -403,15 +404,15 @@ source_count: 1
 1. 讀取 **指定** 來源（路徑、`raw/inbox/` 或批次）。
 2. **Detect／Triage**（檔型、是否需轉檔、是否含資訊性視覺）。
 3. 必要時 **轉 Markdown**（含視覺閘）。
-4. 非 MD 原件歸檔 **`raw/originals/`**（若適用）。
+4. **一律** 將輸入原件複製至 **`raw/originals/`**（含 `.md`；新檔；勿改寫既有檔）。
 5. 視覺資產寫入 **`raw/assets/`**（若適用）。
-6. **新增** 歸檔 **`raw/sources/<slug>.md`**（僅新檔；遵循命名規約）。
+6. **新增** canonical 歸檔 **`raw/sources/<slug>.md`**（僅新檔；遵循命名規約；自 originals 轉寫／清理／補強，非省略 originals）。
 7. 建立或更新 **`wiki/sources/`**（來源頁 Schema）。
 8. 抽取 **concepts**、**entities**。
 9. 更新相關頁並 **雙向連結**（相對路徑）。
 10. 補齊 **OKF 建議 frontmatter**（`description`、`resource`、`timestamp`）。
 11. 更新 **`wiki/index.md`**。
-12. **輸入原件清理**：歸檔成功後，若本次 **輸入路徑** 位於 `raw/inbox/`、repo 根目錄或其他 **非** `raw/originals/`／`raw/sources/`／`raw/assets/` 位置，**刪除該輸入檔**（原件已在 `raw/`）。**禁止**刪除 `raw/` 歸檔本體。
+12. **輸入原件清理**：步驟 4（originals）與步驟 6（sources）成功後，若本次 **輸入路徑** 位於 `raw/inbox/`、repo 根目錄或其他 **非** `raw/originals/`／`raw/sources/`／`raw/assets/` 位置，**刪除該輸入檔**（原件已在 `raw/originals/`）。**禁止**刪除 `raw/` 歸檔本體。
 13. **Append** `wiki/log.md`（含 triage／轉檔摘要；步驟 12 有刪檔時註明路徑）。
 
 ---

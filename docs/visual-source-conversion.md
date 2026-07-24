@@ -203,7 +203,7 @@ PDF 執行時機與 CLI 見 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)（Docli
 
 ## 無法讀取時
 
-- **保留** 原件於 `raw/originals/`（若適用）與可匯出之 `raw/assets/`。
+- **保留** 原件於 `raw/originals/`（**一律**，含輸入為 Markdown 時）與可匯出之 `raw/assets/`。
 - **勿** 虛構圖中文字或關係。
 - 在 **Limitations / Gaps** 說明缺口；wiki 敘述僅寫可驗證部分。
 
