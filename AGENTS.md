@@ -414,6 +414,7 @@ source_count: 1
 11. 更新 **`wiki/index.md`**。
 12. **輸入原件清理**：步驟 4（originals）與步驟 6（sources）成功後，若本次 **輸入路徑** 位於 `raw/inbox/`、repo 根目錄或其他 **非** `raw/originals/`／`raw/sources/`／`raw/assets/` 位置，**刪除該輸入檔**（原件已在 `raw/originals/`）。**禁止**刪除 `raw/` 歸檔本體。
 13. **Append** `wiki/log.md`（含 triage／轉檔摘要；步驟 12 有刪檔時註明路徑）。
+14. **Finish token measurement**：執行 `python3 scripts/wiki-usage.py finish ingest`（開始時須先以相同 log title 執行 `start ingest --title "<title>"`）；詳見 [docs/skill-usage.md](docs/skill-usage.md)。
 
 ---
 
@@ -426,6 +427,7 @@ source_count: 1
 5. 標記不確定性
 6. 若答案可重用，持久化至 `wiki/queries/*` 並更新 `wiki/index.md`（**Queries** 區）。
 7. **一律** append `wiki/log.md`（僅回答、未改 wiki 頁時記 **pass**／**no-op**）。
+8. **Finish token measurement**：執行 `python3 scripts/wiki-usage.py finish query`（開始時須先以相同 log title 執行 `start query --title "<title>"`）；量測欄位僅可記錄 runtime 實際提供的數字。
 
 ## Query 解析規則（強制）
 
@@ -466,6 +468,7 @@ source_count: 1
 5. 持久化至 `wiki/faq/`
 6. 更新 `wiki/index.md`（FAQ 區：每條 = 連結 + 一行說明）
 7. Append `wiki/log.md`
+8. **Finish token measurement**：執行 `python3 scripts/wiki-usage.py finish faq`（開始時須先以相同 log title 執行 `start faq --title "<title>"`）。
 
 ---
 
@@ -536,7 +539,7 @@ tags: ["faq"]
 
 **新增或實質變更** `wiki/lint/` 持久化產物時，若目錄需露出，更新 `wiki/index.md`（**Overview** 區：連結 + 一行說明）（例如 lint 摘要頁）。
 
-**每次** Lint **一律** append `wiki/log.md`（即使未寫新檔 — 記 pass 或簡短摘要）。
+**每次** Lint **一律** append `wiki/log.md`（即使未寫新檔 — 記 pass 或簡短摘要），並在開始／結束以相同 log title 執行 `python3 scripts/wiki-usage.py start lint --title "<title>"`／`finish lint`；詳見 [docs/skill-usage.md](docs/skill-usage.md)。
 
 ---
 
@@ -552,6 +555,7 @@ tags: ["faq"]
 4. 產出 graph 摘要
 5. **新增或實質變更** graph 產物時，更新 `wiki/index.md`（**Overview** 區：連結 + 一行說明）（例如 `wiki/graph/knowledge-map.md`）
 6. Append `wiki/log.md` — **每次** Graph 皆執行，含可選輸出或未變更（記 pass／no-op）
+7. **Finish token measurement**：執行 `python3 scripts/wiki-usage.py finish graph`（開始時須先以相同 log title 執行 `start graph --title "<title>"`）。
 
 可選輸出：
 
@@ -573,6 +577,8 @@ wiki/graph/knowledge-map.md
 
 （日期標題須為 ISO `YYYY-MM-DD`，與 OKF log 日期標題相容。）
 
+`.llm-wiki/usage/events.jsonl` 保存 runtime token telemetry。每次操作的 Agent 須在開始／結束自動執行 `python3 scripts/wiki-usage.py start <operation>`／`finish <operation>`；該 ledger 不取代 `wiki/log.md`。詳見 [docs/skill-usage.md](docs/skill-usage.md)。
+
 ---
 
 # 🚫 硬約束
@@ -581,7 +587,7 @@ wiki/graph/knowledge-map.md
 * 不可無標記地臆測
 * 一律引用
 * 一律建立頁面連結
-* 完成本文件定義之 **任一** 操作時，**一律** append `wiki/log.md`（每次留痕；允許 pass／no-op）
+* 完成本文件定義之 **任一** 操作時，**一律** append `wiki/log.md`，並以相同 title 自動執行 `start <operation> --title "<title>"`／`finish <operation>` 寫入實測 token ledger（每次留痕；允許 pass／no-op）
 * 操作 **新增／刪除／實質變更** wiki 頁或目錄所列產物時，更新 `wiki/index.md`；各操作若有更窄規則（例如 Graph：僅 graph 產物變更後才更新 index），**從其規定**
 
 ---

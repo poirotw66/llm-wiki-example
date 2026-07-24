@@ -9,6 +9,9 @@
 | Agent 提示詞（步驟單一來源） | [**docs/PROMPTS.md**](docs/PROMPTS.md) |
 | **Ingest 13 步管線** | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) |
 | **Wiki lint 腳本** | `python scripts/wiki-lint.py` |
+| **Skill 實測 token 報表** | `python3 scripts/wiki-usage.py report --by skill`（見 [docs/skill-usage.md](docs/skill-usage.md)） |
+| **Codex session 詳細報表** | `python3 scripts/wiki-usage.py codex-report --by model`（input／cache／output／reasoning／cost） |
+| **模型費率設定** | [config/skill-usage-pricing.json](config/skill-usage-pricing.json)（API 等價 USD 區間） |
 | **Ingest 清理 helper** | `python scripts/ingest-cleanup.py ...` |
 | **PDF Docling helper** | `python scripts/docling-pdf.py ...` |
 | **PDF 依賴（uv）** | `uv sync --group pdf`（見 [pyproject.toml](pyproject.toml)） |
@@ -35,6 +38,7 @@ docs/                   # 支援文件（非 wiki 知識本體）
   ingest-pipeline.md  visual-source-conversion.md  pdf-ingest-sop.md
   onboarding.md  okf.md  PROMPTS.md  templates/
 scripts/                # 維護腳本（wiki-lint、ingest-cleanup、docling-pdf）
+.llm-wiki/usage/        # append-only Skill 使用量 ledger（events.jsonl）
 skills/                 # 薄 Skill 單一來源（npx / 本機同步）
 AGENTS.md  SKILL.md  README.md  pyproject.toml  uv.lock
 ```
@@ -166,7 +170,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 1. 依 **AGENTS.md** 硬約束（引用、連結、frontmatter 等）
 2. 依 **PROMPTS.md** 該操作步驟全文執行
 3. 必要時更新 [wiki/index.md](wiki/index.md)
-4. **append** [wiki/log.md](wiki/log.md)（無變更時記 pass／no-op）
+4. 在流程開始／結束由 Agent 自動執行 `python3 scripts/wiki-usage.py start|finish <operation>`，並 **append** [wiki/log.md](wiki/log.md)（無變更時記 pass／no-op）
 
 ### 不用 Skill 時
 

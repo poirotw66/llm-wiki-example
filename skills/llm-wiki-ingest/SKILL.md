@@ -13,7 +13,7 @@ description: LLM Wiki Ingest。使用者輸入 /ingest、ingest、歸檔、收�
 
 1. 遵循工作區根目錄 **AGENTS.md**（含 **操作：Ingest**、硬約束、`raw/` 不可變）。
 2. **依全文執行** 工作區根目錄 **docs/PROMPTS.md** 的 **## Ingest 提示詞** — 勿在本 Skill 改寫或省略步驟。
-3. 完成後確認 `wiki/index.md` 已更新（若適用）、輸入原件已清理（步驟 12）、`wiki/log.md` 已 append。
+3. 操作一開始以本次 log title 執行 `python3 scripts/wiki-usage.py start ingest --title "<title>"`；完成後確認 `wiki/index.md` 已更新（若適用）、輸入原件已清理（步驟 12）、`wiki/log.md` 已 append，並執行 `python3 scripts/wiki-usage.py finish ingest --title "<title>"`。若漏掉 start，finish 會自動復原量測且拒絕 0 token。
 
 ## `raw/sources/` vs `wiki/`（強制）
 
