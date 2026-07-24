@@ -115,7 +115,7 @@ PDF
 | **資訊圖頁** | 架構圖、流程圖、對照表、KPI；或文字層極短 | Docling 保留文字；**另** `pdftoppm` + vision／VLM |
 | **掃描型** | 幾乎無可抽取文字 | Docling OCR 優先；不足再 vision；標 Limitations |
 
-**前置**：`pip install -r requirements-pdf.txt`（或見該檔註解）。Python ≥ 3.10。
+**前置**：`uv sync --group pdf`（見根目錄 `pyproject.toml`）。需已安裝 [uv](https://docs.astral.sh/uv/)。建議 Python **3.12**（`.python-version`）；範圍 `>=3.10,<3.14`。
 
 | 平台 | torch | 說明 |
 |------|-------|------|
@@ -253,7 +253,7 @@ pdftoppm -f 5 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
 | 描述「藍色方塊」「現代感設計」 | 見 visual-source-conversion → Vision 文字化原則 |
 | 部分 ingest 卻用全檔 `<archive-slug>` | slug 加 `-頁<start>至<end>` |
 | 把 wiki 摘要貼進 `raw/sources/` | 歸檔詳盡、wiki 摘要分離 |
-| 未安裝 docling／相容 torch 就略過轉檔 | `pip install -r requirements-pdf.txt`（Intel Mac 勿強裝 torch≥2.4） |
+| 未安裝 docling／相容 torch 就略過轉檔 | `uv sync --group pdf`（Intel Mac 勿強裝 torch≥2.4；見 `pyproject.toml`） |
 
 ---
 

@@ -198,7 +198,7 @@ def convert_with_docling(pdf: Path, page_from: int, page_to: int) -> str:
         from docling.document_converter import DocumentConverter
     except ImportError as error:
         raise RuntimeError(
-            "docling is not installed; run: pip install 'docling>=2.0'"
+            "docling is not installed; run: uv sync --group pdf"
         ) from error
 
     try:
@@ -208,10 +208,10 @@ def convert_with_docling(pdf: Path, page_from: int, page_to: int) -> str:
     except Exception as error:
         # Common on machines with torch < 2.4: layout models fail to import.
         raise RuntimeError(
-            "Docling convert failed. On Intel Mac use: "
-            "pip install -r requirements-pdf.txt "
-            "(torch==2.2.2, numpy<2, transformers<5). "
-            "Elsewhere: pip install 'docling>=2.0' 'torch>=2.4' torchvision. "
+            "Docling convert failed. Install PDF deps with: "
+            "uv sync --group pdf "
+            "(Intel Mac pins torch==2.2.2, numpy<2, transformers<5; "
+            "elsewhere torch>=2.4). "
             f"Original error: {error}"
         ) from error
 

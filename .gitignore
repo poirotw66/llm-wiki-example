@@ -3,3 +3,5 @@
 wiki/.obsidian/
 # Cursor local skills copy — canonical source is skills/ (sync locally or via npx)
 .cursor/
+# uv local environment
+.venv/

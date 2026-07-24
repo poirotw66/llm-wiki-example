@@ -11,6 +11,7 @@
 | **Wiki lint 腳本** | `python scripts/wiki-lint.py` |
 | **Ingest 清理 helper** | `python scripts/ingest-cleanup.py ...` |
 | **PDF Docling helper** | `python scripts/docling-pdf.py ...` |
+| **PDF 依賴（uv）** | `uv sync --group pdf`（見 [pyproject.toml](pyproject.toml)） |
 | **PDF 轉譯 SOP** | [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) |
 | 第一輪 Ingest | [**docs/onboarding.md**](docs/onboarding.md) |
 | 頁面版型 | [**docs/templates/**](docs/templates/) |
@@ -35,10 +36,22 @@ docs/                   # 支援文件（非 wiki 知識本體）
   onboarding.md  okf.md  PROMPTS.md  templates/
 scripts/                # 維護腳本（wiki-lint、ingest-cleanup、docling-pdf）
 skills/                 # 薄 Skill 單一來源（npx / 本機同步）
-AGENTS.md  SKILL.md  README.md  requirements-pdf.txt
+AGENTS.md  SKILL.md  README.md  pyproject.toml  uv.lock
 ```
 
 `.cursor/`（含本機 `skills` 副本）**不進 Git**；見 [`.gitignore`](.gitignore)。
+
+### Python 依賴（uv）
+
+本倉以 [uv](https://docs.astral.sh/uv/) 管理可選 PDF 依賴（Docling／torch）。核心 wiki 腳本（lint 等）**不必**安裝。
+
+```bash
+# 安裝 uv：https://docs.astral.sh/uv/getting-started/installation/
+uv sync --group pdf          # 建立 .venv 並安裝 PDF 組
+uv run python scripts/docling-pdf.py --help
+```
+
+建議 Python：**3.12**（`.python-version`）；範圍 `>=3.10,<3.14`。
 
 ---
 
@@ -184,7 +197,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | [**wiki/README.md**](wiki/README.md) | `wiki/` 目錄樹與連結 |
 | [**SKILL.md**](SKILL.md) | npx skills 安裝說明 |
 | [**skills/**](skills/) | 薄 Skill（**唯一 Git 來源**） |
-| [**requirements-pdf.txt**](requirements-pdf.txt) | Docling／torch 可選依賴（含 Intel Mac 註解） |
+| [**pyproject.toml**](pyproject.toml) / [**uv.lock**](uv.lock) | uv 依賴（PDF 組：`uv sync --group pdf`） |
 | [**scripts/**](scripts/) | `wiki-lint`、`ingest-cleanup`、`docling-pdf` |
 
 ---

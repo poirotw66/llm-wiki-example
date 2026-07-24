@@ -1,0 +1,28 @@
+[project]
+name = "llm-wiki-example"
+version = "0.1.0"
+description = "OKF Knowledge Bundle template (optional PDF Docling helpers)"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+dependencies = []
+
+# Optional PDF path (Docling / torch). See docs/pdf-ingest-sop.md.
+# Intel macOS (x86_64): PyTorch stopped at 2.2.2 — do NOT require torch>=2.4.
+# Apple Silicon / Linux: torch>=2.4 is fine if available.
+#
+# Install:
+#   uv sync --group pdf
+[dependency-groups]
+pdf = [
+    "docling>=2.0",
+    "torch==2.2.2; platform_system == 'Darwin' and platform_machine == 'x86_64'",
+    "torchvision==0.17.2; platform_system == 'Darwin' and platform_machine == 'x86_64'",
+    "torch>=2.4; platform_system != 'Darwin' or platform_machine != 'x86_64'",
+    "torchvision; platform_system != 'Darwin' or platform_machine != 'x86_64'",
+    "numpy<2.0.0; platform_system == 'Darwin' and platform_machine == 'x86_64'",
+    "transformers>=4.42.0,<5.0.0; platform_system == 'Darwin' and platform_machine == 'x86_64'",
+]
+
+[tool.uv]
+package = false
+default-groups = []
