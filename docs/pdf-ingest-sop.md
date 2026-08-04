@@ -221,13 +221,14 @@ stdout 的 `exported_assets[].method`：
 
 ### 5. Vision／VLM 文字化（僅候選頁）
 
-對需視覺閘的每一頁／每一張匯出圖：
+對需視覺閘的每一頁／每一張匯出圖（品質不可縮減）：
 
-1. **讀圖**：打開對應 `raw/assets/<base-slug>/p<NN>.png`（或整頁匯出圖）。
-2. **套用提示詞**：完整複製 [**visual-source-conversion.md → Agent 用提示詞（強制）**](./visual-source-conversion.md#agent-用提示詞強制可複製) 執行轉寫（勿改寫成摘要版提示）。
-3. 將產出寫入 `raw/sources/` **該頁／該節正下方**；並補 Visual Evidence（embed、層／節點盤點、主要資料流 `→`）。**禁止**先寫完全文再把所有圖堆到文末 `## Visual Evidence`（見 [visual-source-conversion.md → 放置規則](./visual-source-conversion.md#放置規則強制歸檔稿)）。
-4. 衝突時以圖為準，標 `（推測）`／`（未知）`。
-5. 跑 `python3 scripts/wiki-lint.py`；出現 `weak Visual Evidence` 或 `Visual Evidence dumped at end` 則未完成。
+1. **編排**：凡讀圖依 [**visual-source-conversion.md → 平行 Vision 編排**](./visual-source-conversion.md#平行-vision-編排強制凡讀圖) — **每張圖派 subagent**（多張平行；同時 3–5、每員 1–2 張）；主 Agent **禁止**自行 `Read` 圖片。
+2. **讀圖（subagent）**：子代理打開對應 `raw/assets/<base-slug>/p<NN>.png`（或整頁匯出圖）。
+3. **套用提示詞**：完整複製 [**visual-source-conversion.md → Agent 用提示詞（強制）**](./visual-source-conversion.md#agent-用提示詞強制可複製) 執行轉寫（勿改寫成摘要版提示）。Subagent 須回傳該檔規定的 **VE schema 區塊**（勿寫整份歸檔）。
+4. **合併就地**：主 Agent 將各區塊寫入 `raw/sources/` **該頁／該節正下方**（embed、層／節點盤點、主要資料流 `→`）。**禁止**先寫完全文再把所有圖堆到文末 `## Visual Evidence`（見 [放置規則](./visual-source-conversion.md#放置規則強制歸檔稿)）。
+5. 衝突時以圖為準，標 `（推測）`／`（未知）`。
+6. 跑 `python3 scripts/wiki-lint.py`；出現 `weak Visual Evidence` 或 `Visual Evidence dumped at end` 則未完成。
 
 可選：本機 Docling VLM 僅作輔助；最終文字仍須符合上述提示詞與硬閘。
 
@@ -265,6 +266,7 @@ stdout 的 `exported_assets[].method`：
 - [ ] 每個處理頁有 `### 第 N 頁`（或等效分節）
 - [ ] 非視覺閘頁未無謂送雲端 vision
 - [ ] 視覺閘頁資產在 `raw/assets/<base-slug>/p<NN>.png`，且有 Visual Evidence + `![]()` embed，且 **就地**放在該頁／該節下（非文末總庫）
+- [ ] 視覺閘已採 **讀圖一律 subagent**（多張平行），log 註明 `vision_via: subagent`
 - [ ] `wiki/sources/*` 含 **`## Visual Assets`**（有資訊圖時），embed 路徑正確
 - [ ] 架構圖／對照表已表格化或層級盤點，非僅標題
 - [ ] 符合 [visual-source-conversion.md → Vision 文字化原則](./visual-source-conversion.md#vision-文字化原則rag-導向)
@@ -293,6 +295,7 @@ stdout 的 `exported_assets[].method`：
 | RapidOCR／Docling 模型找不到／又下載到 `~/.cache` | 固定目錄同上；helper 預設讀 `models/docling/`（`DOCLING_ARTIFACTS_PATH` 可覆寫） |
 | 圖拆得出來但 Visual Evidence 空殼 | **Agent 必須逐張讀圖**寫層／節點＋資料流；禁止「細節以原圖為準」。`wiki-lint` 會對 canonical 歸檔報 `weak Visual Evidence` |
 | 全文寫完再把所有圖堆在文末 `## Visual Evidence` | **就地**寫在該頁／該節下；`wiki-lint` 報 `Visual Evidence dumped at end` |
+| 主 Agent 自行 `Read` 圖片做 Vision | **一律**派 subagent 讀圖（見 visual-source-conversion → 平行 Vision 編排） |
 
 ---
 

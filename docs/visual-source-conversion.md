@@ -65,7 +65,65 @@
 
 PDF 執行時機與 CLI 見 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)（Docling 預設；**僅**視覺閘候選頁進本節）。
 
-**強制**：對每一張視覺閘資產（`raw/assets/<base-slug>/pNN.png`），Agent **必須讀圖**，並 **逐字套用**下方 **Agent 用提示詞**；不得改寫成摘要版提示、不得批次空殼填寫。
+**強制**：對每一張視覺閘資產（`raw/assets/<base-slug>/pNN.png`），**必須讀圖**，並 **逐字套用**下方 **Agent 用提示詞**；不得改寫成摘要版提示、不得用未讀圖的空殼範本填寫。  
+**讀圖一律 subagent（強制）**：凡需開啟／分析圖片（視覺閘資產、資訊圖、截圖等）以產出 Visual Evidence 或圖內轉寫，**一律**派 **subagent** 讀圖；**禁止**主 Agent 自行 `Read` 圖片。多張時平行派工（見下方 **平行 Vision 編排**）。
+
+### 平行 Vision 編排（強制，凡讀圖）
+
+目標：品質契約不變（每張完整讀圖＋層／節點＋資料流＋就地 embed）；讀圖與轉寫交給 subagent，主 Agent 只編排與合併。
+
+```text
+主 Agent（Ingest 編排）
+  ├─ Docling／匯出資產／文字頁歸檔骨架（不讀圖）
+  ├─ 每張視覺閘圖 → 一個（或一組）subagent 讀圖＋轉寫
+  │     每員只產出「可就地插入」的 #### Visual Evidence 區塊
+  ├─ 依頁碼合併進 raw/sources/<archive-slug>.md 對應節
+  └─ wiki／lint／cleanup（仍由主 Agent；不讀圖）
+```
+
+#### 分流規則
+
+| 情況 | 做法 |
+|------|------|
+| 任意張數（含 1 張） | **每張圖至少一個 subagent** 負責讀圖＋套用強制提示詞＋回傳 VE schema |
+| 多張 | **平行**派工；建議同時 **3–5** 個 subagent，每員 **1～2** 張（極密圖建議每員 1 張） |
+| 主 Agent | **禁止** `Read`／開啟 `raw/assets/**/*.png`（或其他視覺閘圖）做內容轉寫；只合併回傳區塊、跑 lint、寫 wiki |
+| 任意 | **禁止**為求快而省略讀圖、縮減節點盤點、或改文末彙整 |
+
+#### Subagent 任務契約（每員）
+
+主 Agent 派工時須在 prompt **寫齊**（子代理看不到父對話）：
+
+1. 資產絕對或 repo 相對路徑：`raw/assets/<base-slug>/p<NN>.png`
+2. PDF／簡報頁碼 `N`、建議短標題（可空）
+3. **完整**貼上本檔 **Agent 用提示詞（強制）**（勿改寫成摘要版）
+4. 規定回傳 **僅**下方 schema（勿寫整份歸檔、勿改 wiki）
+5. 指示子代理 **自行 Read 該圖**（主 Agent 不預讀）
+
+**回傳 schema（唯一允許的終態輸出）**：
+
+```md
+#### Visual Evidence — 第 <N> 頁：<簡短標題>
+
+![<簡短標題>](../assets/<base-slug>/p<NN>.png)
+
+- **資產**：../assets/<base-slug>/p<NN>.png
+- **來源位置**：PDF 第 <N> 頁
+- **層／節點盤點**：
+  - …
+- **主要資料流**：
+  - … → … → …
+- **限制**：（未知）／（推測）……（若無寫「無」）
+```
+
+可選：在區塊前附該頁提示詞產出的正文摘錄（標題／表格／流程轉譯）；**仍須**含完整 Visual Evidence 欄位。
+
+#### 主 Agent 合併規則
+
+1. 等齊所有 subagent 結果（缺頁／空殼／無 `→`／無層／節點 → **重派 subagent**，主 Agent 不得改以自行讀圖補做）。
+2. 將各區塊 **就地插入** 對應 `### 第 N 頁`／該節正文正下方（見 **放置規則**）。
+3. `wiki-lint` 不得出現 `weak Visual Evidence` 或 `Visual Evidence dumped at end`。
+4. `wiki/log.md` triage 摘要註明：`vision_via: subagent`、並行度、視覺閘頁清單。
 
 ### 放置規則（強制，歸檔稿）
 

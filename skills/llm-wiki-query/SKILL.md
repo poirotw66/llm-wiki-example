@@ -17,7 +17,7 @@ description: LLM Wiki Query。使用者輸入 /query、query、向 wiki 提問�
 
 ## 視覺答案
 
-若問題涉及架構圖等資訊性視覺，答案 **必須** embed `raw/assets/` 原圖（見 **docs/visual-source-conversion.md** → **可檢索原圖**、**PROMPTS.md** § Query 步驟 6）。
+若問題涉及架構圖等資訊性視覺，答案 **必須** embed `raw/assets/` 原圖（見 **docs/visual-source-conversion.md** → **可檢索原圖**、**PROMPTS.md** § Query 步驟 6）。若須重新讀圖分析，依 **平行 Vision 編排** **派 subagent**；主 Agent 禁止自行 `Read` 圖片。
 
 ## 使用者輸入
 

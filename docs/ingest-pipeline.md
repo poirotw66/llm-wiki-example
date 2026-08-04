@@ -44,7 +44,7 @@
 | 可否直達 Ingest | `.md` 且內容已結構化 → 可跳過轉檔 |
 
 **3. 多模態轉 Markdown**（非 `.md` 或 `.md` 內嵌不可讀視覺時）  
-依類型轉為 **結構化繁體中文 Markdown**（技術詞保留英文）。**PDF** 依 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)：`scripts/docling-pdf.py`（Docling 初稿 + 頁級分流）→ 文字／表格直入；**僅**資訊圖／短文字頁 `pdftoppm` + vision／VLM。含資訊性視覺時 **必須** 依 [**visual-source-conversion.md**](./visual-source-conversion.md)（含 **硬閘**）。使用者無須另下「請轉視覺」指令。
+依類型轉為 **結構化繁體中文 Markdown**（技術詞保留英文）。**PDF** 依 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)：`scripts/docling-pdf.py`（Docling 初稿 + 頁級分流）→ 文字／表格直入；**僅**資訊圖／短文字頁 `pdftoppm` + vision／VLM。含資訊性視覺時 **必須** 依 [**visual-source-conversion.md**](./visual-source-conversion.md)（含 **硬閘**、**就地放置**、**讀圖一律 subagent** 之平行 Vision 編排）。使用者無須另下「請轉視覺」指令。
 
 ### B. 不可變歸檔（BU + OKF）
 
