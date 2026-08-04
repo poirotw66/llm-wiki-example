@@ -106,7 +106,7 @@ PDF
  ├─ Docling（預設）→ 結構化 MD 初稿 + 表格／版面
  ├─ 頁級分流：文字／表格夠 → 整理進 raw/sources
  └─ 僅「架構圖／流程圖／對照表／文字層極短」頁
-       → pdftoppm + vision（或 Docling VLM）補 Visual Evidence
+       → 匯出圖（優先 Docling 內嵌／裁切；否則 pdftoppm 整頁）+ vision（或 Docling VLM）補 Visual Evidence
 ```
 
 | 類型 | 判斷 | 主路徑 |
@@ -193,18 +193,29 @@ uv run python scripts/docling-pdf.py "<path>.pdf" --page-from 1 --page-to 5
 
 **禁止**只抄標題結案。Agent 應覆核 `vision_pages`：可剔除誤報；若漏報資訊圖頁，**手動加入**。
 
-### 4. 僅匯出視覺閘頁面圖
+### 4. 匯出視覺閘頁面圖（內嵌圖優先）
 
 預設 **144 DPI**；vision 不足時重試 **288 DPI**，並在歸檔 metadata 註明。
 
 ```bash
 # 只匯出 triage 候選頁 → raw/assets/<base-slug>/p<NN>.png
+# 優先 Docling 抽出／裁切頁內圖片；抽不到（常見：純向量架構圖）再整頁 pdftoppm
 uv run python scripts/docling-pdf.py "<path>.pdf" --base-slug "<base-slug>" --export-vision-assets --triage-only
+
+# 強制整頁渲染（舊行為）
+uv run python scripts/docling-pdf.py "<path>.pdf" --export-vision-assets --force-page-render --triage-only
 
 # 或手動單頁
 pdftoppm -f 5 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
 # …-05.png → raw/assets/<base-slug>/p05.png
 ```
+
+stdout 的 `exported_assets[].method`：
+
+| method | 意義 |
+|--------|------|
+| `docling_picture` | Docling 內嵌圖或自頁面裁切的 figure |
+| `pdftoppm_page` | 無可用內嵌／裁切圖（或 `--force-page-render`）→ 整頁 PNG |
 
 `pdftoppm` 輸出檔名可能為 `-1.png` 或 `-01.png`；**重新命名時以 PDF 實際頁碼為準**。
 

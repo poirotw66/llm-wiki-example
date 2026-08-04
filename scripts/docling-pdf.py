@@ -3,6 +3,9 @@
 
 Default path: Docling → structured Markdown draft.
 Vision path: only pages flagged by triage (short text layer and/or diagram cues).
+
+Vision assets prefer Docling embedded / cropped pictures; fall back to full-page
+pdftoppm when no usable picture is available (e.g. vector-only diagrams).
 """
 from __future__ import annotations
 
@@ -14,6 +17,9 @@ import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Any
+
+from docling_pdf_assets import images_scale_for_dpi, pick_best_image
 
 ROOT = Path(__file__).resolve().parents[1]
 # Fixed Docling artifacts dir (contains RapidOcr/). Override with DOCLING_ARTIFACTS_PATH.
@@ -45,6 +51,21 @@ class PageTriage:
     needs_vision: bool
 
 
+@dataclass(frozen=True)
+class ExportedAsset:
+    path: Path
+    page: int
+    method: str
+    width: int
+    height: int
+
+
+@dataclass(frozen=True)
+class DoclingConvertResult:
+    markdown: str
+    document: Any | None
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Convert PDF with Docling and triage pages for vision."
@@ -70,17 +91,25 @@ def build_parser() -> argparse.ArgumentParser:
         "--image-area",
         type=int,
         default=DEFAULT_IMAGE_AREA,
-        help="Min width*height of embedded image to flag page",
+        help="Min width*height of embedded image to flag page / accept as asset",
     )
     parser.add_argument(
         "--triage-only",
         action="store_true",
-        help="Skip Docling; only print page triage JSON",
+        help="Skip Markdown draft; still may run Docling when exporting pictures",
     )
     parser.add_argument(
         "--export-vision-assets",
         action="store_true",
-        help="pdftoppm only vision-flagged pages into raw/assets/<base-slug>/",
+        help=(
+            "Export vision-flagged pages into raw/assets/<base-slug>/; "
+            "prefer Docling pictures, else full-page pdftoppm"
+        ),
+    )
+    parser.add_argument(
+        "--force-page-render",
+        action="store_true",
+        help="Always use pdftoppm full-page render (skip Docling picture extract)",
     )
     parser.add_argument(
         "--dpi",
@@ -205,7 +234,40 @@ def resolve_docling_artifacts() -> Path:
     return DEFAULT_DOCLING_ARTIFACTS.resolve()
 
 
-def convert_with_docling(pdf: Path, page_from: int, page_to: int) -> str:
+def picture_page_number(picture: Any) -> int | None:
+    prov = getattr(picture, "prov", None) or []
+    if not prov:
+        return None
+    page_no = getattr(prov[0], "page_no", None)
+    return int(page_no) if page_no is not None else None
+
+
+def collect_pictures_by_page(document: Any) -> dict[int, list[Any]]:
+    """Map 1-based page → PIL images from Docling PictureItem nodes."""
+    from docling_core.types.doc import PictureItem
+
+    by_page: dict[int, list[Any]] = {}
+    for item, _level in document.iterate_items():
+        if not isinstance(item, PictureItem):
+            continue
+        page = picture_page_number(item)
+        if page is None:
+            continue
+        image = item.get_image(document)
+        if image is None:
+            continue
+        by_page.setdefault(page, []).append(image)
+    return by_page
+
+
+def convert_with_docling(
+    pdf: Path,
+    page_from: int,
+    page_to: int,
+    *,
+    extract_images: bool = False,
+    images_scale: float = 2.0,
+) -> DoclingConvertResult:
     try:
         from docling.datamodel.base_models import InputFormat
         from docling.datamodel.pipeline_options import PdfPipelineOptions
@@ -232,14 +294,22 @@ def convert_with_docling(pdf: Path, page_from: int, page_to: int) -> str:
         )
 
     try:
-        pipeline_options = PdfPipelineOptions(artifacts_path=str(artifacts))
+        pipeline_options = PdfPipelineOptions(
+            artifacts_path=str(artifacts),
+            generate_picture_images=extract_images,
+            generate_page_images=extract_images,
+            images_scale=images_scale if extract_images else 1.0,
+        )
         converter = DocumentConverter(
             format_options={
                 InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
             }
         )
         result = converter.convert(str(pdf), page_range=(page_from, page_to))
-        return result.document.export_to_markdown()
+        return DoclingConvertResult(
+            markdown=result.document.export_to_markdown(),
+            document=result.document if extract_images else None,
+        )
     except Exception as error:
         # Common on machines with torch < 2.4: layout models fail to import.
         raise RuntimeError(
@@ -267,41 +337,118 @@ def pad_page(page: int, total_pages: int) -> str:
     return f"{page:0{width}d}"
 
 
+def export_page_via_pdftoppm(
+    pdf: Path,
+    page: int,
+    target: Path,
+    dpi: int,
+    base_slug: str,
+) -> ExportedAsset:
+    require_cmd("pdftoppm")
+    prefix = Path("/tmp") / f"{base_slug}-vision-{page}"
+    subprocess.check_call(
+        [
+            "pdftoppm",
+            "-f",
+            str(page),
+            "-l",
+            str(page),
+            "-png",
+            "-r",
+            str(dpi),
+            str(pdf),
+            str(prefix),
+        ]
+    )
+    produced = sorted(prefix.parent.glob(f"{prefix.name}-*.png"))
+    if not produced:
+        raise RuntimeError(f"pdftoppm produced no file for page {page}")
+    shutil.move(str(produced[0]), target)
+    # Optional: read size via sips/file; keep zeros if unavailable.
+    width = height = 0
+    try:
+        from PIL import Image
+
+        with Image.open(target) as image:
+            width, height = image.size
+    except Exception:
+        pass
+    return ExportedAsset(
+        path=target,
+        page=page,
+        method="pdftoppm_page",
+        width=width,
+        height=height,
+    )
+
+
 def export_vision_assets(
     pdf: Path,
     base_slug: str,
     pages: list[int],
     total_pages: int,
     dpi: int,
-) -> list[Path]:
+    *,
+    min_image_area: int = DEFAULT_IMAGE_AREA,
+    document: Any | None = None,
+    force_page_render: bool = False,
+    page_from: int | None = None,
+    page_to: int | None = None,
+) -> list[ExportedAsset]:
+    """Export one PNG per vision page: Docling picture first, else full page."""
     if not pages:
         return []
-    require_cmd("pdftoppm")
+
     asset_dir = ROOT / "raw" / "assets" / base_slug
     asset_dir.mkdir(parents=True, exist_ok=True)
-    written: list[Path] = []
+
+    pictures_by_page: dict[int, list[Any]] = {}
+    if not force_page_render:
+        doc = document
+        if doc is None:
+            convert_from = page_from if page_from is not None else min(pages)
+            convert_to = page_to if page_to is not None else max(pages)
+            try:
+                converted = convert_with_docling(
+                    pdf,
+                    convert_from,
+                    convert_to,
+                    extract_images=True,
+                    images_scale=images_scale_for_dpi(dpi),
+                )
+                doc = converted.document
+            except RuntimeError as error:
+                print(
+                    f"docling-pdf: picture extract unavailable, "
+                    f"using pdftoppm ({error})",
+                    file=sys.stderr,
+                )
+                doc = None
+        if doc is not None:
+            pictures_by_page = collect_pictures_by_page(doc)
+
+    written: list[ExportedAsset] = []
     for page in pages:
-        prefix = Path("/tmp") / f"{base_slug}-vision-{page}"
-        subprocess.check_call(
-            [
-                "pdftoppm",
-                "-f",
-                str(page),
-                "-l",
-                str(page),
-                "-png",
-                "-r",
-                str(dpi),
-                str(pdf),
-                str(prefix),
-            ]
-        )
-        produced = sorted(prefix.parent.glob(f"{prefix.name}-*.png"))
-        if not produced:
-            raise RuntimeError(f"pdftoppm produced no file for page {page}")
         target = asset_dir / f"p{pad_page(page, total_pages)}.png"
-        shutil.move(str(produced[0]), target)
-        written.append(target)
+        best = None
+        if not force_page_render:
+            best = pick_best_image(pictures_by_page.get(page, []), min_image_area)
+        if best is not None:
+            best.save(target, format="PNG")
+            width, height = best.size
+            written.append(
+                ExportedAsset(
+                    path=target,
+                    page=page,
+                    method="docling_picture",
+                    width=width,
+                    height=height,
+                )
+            )
+            continue
+        written.append(
+            export_page_via_pdftoppm(pdf, page, target, dpi, base_slug)
+        )
     return written
 
 
@@ -329,7 +476,8 @@ def wrap_draft(
             f"- 轉檔引擎：`{engine}`",
             f"- 視覺閘候選頁：{vision_pages or '無'}",
             "- 說明：文字／表格足夠之頁可直接整理進 `raw/sources/`；"
-            "候選頁須 `pdftoppm` + vision／VLM 補 Visual Evidence"
+            "候選頁匯出資產時優先 Docling 內嵌／裁切圖，"
+            "抽不到再用整頁 `pdftoppm`，並以 vision／VLM 補 Visual Evidence"
             "（見 docs/pdf-ingest-sop.md）。",
             "",
             "---",
@@ -376,13 +524,71 @@ def main() -> int:
         }
         print(json.dumps(summary, ensure_ascii=False, indent=2))
 
-        if args.export_vision_assets:
+        need_draft = not args.triage_only
+        need_export = args.export_vision_assets
+        extract_images = need_export and not args.force_page_render
+        docling_document = None
+        engine = "docling"
+        markdown = ""
+
+        if need_draft or extract_images:
+            try:
+                converted = convert_with_docling(
+                    pdf,
+                    page_from,
+                    page_to,
+                    extract_images=extract_images,
+                    images_scale=images_scale_for_dpi(args.dpi),
+                )
+                markdown = converted.markdown
+                docling_document = converted.document
+            except RuntimeError as error:
+                if need_draft and args.no_fallback:
+                    raise
+                if need_draft:
+                    print(
+                        "docling-pdf: Docling unavailable, "
+                        f"fallback to pdftotext ({error})",
+                        file=sys.stderr,
+                    )
+                    markdown = convert_with_pdftotext_fallback(
+                        pdf, page_from, page_to
+                    )
+                    engine = "pdftotext-fallback"
+                else:
+                    print(
+                        "docling-pdf: picture extract unavailable, "
+                        f"using pdftoppm ({error})",
+                        file=sys.stderr,
+                    )
+
+        if need_export:
             written = export_vision_assets(
-                pdf, base_slug, vision_pages, total_pages, args.dpi
+                pdf,
+                base_slug,
+                vision_pages,
+                total_pages,
+                args.dpi,
+                min_image_area=args.image_area,
+                document=docling_document,
+                force_page_render=args.force_page_render,
+                page_from=page_from,
+                page_to=page_to,
             )
             print(
                 json.dumps(
-                    {"exported_assets": [str(path.relative_to(ROOT)) for path in written]},
+                    {
+                        "exported_assets": [
+                            {
+                                "path": str(item.path.relative_to(ROOT)),
+                                "page": item.page,
+                                "method": item.method,
+                                "width": item.width,
+                                "height": item.height,
+                            }
+                            for item in written
+                        ]
+                    },
                     ensure_ascii=False,
                     indent=2,
                 )
@@ -390,19 +596,6 @@ def main() -> int:
 
         if args.triage_only:
             return 0
-
-        engine = "docling"
-        try:
-            markdown = convert_with_docling(pdf, page_from, page_to)
-        except RuntimeError as error:
-            if args.no_fallback:
-                raise
-            print(
-                f"docling-pdf: Docling unavailable, fallback to pdftotext ({error})",
-                file=sys.stderr,
-            )
-            markdown = convert_with_pdftotext_fallback(pdf, page_from, page_to)
-            engine = "pdftotext-fallback"
 
         out = (
             resolve_path(args.out)
