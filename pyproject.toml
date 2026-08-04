@@ -6,12 +6,14 @@ readme = "README.md"
 requires-python = ">=3.10,<3.14"
 dependencies = []
 
-# Optional PDF path (Docling / torch). See docs/pdf-ingest-sop.md.
+# Optional PDF path (Docling / torch). See docs/pdf-ingest-sop.md → 前置（安裝）.
 # Intel macOS (x86_64): PyTorch stopped at 2.2.2 — do NOT require torch>=2.4.
 # Apple Silicon / Linux: torch>=2.4 is fine if available.
 #
 # Install:
 #   uv sync --group pdf
+#   uv run docling-tools models download -o models/docling
+# Models land in models/docling/ (gitignored; ~1.2GB). Do not pass only "rapidocr".
 [dependency-groups]
 pdf = [
     "docling>=2.0",

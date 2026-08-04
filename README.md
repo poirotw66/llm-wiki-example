@@ -10,7 +10,7 @@
 | Ingest 13 步管線 | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) |
 | 第一輪 Ingest | [**docs/onboarding.md**](docs/onboarding.md) |
 | PDF 轉譯 SOP | [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) |
-| PDF 依賴（uv） | `uv sync --group pdf`（[pyproject.toml](pyproject.toml)） |
+| PDF 依賴（uv） | `uv sync --group pdf` 後 `uv run docling-tools models download -o models/docling`（詳見 [docs/pdf-ingest-sop.md](docs/pdf-ingest-sop.md)） |
 | Wiki lint | `python3 scripts/wiki-lint.py` |
 | Ingest 清理 | `python3 scripts/ingest-cleanup.py ...` |
 | PDF Docling helper | `uv run python scripts/docling-pdf.py ...` |
@@ -37,6 +37,7 @@ docs/                   # 支援文件（非 wiki 知識本體）
   visual-source-conversion.md  onboarding.md  okf.md
   skill-usage.md  templates/
 scripts/                # wiki-lint、ingest-cleanup、docling-pdf、wiki-usage
+models/docling/         # Docling 預設模型（本機下載；已 gitignore；約 1.2GB）
 config/                 # skill-usage 費率等設定
 .llm-wiki/usage/        # append-only Skill 使用量 ledger（events.jsonl）
 skills/                 # 薄 Skill 單一來源（npx / 本機同步）
@@ -44,7 +45,7 @@ AGENTS.md  SKILL.md  README.md
 pyproject.toml  uv.lock  .python-version
 ```
 
-`.cursor/`（含本機 `skills` 副本）**不進 Git**；見 [`.gitignore`](.gitignore)。
+`.cursor/`（含本機 `skills` 副本）與 `models/docling/` **不進 Git**；見 [`.gitignore`](.gitignore)。
 
 ### `raw/originals/` vs `raw/sources/`
 
@@ -105,19 +106,24 @@ pyproject.toml  uv.lock  .python-version
 
 **硬約束（摘要）**：勿改寫既有 `raw/` 檔；修訂請另建新歸檔；有架構圖／流程圖時禁止只抄標題（見 [docs/visual-source-conversion.md](docs/visual-source-conversion.md)、[docs/pdf-ingest-sop.md](docs/pdf-ingest-sop.md)）。
 
-### Python 依賴（uv）
+### Python 依賴與 Docling 模型（uv）
 
-可選 PDF 路徑（Docling／torch）以 [uv](https://docs.astral.sh/uv/) 管理。核心 wiki 腳本（lint、cleanup、usage）**不必**安裝 PDF 組。
+可選 PDF 路徑（Docling／torch）以 [uv](https://docs.astral.sh/uv/) 管理。核心 wiki 腳本（lint、cleanup、usage）**不必**安裝 PDF 組。完整前置（poppler、平台 torch 表、常見錯誤）見 [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) → **前置（安裝）**。
 
 ```bash
 # 安裝 uv：https://docs.astral.sh/uv/getting-started/installation/
 uv sync --group pdf
-# RapidOCR 模型固定放在 models/docling/（已 gitignore；約 100MB）
-uv run docling-tools models download rapidocr -o models/docling
+# 預設模型組（勿只傳 rapidocr）→ models/docling/（gitignore；約 1.2GB）
+uv run docling-tools models download -o models/docling
 uv run python scripts/docling-pdf.py --help
 ```
 
-`scripts/docling-pdf.py` 預設讀 `models/docling/`；可用環境變數 `DOCLING_ARTIFACTS_PATH` 覆寫。建議 Python：**3.12**（`.python-version`）；範圍 `>=3.10,<3.14`。Intel Mac 之 torch 鎖定見 `pyproject.toml`。
+| 項目 | 說明 |
+|------|------|
+| 模型目錄 | `models/docling/`（`scripts/docling-pdf.py` 預設） |
+| 覆寫 | `DOCLING_ARTIFACTS_PATH` |
+| CLI | 用 `uv run docling-tools ...`（勿直接打 `docling-tools`） |
+| Python | **3.12** 建議（`.python-version`）；`>=3.10,<3.14`；Intel Mac torch 鎖定見 `pyproject.toml` |
 
 ---
 
@@ -227,7 +233,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | [**docs/okf.md**](docs/okf.md) | OKF v0.1 對照、合規、匯出／匯入 |
 | [**docs/PROMPTS.md**](docs/PROMPTS.md) | Agent 提示詞（**步驟單一來源**） |
 | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) | Ingest 13 步（多模態） |
-| [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) | PDF 轉譯 SOP（Docling + 視覺閘） |
+| [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) | PDF 轉譯 SOP（安裝前置、`models/docling/`、Docling + 視覺閘） |
 | [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md) | 視覺來源轉換 |
 | [**docs/onboarding.md**](docs/onboarding.md) | 第一輪 Ingest |
 | [**docs/skill-usage.md**](docs/skill-usage.md) | Skill token／usage ledger |
@@ -236,7 +242,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | [**wiki/README.md**](wiki/README.md) | `wiki/` 目錄導覽 |
 | [**SKILL.md**](SKILL.md) | npx skills 安裝 |
 | [**skills/**](skills/) | 薄 Skill（**唯一 Git 來源**） |
-| [**pyproject.toml**](pyproject.toml)／[**uv.lock**](uv.lock) | uv 依賴（`uv sync --group pdf`） |
+| [**pyproject.toml**](pyproject.toml)／[**uv.lock**](uv.lock) | uv 依賴；PDF 組見 `uv sync --group pdf` + 模型下載 |
 | [**config/**](config/) | usage 費率等設定 |
 | [**scripts/**](scripts/) | lint、cleanup、docling-pdf、wiki-usage |
 

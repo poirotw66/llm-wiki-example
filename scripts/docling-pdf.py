@@ -216,12 +216,19 @@ def convert_with_docling(pdf: Path, page_from: int, page_to: int) -> str:
         ) from error
 
     artifacts = resolve_docling_artifacts()
-    rapidocr_dir = artifacts / "RapidOcr"
-    if not rapidocr_dir.is_dir():
+    required = (
+        artifacts / "RapidOcr",
+        artifacts / "docling-project--docling-layout-heron",
+        artifacts / "docling-project--docling-models",
+    )
+    missing = [str(path) for path in required if not path.is_dir()]
+    if missing:
+        listed = "\n".join(f" - {path}" for path in missing)
         raise RuntimeError(
-            f"Docling RapidOCR models missing at {rapidocr_dir}. "
-            "Download once with: "
-            f"uv run docling-tools models download rapidocr -o {artifacts}"
+            "Docling models missing under artifacts_path:\n"
+            f"{listed}\n"
+            "Download the default set once with:\n"
+            f"  uv run docling-tools models download -o {artifacts}"
         )
 
     try:

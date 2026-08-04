@@ -31,7 +31,7 @@ description: LLM Wiki Ingest。使用者輸入 /ingest、ingest、歸檔、收�
 
 ## PDF
 
-依 **docs/pdf-ingest-sop.md**：**Docling 預設**（`python scripts/docling-pdf.py`）→ MD 初稿 + 頁級分流；文字／表格頁直入歸檔；**僅**架構／流程／對照／短文字頁再 `pdftoppm` + vision／VLM。`<base-slug>` 與 `<archive-slug>` 分工見該檔。
+依 **docs/pdf-ingest-sop.md**（含 **前置（安裝）**：`uv sync --group pdf` + `uv run docling-tools models download -o models/docling`）。**Docling 預設**（`uv run python scripts/docling-pdf.py`，模型在 `models/docling/`）→ MD 初稿 + 頁級分流；文字／表格頁直入歸檔；**僅**架構／流程／對照／短文字頁再 `pdftoppm` + vision／VLM。`<base-slug>` 與 `<archive-slug>` 分工見該檔。
 
 **wiki 頁**從歸檔稿 **抽取摘要**；若使用者抱怨「歸檔太簡」，優先 **補厚 `raw/sources/`**，而非只改 wiki 一句話。
 

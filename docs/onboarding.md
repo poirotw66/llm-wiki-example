@@ -7,7 +7,7 @@
 - OKF 對照：[docs/okf.md](./okf.md)
 - Agent 提示詞：[docs/PROMPTS.md](./PROMPTS.md)
 - 視覺轉換：[visual-source-conversion.md](./visual-source-conversion.md)
-- PDF 轉譯 SOP：[pdf-ingest-sop.md](./pdf-ingest-sop.md)
+- PDF 轉譯 SOP：[pdf-ingest-sop.md](./pdf-ingest-sop.md)（含 **前置（安裝）**：`uv sync --group pdf` + 模型下載至 `models/docling/`）
 - Skill 入口：[skills/llm-wiki-example/](../skills/llm-wiki-example/SKILL.md)
 
 ---
@@ -17,6 +17,7 @@
 1. 以 **GitHub Template** 或 **fork** 建立新 repo。
 2. **不要**在共用的 `llm-wiki-example` 上寫部門知識。
 3. 編輯 `wiki/index.md` 的 **Overview**（部門名稱、範圍、維護方式）。
+4. 若會 ingest PDF：依 [pdf-ingest-sop.md](./pdf-ingest-sop.md) 安裝 PDF 依賴與 Docling 預設模型（約 1.2GB，不進 Git）。
 
 ---
 

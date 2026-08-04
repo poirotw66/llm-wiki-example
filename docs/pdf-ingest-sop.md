@@ -2,7 +2,7 @@
 
 本檔為 **PDF Ingest** 的 CLI 步驟與命名 **單一來源**。Vision **怎麼寫**（RAG 轉譯、資訊圖／裝飾圖、Visual Evidence）見 [**visual-source-conversion.md**](./visual-source-conversion.md)；管線總表見 [**ingest-pipeline.md**](./ingest-pipeline.md)。
 
-**預設路徑**：[Docling](https://github.com/docling-project/docling) 產出結構化 Markdown 初稿；**僅**頁級 triage 判定需視覺閘之頁再跑 `pdftoppm` + vision／VLM。helper：`python scripts/docling-pdf.py`。
+**預設路徑**：[Docling](https://github.com/docling-project/docling) 產出結構化 Markdown 初稿；**僅**頁級 triage 判定需視覺閘之頁再跑 `pdftoppm` + vision／VLM。helper：`uv run python scripts/docling-pdf.py`（模型固定於 `models/docling/`，見下方 **前置（安裝）**）。
 
 ### 本檔與 visual-source-conversion 分工
 
@@ -77,7 +77,7 @@ mv "/tmp/<base-slug>-page-05.png" "raw/assets/<base-slug>/p05.png"
 或由 helper 僅匯出視覺閘候選頁：
 
 ```bash
-python scripts/docling-pdf.py "<path>.pdf" --export-vision-assets
+uv run python scripts/docling-pdf.py "<path>.pdf" --export-vision-assets
 ```
 
 **各產物引用路徑**
@@ -115,14 +115,36 @@ PDF
 | **資訊圖頁** | 架構圖、流程圖、對照表、KPI；或文字層極短 | Docling 保留文字；**另** `pdftoppm` + vision／VLM |
 | **掃描型** | 幾乎無可抽取文字 | Docling OCR 優先；不足再 vision；標 Limitations |
 
-**前置**：`uv sync --group pdf`（見根目錄 `pyproject.toml`）。需已安裝 [uv](https://docs.astral.sh/uv/)。建議 Python **3.12**（`.python-version`）；範圍 `>=3.10,<3.14`。
+**前置（安裝）**
+
+需已安裝 [uv](https://docs.astral.sh/uv/)。建議 Python **3.12**（`.python-version`）；範圍 `>=3.10,<3.14`。另需系統工具：`pdfinfo`／`pdftotext`／`pdftoppm`（poppler）；大圖偵測建議有 `pdfimages`。
+
+```bash
+# 1) Python 依賴（Docling／torch）
+uv sync --group pdf
+
+# 2) Docling 預設模型組 → 固定目錄 models/docling/（已 gitignore；約 1.2GB）
+#    含：layout、tableformer、code_formula、picture_classifier、rapidocr
+#    勿只傳 rapidocr，否則缺 layout／tableformer，轉換會失敗或重下到 ~/.cache
+uv run docling-tools models download -o models/docling
+
+# 3) 確認 helper
+uv run python scripts/docling-pdf.py --help
+```
+
+| 項目 | 說明 |
+|------|------|
+| **模型目錄** | `models/docling/`（repo 相對；**不進 Git**） |
+| **覆寫路徑** | 環境變數 `DOCLING_ARTIFACTS_PATH`（須含 `RapidOcr/`、`docling-project--docling-layout-heron/`、`docling-project--docling-models/` 等） |
+| **下載來源** | RapidOCR 權重來自 **ModelScope**；layout／tableformer 等來自 **Hugging Face**（`docling-project/*`）。上游無「全部改走 HF」開關 |
+| **CLI** | 請用 `uv run docling-tools ...`；直接打 `docling-tools` 常因 PATH 找不到而失敗 |
 
 | 平台 | torch | 說明 |
 |------|-------|------|
-| **Intel macOS (x86_64)** | **`torch==2.2.2`**（PyTorch 最後支援版）+ `numpy<2` + `transformers<5` | **不需要 GPU**；CPU 可跑，首次會下載模型較慢 |
+| **Intel macOS (x86_64)** | **`torch==2.2.2`**（PyTorch 最後支援版）+ `numpy<2` + `transformers<5` | **不需要 GPU**；CPU 可跑 |
 | **Apple Silicon／Linux** | 可用 `torch>=2.4` | 有 GPU／MPS 會更快，非必須 |
 
-若 Docling 仍失敗，`scripts/docling-pdf.py` 會 **自動後備** 為逐頁 `pdftotext`（stdout `engine: pdftotext-fallback`）；仍須對視覺閘頁跑 vision。另需 `pdfinfo`／`pdftotext`／`pdftoppm`（poppler）；大圖偵測建議有 `pdfimages`。
+`scripts/docling-pdf.py` 以 `artifacts_path=models/docling` 呼叫 Docling；缺模型時會提示上述下載指令。若 Docling 仍失敗，會 **自動後備** 為逐頁 `pdftotext`（stdout `engine: pdftotext-fallback`）；仍須對視覺閘頁跑 vision。
 
 ---
 
@@ -144,13 +166,13 @@ cp "<path>.pdf" "raw/originals/<原件檔名>.pdf"
 
 ```bash
 # 初稿 + 分流 JSON（stdout）；draft 預設寫入 /tmp/<base-slug>-docling-draft.md
-python scripts/docling-pdf.py "<path>.pdf" --base-slug "<base-slug>"
+uv run python scripts/docling-pdf.py "<path>.pdf" --base-slug "<base-slug>"
 
 # 僅看哪些頁需 vision（不跑 Docling）
-python scripts/docling-pdf.py "<path>.pdf" --triage-only
+uv run python scripts/docling-pdf.py "<path>.pdf" --triage-only
 
 # 部分頁
-python scripts/docling-pdf.py "<path>.pdf" --page-from 1 --page-to 5
+uv run python scripts/docling-pdf.py "<path>.pdf" --page-from 1 --page-to 5
 ```
 
 腳本會：
@@ -177,7 +199,7 @@ python scripts/docling-pdf.py "<path>.pdf" --page-from 1 --page-to 5
 
 ```bash
 # 只匯出 triage 候選頁 → raw/assets/<base-slug>/p<NN>.png
-python scripts/docling-pdf.py "<path>.pdf" --base-slug "<base-slug>" --export-vision-assets --triage-only
+uv run python scripts/docling-pdf.py "<path>.pdf" --base-slug "<base-slug>" --export-vision-assets --triage-only
 
 # 或手動單頁
 pdftoppm -f 5 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
@@ -254,7 +276,8 @@ pdftoppm -f 5 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
 | 部分 ingest 卻用全檔 `<archive-slug>` | slug 加 `-頁<start>至<end>` |
 | 把 wiki 摘要貼進 `raw/sources/` | 歸檔詳盡、wiki 摘要分離 |
 | 未安裝 docling／相容 torch 就略過轉檔 | `uv sync --group pdf`（Intel Mac 勿強裝 torch≥2.4；見 `pyproject.toml`） |
-| RapidOCR 模型找不到／又下載到 `~/.cache` | 固定目錄：`uv run docling-tools models download rapidocr -o models/docling`；helper 預設讀此路徑（`DOCLING_ARTIFACTS_PATH` 可覆寫） |
+| 只下 RapidOCR、缺 layout／tableformer | 下完整預設組：`uv run docling-tools models download -o models/docling`（勿只傳 `rapidocr`） |
+| RapidOCR／Docling 模型找不到／又下載到 `~/.cache` | 固定目錄同上；helper 預設讀 `models/docling/`（`DOCLING_ARTIFACTS_PATH` 可覆寫） |
 
 ---
 
