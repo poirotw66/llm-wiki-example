@@ -144,6 +144,14 @@ def check_visual(err: list[str]) -> None:
                 None,
             )
         if page is None:
+            # Partial ingest: archive-slug may be `<base-slug>-頁N至M` while
+            # assets stay under `<base-slug>/`.
+            marker = f"raw/assets/{slug}/"
+            page = next(
+                (p for p in sources if marker in p.read_text(encoding="utf-8")),
+                None,
+            )
+        if page is None:
             err.append(f"visual assets without wiki source: raw/assets/{slug}/")
             continue
         text = page.read_text(encoding="utf-8")
