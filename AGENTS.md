@@ -384,7 +384,7 @@ source_count: 1
 * **一律**先將輸入原件複製至 `raw/originals/`（**含 Markdown**）。
 * 非 Markdown 或含不可讀視覺之來源 → 轉 **結構化 Markdown** 後寫入 `raw/sources/`（**詳盡還原稿**，見 **docs/visual-source-conversion.md**）；純 MD 輸入亦須另寫 canonical 至 `raw/sources/`（可清理／補強，不可省略 originals）。
 * 支援類型：`.md`、`.txt`、`.docx`、`.pdf`、`.ppt`/`.pptx`、`.xlsx`、常見圖片格式（見 ingest-pipeline 表）。
-* 含流程圖、架構圖、截圖、ER、掃描頁等 → 依 [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md)；資產入 `raw/assets/`。**PDF** 預設 [Docling](https://github.com/docling-project/docling)（`scripts/docling-pdf.py`）→ 結構化初稿；**僅**資訊圖／文字層極短頁再 vision／VLM（見 [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md)）。**文字層極短但頁面有架構圖時，必須 vision 寫層／節點盤點，禁止只抄標題。**
+* 含流程圖、架構圖、截圖、ER、掃描頁等 → 依 [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md)；資產入 `raw/assets/`。**PDF** 預設 [Docling](https://github.com/docling-project/docling)（`scripts/docling-pdf.py`）→ 結構化初稿；**僅**資訊圖／文字層極短頁再 vision／VLM（見 [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md)）。**文字層極短但頁面有架構圖時，必須 vision 寫層／節點盤點，禁止只抄標題。** Visual Evidence **就地**寫在該頁／該節下，**禁止**文末彙整所有圖。
 * 無資訊性視覺 → log 或歸檔稿註明「視覺轉換閘：未適用」。
 * 視覺無法辨識 → 保留資產（若可）、標 `（未知）`、寫入 **Limitations / Gaps**。
 * 資產路徑為 **`raw/assets/<base-slug>/p<NN>.png`**（見 **docs/pdf-ingest-sop.md**）；頁碼須與「來源位置」一致；修訂歸檔時 **另建新檔**（如 `YYYYMMDD_<base-slug>.md`），勿改寫既有 `raw/sources/`。
@@ -534,6 +534,7 @@ tags: ["faq"]
 * **斷鏈**（`/path.md` 目標不存在於 `wiki/`）
 * **`/path.md` 根路徑連結**（在嵌於 repo 的 `wiki/` 內會斷鏈；應改相對路徑）
 * **視覺資產缺口**：`raw/assets/` 有對應資產，但 `wiki/sources/*` 缺 **`## Visual Assets`**、缺 `![]()` embed，或 embed 路徑與 `raw/assets/<base-slug>/p<NN>.png` 不一致
+* **文末彙整 Visual Evidence**：canonical 歸檔把全部資產 embed 堆在單一 `## Visual Evidence`（應就地放置；見 **docs/visual-source-conversion.md**）
 
 輸出 → `wiki/lint/`
 

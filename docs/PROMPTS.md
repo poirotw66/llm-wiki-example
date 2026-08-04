@@ -15,10 +15,10 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 0. 決定本次 `wiki/log.md` title 後，執行 `python3 scripts/wiki-usage.py start ingest --title "<title>"`。
 1. 讀取指定來源（路徑、`raw/inbox/` 或批次）；未提供時向使用者索取。
 2. **Detect／Triage**：副檔名、是否需轉 Markdown、是否含資訊性視覺（見 ingest-pipeline 支援類型表）。
-3. 必要時轉為結構化 Markdown。**PDF** 依 [**docs/pdf-ingest-sop.md**](./pdf-ingest-sop.md)（含 **前置（安裝）**：`uv sync --group pdf` + `uv run docling-tools models download -o models/docling`）：**Docling 預設**（`uv run python scripts/docling-pdf.py`，模型在 `models/docling/`）→ 結構化 MD 初稿；頁級分流後，文字／表格夠則直入歸檔；**僅**架構圖／流程圖／對照表／文字層極短頁再 `pdftoppm` + vision／VLM（資產 **`raw/assets/<base-slug>/p<NN>.png`**）。含視覺則依 [**docs/visual-source-conversion.md**](./visual-source-conversion.md)。**硬閘**：資訊圖頁禁止只抄標題；須寫「層／節點盤點」+ Visual Evidence；資產頁碼須與來源標註一致。
+3. 必要時轉為結構化 Markdown。**PDF** 依 [**docs/pdf-ingest-sop.md**](./pdf-ingest-sop.md)（含 **前置（安裝）**：`uv sync --group pdf` + `uv run docling-tools models download -o models/docling`）：**Docling 預設**（`uv run python scripts/docling-pdf.py`，模型在 `models/docling/`）→ 結構化 MD 初稿；頁級分流後，文字／表格夠則直入歸檔；**僅**架構圖／流程圖／對照表／文字層極短頁再匯出圖（優先 Docling 內嵌／裁切，否則 `pdftoppm`）+ vision／VLM（資產 **`raw/assets/<base-slug>/p<NN>.png`**）。含視覺則依 [**docs/visual-source-conversion.md**](./visual-source-conversion.md)。**硬閘**：資訊圖頁禁止只抄標題；須寫「層／節點盤點」+ Visual Evidence；資產頁碼須與來源標註一致。**Vision 防呆**：對每張視覺閘資產，Agent **必須讀圖**，並 **完整套用** [**visual-source-conversion.md → Agent 用提示詞（強制）**](./visual-source-conversion.md#agent-用提示詞強制可複製)（勿改寫成摘要版）；**禁止**「細節以原圖為準／請看原圖」等空殼；Visual Evidence 另須層／節點盤點＋主要資料流（含 `→`）；結束前 `python3 scripts/wiki-lint.py` 不得出現 `weak Visual Evidence`。
 4. **一律** 將輸入原件複製至 `raw/originals/`（**含 Markdown**、PDF、Office、圖片等；新檔；勿改寫既有 `raw/` 檔；保留原始檔名／位元）。
 5. 視覺資產寫入 `raw/assets/`（若適用；PDF 命名見 **pdf-ingest-sop.md**）。
-6. **新增** canonical 歸檔 `raw/sources/<archive-slug>.md`（僅新檔；`<archive-slug>` 見 **pdf-ingest-sop.md**／**okf.md**；修訂另建新檔）。自 `raw/originals/` 轉寫／清理／補強；**不可**以「輸入已是 MD」為由跳過步驟 4。**歸檔稿須盡可能詳盡還原原文，非精簡版**：合併 Docling 初稿與視覺閘補寫；逐頁／逐段；文字／表格頁以 Docling 為主；**資訊圖頁**須 vision／VLM 寫入正文＋Visual Evidence（含 `![]()` embed 原圖）；**禁止**僅抄標題或幾句摘要；歸檔稿可遠長於 wiki 摘要頁。
+6. **新增** canonical 歸檔 `raw/sources/<archive-slug>.md`（僅新檔；`<archive-slug>` 見 **pdf-ingest-sop.md**／**okf.md**；修訂另建新檔）。自 `raw/originals/` 轉寫／清理／補強；**不可**以「輸入已是 MD」為由跳過步驟 4。**歸檔稿須盡可能詳盡還原原文，非精簡版**：合併 Docling 初稿與視覺閘補寫；逐頁／逐段；文字／表格頁以 Docling／`pdftotext` 為主；**資訊圖頁**須 vision／VLM 寫入正文＋Visual Evidence（含 `![]()` embed 原圖）；**就地放置**：每張圖的 Visual Evidence 寫在該頁／該節出現處正下方（見 [visual-source-conversion.md → 放置規則](./visual-source-conversion.md#放置規則強制歸檔稿)）；**禁止**文末單一 `## Visual Evidence` 彙整所有圖；**禁止**僅抄標題、幾句摘要或「細節以原圖為準」；歸檔稿可遠長於 wiki 摘要頁。
 7. 依歸檔稿建立或更新 `wiki/sources/*`（**摘要**，非歸檔全文複製），區塊標題須符合 **來源頁 Schema**（含 **`## Visual Assets`**：有資訊性視覺時 **必須** `![]()` embed `../../raw/assets/<base-slug>/p<NN>.png`）。版型：`docs/templates/page-template-source.md`。
 8. 抽取並更新 `wiki/concepts/*`、`wiki/entities/*`。
 9. 更新相關頁；建立雙向連結（**markdown 相對路徑**；勿用 `/path.md`）。
@@ -61,7 +61,7 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 1. **先執行** `python scripts/wiki-lint.py`；依 stderr 修正後重跑至 exit 0。
 2. 再執行 Agent 深度檢查（見下方清單）。
 
-檢查：矛盾、過時資訊、孤兒頁、缺頁、重複概念、無來源頁、過時頁面、**斷鏈**（相對路徑目標不存在）、**`/path.md` 根路徑**（嵌於 repo 時必斷）、**`[[...]]` 混用**（見 **AGENTS.md** → 連結規則）、**視覺資產缺口**（`raw/assets/<base-slug>/` 有圖但對應 `wiki/sources/*` 缺 **`## Visual Assets`** 或缺 `![]()` embed；或 embed 路徑與 `raw/assets/<base-slug>/p<NN>.png` 不一致）。
+檢查：矛盾、過時資訊、孤兒頁、缺頁、重複概念、無來源頁、過時頁面、**斷鏈**（相對路徑目標不存在）、**`/path.md` 根路徑**（嵌於 repo 時必斷）、**`[[...]]` 混用**（見 **AGENTS.md** → 連結規則）、**視覺資產缺口**（`raw/assets/<base-slug>/` 有圖但對應 `wiki/sources/*` 缺 **`## Visual Assets`** 或缺 `![]()` embed；或 embed 路徑與 `raw/assets/<base-slug>/p<NN>.png` 不一致）、**空殼 Visual Evidence**（canonical `raw/sources/*` 出現「細節以原圖為準」等禁句，或缺層／節點盤點／資料流 — `wiki-lint` 報 `weak Visual Evidence`）、**文末彙整 Visual Evidence**（全部資產 embed 堆在單一 `## Visual Evidence` — 報 `Visual Evidence dumped at end`）。
 
 結果輸出至 `wiki/lint/`，附可執行修正與檔案級引用。**新增或實質變更** lint 產物時，若目錄需露出，更新 `wiki/index.md`（**Overview** 區：連結 + 一行說明）。
 

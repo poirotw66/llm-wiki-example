@@ -221,14 +221,15 @@ stdout 的 `exported_assets[].method`：
 
 ### 5. Vision／VLM 文字化（僅候選頁）
 
-對需視覺閘的每一頁，依 [**visual-source-conversion.md** → **Vision 文字化原則（RAG 導向）**](./visual-source-conversion.md#vision-文字化原則rag-導向) 執行：
+對需視覺閘的每一頁／每一張匯出圖：
 
-1. 讀匯出圖、同頁文字層，以及 Docling 初稿對應段落（初稿可作骨架，**資訊圖不以初稿單獨結案**）。
-2. 將**資訊圖**轉為結構化 Markdown（層／節點盤點）；**忽略裝飾圖**。
-3. 撰寫 Visual Evidence；**每節須含 `![]()` embed 原圖**。
+1. **讀圖**：打開對應 `raw/assets/<base-slug>/p<NN>.png`（或整頁匯出圖）。
+2. **套用提示詞**：完整複製 [**visual-source-conversion.md → Agent 用提示詞（強制）**](./visual-source-conversion.md#agent-用提示詞強制可複製) 執行轉寫（勿改寫成摘要版提示）。
+3. 將產出寫入 `raw/sources/` **該頁／該節正下方**；並補 Visual Evidence（embed、層／節點盤點、主要資料流 `→`）。**禁止**先寫完全文再把所有圖堆到文末 `## Visual Evidence`（見 [visual-source-conversion.md → 放置規則](./visual-source-conversion.md#放置規則強制歸檔稿)）。
 4. 衝突時以圖為準，標 `（推測）`／`（未知）`。
+5. 跑 `python3 scripts/wiki-lint.py`；出現 `weak Visual Evidence` 或 `Visual Evidence dumped at end` 則未完成。
 
-可選：本機 Docling VLM（例 GraniteDocling）代替雲端 vision；品質不足時仍回退 Agent vision。
+可選：本機 Docling VLM 僅作輔助；最終文字仍須符合上述提示詞與硬閘。
 
 ### 6. 寫入歸檔稿
 
@@ -263,10 +264,11 @@ stdout 的 `exported_assets[].method`：
 - [ ] 已跑 `scripts/docling-pdf.py`（或同等 Docling 轉檔）並保留／合併初稿
 - [ ] 每個處理頁有 `### 第 N 頁`（或等效分節）
 - [ ] 非視覺閘頁未無謂送雲端 vision
-- [ ] 視覺閘頁資產在 `raw/assets/<base-slug>/p<NN>.png`，且有 Visual Evidence + `![]()` embed
+- [ ] 視覺閘頁資產在 `raw/assets/<base-slug>/p<NN>.png`，且有 Visual Evidence + `![]()` embed，且 **就地**放在該頁／該節下（非文末總庫）
 - [ ] `wiki/sources/*` 含 **`## Visual Assets`**（有資訊圖時），embed 路徑正確
 - [ ] 架構圖／對照表已表格化或層級盤點，非僅標題
 - [ ] 符合 [visual-source-conversion.md → Vision 文字化原則](./visual-source-conversion.md#vision-文字化原則rag-導向)
+- [ ] `wiki-lint` 無 `weak Visual Evidence`／`Visual Evidence dumped at end`
 - [ ] 部分 ingest 已標未涵蓋頁
 - [ ] `resource` 使用 `<archive-slug>`，與 `raw/sources/` 檔名一致
 - [ ] 輸入原件已於歸檔成功後清理（步驟 12）
@@ -289,6 +291,8 @@ stdout 的 `exported_assets[].method`：
 | 未安裝 docling／相容 torch 就略過轉檔 | `uv sync --group pdf`（Intel Mac 勿強裝 torch≥2.4；見 `pyproject.toml`） |
 | 只下 RapidOCR、缺 layout／tableformer | 下完整預設組：`uv run docling-tools models download -o models/docling`（勿只傳 `rapidocr`） |
 | RapidOCR／Docling 模型找不到／又下載到 `~/.cache` | 固定目錄同上；helper 預設讀 `models/docling/`（`DOCLING_ARTIFACTS_PATH` 可覆寫） |
+| 圖拆得出來但 Visual Evidence 空殼 | **Agent 必須逐張讀圖**寫層／節點＋資料流；禁止「細節以原圖為準」。`wiki-lint` 會對 canonical 歸檔報 `weak Visual Evidence` |
+| 全文寫完再把所有圖堆在文末 `## Visual Evidence` | **就地**寫在該頁／該節下；`wiki-lint` 報 `Visual Evidence dumped at end` |
 
 ---
 

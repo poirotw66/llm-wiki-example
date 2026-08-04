@@ -26,7 +26,7 @@ description: LLM Wiki Ingest。使用者輸入 /ingest、ingest、歸檔、收�
 
 - **逐頁／逐段**還原：簡報每張投影片一節；PDF 保留可抽取文字層與頁碼標記。
 - **圖內資訊寫入正文**：架構圖、流程圖、對照表、KPI 區塊須 vision 文字化（層／節點、箭頭、表格儲格），不可只寫標題。
-- **Visual Evidence**：每頁有資訊性視覺時須有對應區塊；資產 **`raw/assets/<base-slug>/p<NN>.png`**（見 **docs/pdf-ingest-sop.md**），頁碼須一致；歸檔稿與 **`wiki/sources/*` 的 `## Visual Assets`** 須 **`![]()` embed 原圖**（見 **docs/visual-source-conversion.md**）。
+- **Visual Evidence**：**就地**寫在該頁／該節出現處正下方（見 **docs/visual-source-conversion.md → 放置規則**）；資產 **`raw/assets/<base-slug>/p<NN>.png`**（見 **docs/pdf-ingest-sop.md**），頁碼須一致；歸檔稿與 **`wiki/sources/*` 的 `## Visual Assets`** 須 **`![]()` embed 原圖**。**必須逐張讀圖**，並完整套用 **Agent 用提示詞（強制）**；禁止「細節以原圖為準」等空殼；**禁止**文末單一 `## Visual Evidence` 彙整所有圖；Ingest 結束前 `wiki-lint` 不得出現 `weak Visual Evidence` 或 `Visual Evidence dumped at end`。
 - **可長**：歸檔稿允許遠長於 `wiki/sources/`；修訂時 **另建新檔**（如 `YYYYMMDD_<base-slug>.md`），勿改寫既有 `raw/`。
 
 ## PDF
