@@ -112,10 +112,12 @@ pyproject.toml  uv.lock  .python-version
 ```bash
 # 安裝 uv：https://docs.astral.sh/uv/getting-started/installation/
 uv sync --group pdf
+# RapidOCR 模型固定放在 models/docling/（已 gitignore；約 100MB）
+uv run docling-tools models download rapidocr -o models/docling
 uv run python scripts/docling-pdf.py --help
 ```
 
-建議 Python：**3.12**（`.python-version`）；範圍 `>=3.10,<3.14`。Intel Mac 之 torch 鎖定見 `pyproject.toml`。
+`scripts/docling-pdf.py` 預設讀 `models/docling/`；可用環境變數 `DOCLING_ARTIFACTS_PATH` 覆寫。建議 Python：**3.12**（`.python-version`）；範圍 `>=3.10,<3.14`。Intel Mac 之 torch 鎖定見 `pyproject.toml`。
 
 ---
 

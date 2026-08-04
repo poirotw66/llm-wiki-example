@@ -5,3 +5,5 @@ wiki/.obsidian/
 .cursor/
 # uv local environment
 .venv/
+# Docling / RapidOCR model weights (download locally; ~100MB+)
+models/docling/

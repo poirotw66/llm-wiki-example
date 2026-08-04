@@ -254,6 +254,7 @@ pdftoppm -f 5 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
 | 部分 ingest 卻用全檔 `<archive-slug>` | slug 加 `-頁<start>至<end>` |
 | 把 wiki 摘要貼進 `raw/sources/` | 歸檔詳盡、wiki 摘要分離 |
 | 未安裝 docling／相容 torch 就略過轉檔 | `uv sync --group pdf`（Intel Mac 勿強裝 torch≥2.4；見 `pyproject.toml`） |
+| RapidOCR 模型找不到／又下載到 `~/.cache` | 固定目錄：`uv run docling-tools models download rapidocr -o models/docling`；helper 預設讀此路徑（`DOCLING_ARTIFACTS_PATH` 可覆寫） |
 
 ---
 

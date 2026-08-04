@@ -16,6 +16,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# Fixed Docling artifacts dir (contains RapidOcr/). Override with DOCLING_ARTIFACTS_PATH.
+DEFAULT_DOCLING_ARTIFACTS = ROOT / "models" / "docling"
 DEFAULT_CHAR_THRESHOLD = 200
 DEFAULT_IMAGE_AREA = 80_000
 VISION_KEYWORDS = (
@@ -193,16 +195,42 @@ def triage_pdf(
     ]
 
 
+def resolve_docling_artifacts() -> Path:
+    """Return artifacts_path parent that must contain RapidOcr/."""
+    import os
+
+    raw = os.environ.get("DOCLING_ARTIFACTS_PATH")
+    if raw:
+        return Path(raw).expanduser().resolve()
+    return DEFAULT_DOCLING_ARTIFACTS.resolve()
+
+
 def convert_with_docling(pdf: Path, page_from: int, page_to: int) -> str:
     try:
-        from docling.document_converter import DocumentConverter
+        from docling.datamodel.base_models import InputFormat
+        from docling.datamodel.pipeline_options import PdfPipelineOptions
+        from docling.document_converter import DocumentConverter, PdfFormatOption
     except ImportError as error:
         raise RuntimeError(
             "docling is not installed; run: uv sync --group pdf"
         ) from error
 
+    artifacts = resolve_docling_artifacts()
+    rapidocr_dir = artifacts / "RapidOcr"
+    if not rapidocr_dir.is_dir():
+        raise RuntimeError(
+            f"Docling RapidOCR models missing at {rapidocr_dir}. "
+            "Download once with: "
+            f"uv run docling-tools models download rapidocr -o {artifacts}"
+        )
+
     try:
-        converter = DocumentConverter()
+        pipeline_options = PdfPipelineOptions(artifacts_path=str(artifacts))
+        converter = DocumentConverter(
+            format_options={
+                InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
+            }
+        )
         result = converter.convert(str(pdf), page_range=(page_from, page_to))
         return result.document.export_to_markdown()
     except Exception as error:
