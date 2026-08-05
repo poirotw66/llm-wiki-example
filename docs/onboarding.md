@@ -7,7 +7,8 @@
 - OKF 對照：[docs/okf.md](./okf.md)
 - Agent 提示詞：[docs/PROMPTS.md](./PROMPTS.md)
 - 視覺轉換：[visual-source-conversion.md](./visual-source-conversion.md)
-- PDF 轉譯 SOP：[pdf-ingest-sop.md](./pdf-ingest-sop.md)（含 **前置（安裝）**：`uv sync --group pdf` + 模型下載至 `models/docling/`）
+- PDF 轉譯 SOP：[pdf-ingest-sop.md](./pdf-ingest-sop.md)（含 **前置（安裝）**：`uv sync --group pdf` + 模型下載至 `models/docling/` + Poppler）
+- 初始化安裝建議指令：[README.md → 初始化安裝](../README.md#初始化安裝建議含-pdf-ingest)
 - Skill 入口：[skills/llm-wiki-example/](../skills/llm-wiki-example/SKILL.md)
 
 ---
@@ -18,7 +19,27 @@
 2. **不要**在共用的 `llm-wiki-example` 上寫部門知識。
 3. 編輯 `wiki/index.md` 的 **Overview**（部門名稱、範圍、維護方式）。
 4. 先指定資料 owner、分類／PII 規則與核准私有 repo；依 [data-governance.md](./data-governance.md) 完成 Git 准入與例外流程設定。
-5. 若會 ingest PDF：依 [pdf-ingest-sop.md](./pdf-ingest-sop.md) 安裝 PDF 依賴與 Docling 預設模型（約 1.2GB，不進 Git）。
+5. 若會 ingest PDF：完成下方 **PDF 前置（與 README 對齊）**（約 1.2GB 模型，不進 Git）。
+
+### PDF 前置（與 README 對齊）
+
+完整指令見 [README 初始化安裝](../README.md#初始化安裝建議含-pdf-ingest)。摘要：
+
+```bash
+uv sync --group pdf
+uv run docling-tools models download -o models/docling
+# Poppler：macOS brew / Ubuntu apt / Windows winget（oschwartz10612.Poppler）
+uv run python scripts/docling-pdf.py --help
+pdfinfo -v
+```
+
+Windows 注意：用 `uv run python`（勿依賴 Store 的 `python3`）；安裝 Poppler 後**重開終端**讓 PATH 生效。
+
+### 輸入偏好（文字層優先）
+
+- **優先**：可選取文字的 PDF、Markdown、Word／簡報（文字層完整 → Docling／文字直入，vision 只打資訊圖頁）。
+- **避免當首選**：純圖／掃描／整頁點陣簡報（文字層 0 → 幾乎全頁 vision，成本高、較易空殼需重派）。
+- 若只有純圖 PDF，仍可 ingest，但請預期較久，並依 [visual-source-conversion.md](./visual-source-conversion.md) 做 vision 驗收／自動重派。
 
 ---
 
@@ -93,6 +114,17 @@
 > 依 **docs/PROMPTS.md** Ingest 提示詞處理 `<path>`：triage → `raw/sources/` → `wiki/` → `index` + `log`。
 
 或：`/ingest <path>` · `/ingest raw/inbox/某檔.pdf`
+
+---
+
+## 回到範本空白（可選）
+
+若要清除 knowledge／raw 歸檔並還原空白目錄（**保留** `wiki/lint/`）：
+
+```bash
+uv run python scripts/wiki-reset.py          # dry-run
+uv run python scripts/wiki-reset.py --confirm
+```
 
 ---
 

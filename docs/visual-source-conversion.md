@@ -120,10 +120,16 @@ PDF 執行時機與 CLI 見 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)（Docli
 
 #### 主 Agent 合併規則
 
-1. 等齊所有 subagent 結果（缺頁／空殼／無 `→`／無層／節點 → **重派 subagent**，主 Agent 不得改以自行讀圖補做）。
-2. 將各區塊 **就地插入** 對應 `### 第 N 頁`／該節正文正下方（見 **放置規則**）。
-3. `wiki-lint` 不得出現 `weak Visual Evidence` 或 `Visual Evidence dumped at end`。
-4. `wiki/log.md` triage 摘要註明：`vision_via: subagent`、並行度、視覺閘頁清單。
+1. 等齊所有 subagent 結果後，先做 **驗收閘**（任一失敗 → 該頁／該圖 **自動重派**，不得略過）：
+   - 缺頁（視覺閘清單有頁碼但無回傳區塊）
+   - 空殼（「細節以原圖為準／請看原圖」等禁句，或幾乎只有標題）
+   - 缺 **層／節點盤點**
+   - 缺 **主要資料流** 或資料流無 `→`
+   - 缺 `![]()` embed 或資產路徑／頁碼不一致
+2. **重派上限**：同一張圖最多再派 **2** 次（含首次共 3 次嘗試）。仍失敗 → **停止合併該批**，向使用者報告頁碼與失敗原因；**禁止**主 Agent 自行 `Read` 圖片補做，**禁止**用空殼填檔。
+3. 通過驗收後，將各區塊 **就地插入** 對應 `### 第 N 頁`／該節正文正下方（見 **放置規則**）。
+4. `wiki-lint` 不得出現 `weak Visual Evidence` 或 `Visual Evidence dumped at end`。
+5. `wiki/log.md` triage 摘要註明：`vision_via: subagent`、並行度、視覺閘頁清單；若有重派，加 `vision_retries: {頁碼: 次數}`。
 
 ### 放置規則（強制，歸檔稿）
 

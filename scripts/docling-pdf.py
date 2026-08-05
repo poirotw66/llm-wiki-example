@@ -15,6 +15,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -22,6 +23,16 @@ from typing import Any
 from docling_pdf_assets import images_scale_for_dpi, pick_best_image
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def os_temp_dir() -> Path:
+    """Return the OS temp directory (portable; do not hard-code /tmp)."""
+    return Path(tempfile.gettempdir())
+
+
+def temp_path(name: str) -> Path:
+    """Build a path under the OS temp directory."""
+    return os_temp_dir() / name
 # Fixed Docling artifacts dir (contains RapidOcr/). Override with DOCLING_ARTIFACTS_PATH.
 DEFAULT_DOCLING_ARTIFACTS = ROOT / "models" / "docling"
 DEFAULT_CHAR_THRESHOLD = 200
@@ -77,7 +88,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--out",
-        help="Draft Markdown output path; default = /tmp/<base-slug>-docling-draft.md",
+        help=(
+            "Draft Markdown output path; "
+            "default = <OS-temp>/<base-slug>-docling-draft.md"
+        ),
     )
     parser.add_argument("--page-from", type=int, default=1, help="First page (1-based)")
     parser.add_argument("--page-to", type=int, default=0, help="Last page; 0 = last page")
@@ -345,7 +359,7 @@ def export_page_via_pdftoppm(
     base_slug: str,
 ) -> ExportedAsset:
     require_cmd("pdftoppm")
-    prefix = Path("/tmp") / f"{base_slug}-vision-{page}"
+    prefix = temp_path(f"{base_slug}-vision-{page}")
     subprocess.check_call(
         [
             "pdftoppm",
@@ -600,7 +614,7 @@ def main() -> int:
         out = (
             resolve_path(args.out)
             if args.out
-            else Path(f"/tmp/{base_slug}-docling-draft.md")
+            else temp_path(f"{base_slug}-docling-draft.md")
         )
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(

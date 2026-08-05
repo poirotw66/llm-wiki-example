@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 from pathlib import Path
 
 import pytest
@@ -12,6 +13,33 @@ SPEC = importlib.util.spec_from_file_location("ingest_cleanup", SCRIPT)
 assert SPEC and SPEC.loader
 cleanup = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(cleanup)
+
+
+def can_create_symlink(directory: Path) -> bool:
+    """Return True when the host allows creating a file symlink in directory.
+
+    Unprivileged Windows often raises WinError 1314 (privilege not held).
+    """
+    if not hasattr(os, "symlink"):
+        return False
+    source = directory / "_symlink_probe_src"
+    link = directory / "_symlink_probe_link"
+    source.write_text("probe", encoding="utf-8")
+    try:
+        link.symlink_to(source)
+    except OSError:
+        return False
+    finally:
+        if link.exists() or link.is_symlink():
+            link.unlink()
+        if source.exists():
+            source.unlink()
+    return True
+
+
+def require_symlink_support(directory: Path) -> None:
+    if not can_create_symlink(directory):
+        pytest.skip("symlink creation unavailable (common on unprivileged Windows)")
 
 
 @pytest.fixture()
@@ -81,6 +109,7 @@ def test_requires_both_archive_roles_and_identical_original(repo: Path) -> None:
 
 
 def test_refuses_symlink_input_and_archive(repo: Path) -> None:
+    require_symlink_support(repo / "raw/inbox")
     input_path, original, canonical = archived_input(repo)
     linked_input = repo / "raw/inbox" / "linked.md"
     linked_input.symlink_to(input_path)

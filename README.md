@@ -17,6 +17,7 @@
 | PDF 初始化安裝 | 見下方 **初始化安裝**（`uv sync --group pdf`、Docling 模型、Poppler）；詳見 [docs/pdf-ingest-sop.md](docs/pdf-ingest-sop.md) |
 | Wiki lint | `uv run --group test python3 scripts/wiki-lint.py` |
 | Ingest 清理 | `python3 scripts/ingest-cleanup.py <input> --archive raw/originals/<original> --archive raw/sources/<slug>.md`（先 dry-run，確認後加 `--confirm`） |
+| Wiki 重置為空白 | `uv run python scripts/wiki-reset.py`（dry-run）→ `--confirm`（保留 `wiki/lint/`；append log） |
 | PDF Docling helper | `uv run python scripts/docling-pdf.py ...`（可 `--page-from`／`--page-to` 部分頁） |
 | Skill token 報表 | `python3 scripts/wiki-usage.py report --by skill`（[docs/skill-usage.md](docs/skill-usage.md)） |
 | 頁面版型 | [**docs/templates/**](docs/templates/) |
@@ -41,7 +42,7 @@ docs/                   # 支援文件（非 wiki 知識本體）
   PROMPTS.md  ingest-pipeline.md  pdf-ingest-sop.md
   visual-source-conversion.md  onboarding.md  okf.md
   data-governance.md  skill-usage.md  templates/
-scripts/                # wiki-lint、ingest-cleanup、docling-pdf、wiki-usage
+scripts/                # wiki-lint、ingest-cleanup、wiki-reset、docling-pdf、wiki-usage
 .github/workflows/      # wiki-quality CI
 models/docling/         # Docling 預設模型（本機下載；已 gitignore；約 1.2GB）
 config/                 # skill-usage 費率等設定
@@ -64,6 +65,8 @@ pyproject.toml  uv.lock  .python-version
 | **`wiki/sources/`** | OKF 來源**摘要頁**（非歸檔全文） |
 
 成功歸檔後會刪除 `raw/inbox/` 或 repo 根目錄的輸入副本（原件已在 `raw/originals/`）。
+
+**輸入偏好**：優先提供**可選取文字**的 PDF／Markdown／Office；純圖或掃描簡報會觸發大量 vision，成本與空殼風險較高（仍可 ingest，見 [visual-source-conversion.md](docs/visual-source-conversion.md) 驗收／自動重派）。
 
 ### Ingest 檔案流程
 
@@ -161,6 +164,8 @@ pdfinfo -v
 | Python | **3.12** 建議（`.python-version`）；`>=3.10,<3.14` |
 | 平台 | **Apple Silicon**（含 M 系列）：`torch>=2.4`，可用 **MPS**；**Intel Mac**：torch 鎖定 `2.2.2`（見 `pyproject.toml`）；**Windows**：CPU 可跑，首次 `uv sync --group pdf` 與模型下載較久 |
 | 部分頁 | `uv run python scripts/docling-pdf.py <pdf> --page-from 1 --page-to 5 --export-vision-assets` |
+| 輸入偏好 | **可選文字** PDF／MD／Office 優先；純圖簡報會全頁 vision |
+| 回到空白 | `uv run python scripts/wiki-reset.py` → 確認後 `--confirm`（見 [onboarding](docs/onboarding.md#回到範本空白可選)） |
 
 ---
 
@@ -283,7 +288,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | [**skills/**](skills/) | 薄 Skill（**唯一 Git 來源**） |
 | [**pyproject.toml**](pyproject.toml)／[**uv.lock**](uv.lock) | uv 依賴；PDF 組見 `uv sync --group pdf` + 模型下載 |
 | [**config/**](config/) | usage 費率等設定 |
-| [**scripts/**](scripts/) | lint、cleanup、docling-pdf、wiki-usage |
+| [**scripts/**](scripts/) | lint、cleanup、wiki-reset、docling-pdf、wiki-usage |
 | [**.github/workflows/wiki-quality.yml**](.github/workflows/wiki-quality.yml) | PR／push：pytest + wiki-lint |
 
 ---

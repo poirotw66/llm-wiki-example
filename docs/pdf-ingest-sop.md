@@ -70,8 +70,9 @@ raw/sources/260701-金融業生成式AI平台工程-Justin-頁1至5.md
 
 ```bash
 mkdir -p "raw/assets/<base-slug>"
-# 將 /tmp/<base-slug>-page-05.png → raw/assets/<base-slug>/p05.png
-mv "/tmp/<base-slug>-page-05.png" "raw/assets/<base-slug>/p05.png"
+# 將 <OS-temp>/<base-slug>-page-05.png → raw/assets/<base-slug>/p05.png
+# （Windows／macOS／Linux：用系統暫存目錄，勿寫死 /tmp）
+mv "<OS-temp>/<base-slug>-page-05.png" "raw/assets/<base-slug>/p05.png"
 ```
 
 或由 helper 僅匯出視覺閘候選頁：
@@ -165,7 +166,8 @@ cp "<path>.pdf" "raw/originals/<原件檔名>.pdf"
 ### 2. Docling 初稿 + 頁級分流
 
 ```bash
-# 初稿 + 分流 JSON（stdout）；draft 預設寫入 /tmp/<base-slug>-docling-draft.md
+# 初稿 + 分流 JSON（stdout）；draft 預設寫入 <OS-temp>/<base-slug>-docling-draft.md
+# （scripts/docling-pdf.py 使用 tempfile.gettempdir()，Windows 可用）
 uv run python scripts/docling-pdf.py "<path>.pdf" --base-slug "<base-slug>"
 
 # 僅看哪些頁需 vision（不跑 Docling）
@@ -206,8 +208,8 @@ uv run python scripts/docling-pdf.py "<path>.pdf" --base-slug "<base-slug>" --ex
 uv run python scripts/docling-pdf.py "<path>.pdf" --export-vision-assets --force-page-render --triage-only
 
 # 或手動單頁
-pdftoppm -f 5 -l 5 -png -r 144 "<path>.pdf" "/tmp/<base-slug>-page"
-# …-05.png → raw/assets/<base-slug>/p05.png
+pdftoppm -f 5 -l 5 -png -r 144 "<path>.pdf" "<OS-temp>/<base-slug>-page"
+# …-05.png → raw/assets/<base-slug>/p05.png（OS-temp = tempfile.gettempdir()）
 ```
 
 stdout 的 `exported_assets[].method`：
@@ -296,6 +298,8 @@ stdout 的 `exported_assets[].method`：
 | 圖拆得出來但 Visual Evidence 空殼 | **Agent 必須逐張讀圖**寫層／節點＋資料流；禁止「細節以原圖為準」。`wiki-lint` 會對 canonical 歸檔報 `weak Visual Evidence` |
 | 全文寫完再把所有圖堆在文末 `## Visual Evidence` | **就地**寫在該頁／該節下；`wiki-lint` 報 `Visual Evidence dumped at end` |
 | 主 Agent 自行 `Read` 圖片做 Vision | **一律**派 subagent 讀圖（見 visual-source-conversion → 平行 Vision 編排） |
+| 缺頁／空殼仍繼續合併 | 合併前驗收閘失敗須 **自動重派**（同圖最多再 2 次）；見 visual-source-conversion → 主 Agent 合併規則 |
+| 硬編碼 `/tmp/...`（Windows 失敗） | `scripts/docling-pdf.py` 使用 `tempfile.gettempdir()` |
 
 ---
 
