@@ -14,7 +14,7 @@
 | 第一輪 Ingest | [**docs/onboarding.md**](docs/onboarding.md) |
 | PDF 轉譯 SOP | [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) |
 | 視覺閘／Visual Evidence | [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md)（就地放置；**讀圖一律 subagent**） |
-| PDF 依賴（uv） | `uv sync --group pdf` 後 `uv run docling-tools models download -o models/docling`（詳見 [docs/pdf-ingest-sop.md](docs/pdf-ingest-sop.md)） |
+| PDF 初始化安裝 | 見下方 **初始化安裝**（`uv sync --group pdf`、Docling 模型、Poppler）；詳見 [docs/pdf-ingest-sop.md](docs/pdf-ingest-sop.md) |
 | Wiki lint | `uv run --group test python3 scripts/wiki-lint.py` |
 | Ingest 清理 | `python3 scripts/ingest-cleanup.py <input> --archive raw/originals/<original> --archive raw/sources/<slug>.md`（先 dry-run，確認後加 `--confirm`） |
 | PDF Docling helper | `uv run python scripts/docling-pdf.py ...`（可 `--page-from`／`--page-to` 部分頁） |
@@ -127,25 +127,39 @@ pyproject.toml  uv.lock  .python-version
 
 細節：[docs/visual-source-conversion.md](docs/visual-source-conversion.md)、[docs/pdf-ingest-sop.md](docs/pdf-ingest-sop.md)。
 
-### Python 依賴與 Docling 模型（uv）
+### 初始化安裝（建議；含 PDF Ingest）
 
-可選 PDF 路徑（Docling／torch）以 [uv](https://docs.astral.sh/uv/) 管理。核心 wiki 腳本（lint、cleanup、usage）**不必**安裝 PDF 組。完整前置（poppler、平台 torch 表、常見錯誤）見 [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) → **前置（安裝）**。
+核心 wiki 腳本（lint、cleanup、usage）**不必**裝 PDF 組。若會 `/ingest` PDF，請在本機**一次備齊**下列前置（之後可跳過）。細節與常見錯誤見 [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) → **前置（安裝）**。
 
 ```bash
-# 安裝 uv：https://docs.astral.sh/uv/getting-started/installation/
+# 0) 安裝 uv（若尚未安裝）
+#    https://docs.astral.sh/uv/getting-started/installation/
+
+# 1) Python 依賴（Docling／torch）
 uv sync --group pdf
-# 預設模型組（勿只傳 rapidocr）→ models/docling/（gitignore；約 1.2GB）
+
+# 2) Docling 預設模型組 → models/docling/（gitignore；約 1.2GB）
+#    勿只傳 rapidocr，否則缺 layout／tableformer
 uv run docling-tools models download -o models/docling
+
+# 3) 系統工具：pdfinfo／pdftotext／pdftoppm（Poppler）
+#    macOS:   brew install poppler
+#    Ubuntu:  sudo apt install poppler-utils
+#    Windows: winget install --id oschwartz10612.Poppler -e
+#             （安裝後重新開一個終端機，讓 PATH 生效）
+
+# 4) 確認 helper
 uv run python scripts/docling-pdf.py --help
+pdfinfo -v
 ```
 
 | 項目 | 說明 |
 |------|------|
 | 模型目錄 | `models/docling/`（`scripts/docling-pdf.py` 預設） |
 | 覆寫 | `DOCLING_ARTIFACTS_PATH` |
-| CLI | 用 `uv run docling-tools ...`（勿直接打 `docling-tools`） |
+| CLI | 用 `uv run docling-tools ...`／`uv run python ...`（勿直接打 `docling-tools`；Windows 上 `python3` 常不可用） |
 | Python | **3.12** 建議（`.python-version`）；`>=3.10,<3.14` |
-| 平台 | **Apple Silicon**（含 M 系列）：`torch>=2.4`，可用 **MPS** 加速 Docling；**Intel Mac**：torch 鎖定 `2.2.2`（見 `pyproject.toml`） |
+| 平台 | **Apple Silicon**（含 M 系列）：`torch>=2.4`，可用 **MPS**；**Intel Mac**：torch 鎖定 `2.2.2`（見 `pyproject.toml`）；**Windows**：CPU 可跑，首次 `uv sync --group pdf` 與模型下載較久 |
 | 部分頁 | `uv run python scripts/docling-pdf.py <pdf> --page-from 1 --page-to 5 --export-vision-assets` |
 
 ---
@@ -158,7 +172,7 @@ uv run python scripts/docling-pdf.py --help
 
 1. **建立部門專用 repo** — **Use this template** 或 fork 後改名；**勿**在本 example 倉寫部門內容。
 2. **客製化** — 編輯 [`wiki/index.md`](wiki/index.md) 的 **Overview**（部門名稱、範圍）；設定資料 owner／分類規則（[data-governance.md](docs/data-governance.md)）；必要時微調 [**AGENTS.md**](AGENTS.md)。
-3. **安裝 Skill 並第一次 Ingest** — 見下方 **npx skills 安裝** 與 [docs/onboarding.md](docs/onboarding.md)；在 Cursor 輸入 **`/ingest <路徑>`**（或把檔案放入 `raw/inbox/` 後 `/ingest raw/inbox`）。
+3. **安裝 Skill 並第一次 Ingest** — 見下方 **npx skills 安裝** 與 [docs/onboarding.md](docs/onboarding.md)。若會 ingest PDF，先完成上方 **初始化安裝（建議；含 PDF Ingest）**。再在 Cursor 輸入 **`/ingest <路徑>`**（或把檔案放入 `raw/inbox/` 後 `/ingest raw/inbox`）。
 
 ### 日常操作
 
@@ -258,7 +272,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | [**docs/data-governance.md**](docs/data-governance.md) | 分類、owner、PII、保存、遮罩、人工核可與 Git 准入 |
 | [**docs/PROMPTS.md**](docs/PROMPTS.md) | Agent 提示詞（**步驟單一來源**） |
 | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) | Ingest 13 步（多模態） |
-| [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) | PDF 轉譯 SOP（安裝前置、`models/docling/`、Docling + 視覺閘、部分頁） |
+| [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) | PDF 轉譯 SOP（安裝前置、`models/docling/`、Docling + 視覺閘、部分頁）；README 有初始化建議指令 |
 | [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md) | Visual Evidence 就地放置、讀圖一律 subagent、強制提示詞 |
 | [**docs/onboarding.md**](docs/onboarding.md) | 第一輪 Ingest |
 | [**docs/skill-usage.md**](docs/skill-usage.md) | Skill token／usage ledger |
