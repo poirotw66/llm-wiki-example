@@ -1,0 +1,36 @@
+name: Wiki quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.32"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: uv sync --locked --group test
+      - name: Run unit tests
+        run: uv run --group test python3 -m pytest
+      - name: Validate knowledge bundle
+        env:
+          WIKI_LINT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ "$WIKI_LINT_BASE" = "0000000000000000000000000000000000000000" ]; then
+            uv run --group test python3 scripts/wiki-lint.py
+          else
+            uv run --group test python3 scripts/wiki-lint.py --base "$WIKI_LINT_BASE"
+          fi

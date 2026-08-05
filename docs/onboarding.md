@@ -17,7 +17,8 @@
 1. 以 **GitHub Template** 或 **fork** 建立新 repo。
 2. **不要**在共用的 `llm-wiki-example` 上寫部門知識。
 3. 編輯 `wiki/index.md` 的 **Overview**（部門名稱、範圍、維護方式）。
-4. 若會 ingest PDF：依 [pdf-ingest-sop.md](./pdf-ingest-sop.md) 安裝 PDF 依賴與 Docling 預設模型（約 1.2GB，不進 Git）。
+4. 先指定資料 owner、分類／PII 規則與核准私有 repo；依 [data-governance.md](./data-governance.md) 完成 Git 准入與例外流程設定。
+5. 若會 ingest PDF：依 [pdf-ingest-sop.md](./pdf-ingest-sop.md) 安裝 PDF 依賴與 Docling 預設模型（約 1.2GB，不進 Git）。
 
 ---
 
@@ -43,11 +44,12 @@
 ## 步驟 A：丟檔與歸檔（`raw/`）
 
 1. （可選）將原件放入 `raw/inbox/`。
-2. Agent 執行 **Detect／Triage**；**PDF** 依 [pdf-ingest-sop.md](./pdf-ingest-sop.md)。**所有輸入**（含 `.md`）先：
+2. Agent 先執行 [資料治理閘](./data-governance.md)：`confidential`／`restricted`、PII、未知 PII、待遮罩或疑似秘密資料，未經人工核可不可寫入 `raw/`、Git 或外部轉檔工具。
+3. Agent 執行 **Detect／Triage**；**PDF** 依 [pdf-ingest-sop.md](./pdf-ingest-sop.md)。**所有已准入輸入**（含 `.md`）先：
    - 原件 → `raw/originals/`（位元副本）
    - 圖片（若有）→ `raw/assets/<base-slug>/p<NN>.png`
    - canonical 正文 → **`raw/sources/<archive-slug>.md`**（新檔；修訂另建新檔）
-3. 歸檔成功後 **刪除** `raw/inbox/` 或 repo 根目錄的輸入副本（原件已在 `raw/originals/`；見 **ingest-pipeline** 步驟 12）。
+4. 歸檔成功後，依 cleanup dry-run／`--confirm` 防呆流程 **刪除** `raw/inbox/` 或 repo 根目錄的輸入副本（原件已在 `raw/originals/`；見 **ingest-pipeline** 步驟 12）。
 
 命名：`<base-slug>`（資產用）、`<archive-slug>`（歸檔檔名與 `resource`）；全檔／部分頁／修訂規則見 **pdf-ingest-sop.md** 與 **AGENTS.md**。
 
@@ -57,9 +59,9 @@
 
 依 [page-template-source.md](./templates/page-template-source.md) 建立 `wiki/sources/<slug>.md`：
 
-- `type: source`、`resource: "<slug>"`
+- `type: source`、`archive_slug: "<slug>"`、`sources`（指向歸檔稿）、`generated`、OKF v0.2 lifecycle 與六個治理欄位
 - Summary、Key Concepts、Entities、Notable Claims、**Visual Assets**（有圖時 embed 原圖）、Limitations / Gaps
-- Citations：`../../raw/sources/<slug>.md`
+- 以 `sources[].resource: "../../raw/sources/<slug>.md"` 與 keyed footnote 記錄 provenance
 - 含視覺時：`## Visual Assets` 須 `![]()` 指向 `../../raw/assets/<base-slug>/p<NN>.png`；詳見 **visual-source-conversion.md**
 
 ---
@@ -100,6 +102,7 @@
 - [ ] `raw/sources/` 有新歸檔，且未就地改寫舊檔
 - [ ] 輸入原件已在 `raw/originals/`（**含** Markdown）
 - [ ] canonical 歸檔稿在 `raw/sources/`
+- [ ] 資料分類、owner、access scope、PII、retention 與 redaction 已人工確認；Git 准入已通過
 - [ ] 每個新 wiki 頁有 frontmatter 與 ≥1 連結
 - [ ] 可驗證敘述有來源引用（相對路徑）
 - [ ] bundle 內連結為 **相對路徑**（勿用 `/path.md`）

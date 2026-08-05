@@ -1,18 +1,19 @@
 # llm-wiki-example（OKF Knowledge Bundle 範本）
 
-供各部門 **fork／GitHub Template** 後自建 wiki 的 **起步 repo**。`wiki/` 為 **[OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) Knowledge Bundle**（**內容刻意留白**，以 `/ingest` 填入）；`raw/` 為不可變歸檔擴充；薄 Skill 見 [`skills/`](skills/)（**Git 追蹤的單一來源**；`.cursor/` 已 gitignore）。
+供各部門 **fork／GitHub Template** 後自建 wiki 的 **起步 repo**。`wiki/` 為 **[OKF v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) Knowledge Bundle**（**內容刻意留白**，以 `/ingest` 填入）；`raw/` 為不可變歸檔擴充；薄 Skill 見 [`skills/`](skills/)（**Git 追蹤的單一來源**；`.cursor/` 已 gitignore）。
 
 | 需求 | 檔案／指令 |
 |------|------------|
 | 規約與五大操作 | [**AGENTS.md**](AGENTS.md) |
 | OKF 對照 | [**docs/okf.md**](docs/okf.md) |
+| 資料分類、PII 與 Git 准入 | [**docs/data-governance.md**](docs/data-governance.md) |
 | Agent 提示詞（步驟單一來源） | [**docs/PROMPTS.md**](docs/PROMPTS.md) |
 | Ingest 13 步管線 | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) |
 | 第一輪 Ingest | [**docs/onboarding.md**](docs/onboarding.md) |
 | PDF 轉譯 SOP | [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) |
 | PDF 依賴（uv） | `uv sync --group pdf` 後 `uv run docling-tools models download -o models/docling`（詳見 [docs/pdf-ingest-sop.md](docs/pdf-ingest-sop.md)） |
 | Wiki lint | `python3 scripts/wiki-lint.py` |
-| Ingest 清理 | `python3 scripts/ingest-cleanup.py ...` |
+| Ingest 清理 | `python3 scripts/ingest-cleanup.py <input> --archive raw/originals/<original> --archive raw/sources/<slug>.md`（先 dry-run，確認後加 `--confirm`） |
 | PDF Docling helper | `uv run python scripts/docling-pdf.py ...` |
 | Skill token 報表 | `python3 scripts/wiki-usage.py report --by skill`（[docs/skill-usage.md](docs/skill-usage.md)） |
 | 頁面版型 | [**docs/templates/**](docs/templates/) |
@@ -48,6 +49,8 @@ pyproject.toml  uv.lock  .python-version
 `.cursor/`（含本機 `skills` 副本）與 `models/docling/` **不進 Git**；見 [`.gitignore`](.gitignore)。
 
 ### `raw/originals/` vs `raw/sources/`
+
+寫入 `raw/` 前仍須通過 [企業資料治理與 Git 准入](docs/data-governance.md)：`confidential`／`restricted`、PII 或未知 PII 預設不得將原件、OCR、截圖或可還原內容提交到 Git。`raw/` 的不可變性不是准入授權。
 
 | 目錄 | 角色 |
 |------|------|
@@ -230,7 +233,8 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | 檔案 | 用途 |
 |------|------|
 | [**AGENTS.md**](AGENTS.md) | OKF 主軸、目錄契約、頁面格式、五大操作 |
-| [**docs/okf.md**](docs/okf.md) | OKF v0.1 對照、合規、匯出／匯入 |
+| [**docs/okf.md**](docs/okf.md) | OKF v0.2 對照、合規、遷移、匯出／匯入 |
+| [**docs/data-governance.md**](docs/data-governance.md) | 分類、owner、PII、保存、遮罩、人工核可與 Git 准入 |
 | [**docs/PROMPTS.md**](docs/PROMPTS.md) | Agent 提示詞（**步驟單一來源**） |
 | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) | Ingest 13 步（多模態） |
 | [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) | PDF 轉譯 SOP（安裝前置、`models/docling/`、Docling + 視覺閘） |

@@ -1,12 +1,14 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
 ---
 
 # Index
 
 ## Overview
 
-- 本 repo **llm-wiki-example** 為各部門可 fork 的 **OKF v0.1 Knowledge Bundle 範本**（見 [docs/okf.md](../docs/okf.md)）。
+- 本 repo **llm-wiki-example** 為各部門可 fork 的 **OKF v0.2 Knowledge Bundle 範本**（見 [docs/okf.md](../docs/okf.md)）。
+- 寫入或分享內容前，須依 [企業資料治理](../docs/data-governance.md) 完成分類、PII、遮罩、owner 與 Git 准入確認。
+- [企業治理與 OKF v0.2 生產化強化](./lint/企業治理與OKF-v0.2強化.md) — 本輪治理、cleanup、schema lint、CI 與遷移驗證摘要。
 - 採用見 [README](../README.md)、[docs/onboarding.md](../docs/onboarding.md)、[SKILL.md](../SKILL.md)。
 - 規約：[AGENTS.md](../AGENTS.md)；提示詞：[docs/PROMPTS.md](../docs/PROMPTS.md)；`wiki/` 導覽：[Wiki README](./README.md)。
 - `wiki/` **刻意留白** — 請以第一份來源執行 `/ingest` 後更新本目錄。

@@ -5,5 +5,6 @@ wiki/.obsidian/
 .cursor/
 # uv local environment
 .venv/
+__pycache__/
 # Docling / RapidOCR model weights (download locally; ~100MB+)
 models/docling/

@@ -20,7 +20,7 @@
 | 術語 | 用途 | 範例 |
 |------|------|------|
 | **`<base-slug>`** | 來源穩定識別名；**資產目錄名**一律用它 | `260701-金融業生成式AI平台工程-Justin` |
-| **`<archive-slug>`** | `raw/sources/` 與 wiki `resource` 的歸檔 slug | 見下方表 |
+| **`<archive-slug>`** | `raw/sources/` 檔名與 wiki `archive_slug` | 見下方表 |
 | **頁碼 `<NN>`** | PDF **實際頁碼**（非投影片邏輯序的重新編號） | 第 5 頁 → `05` |
 
 ### `<archive-slug>` 規則
@@ -55,7 +55,7 @@ raw/assets/<base-slug>/p<NN>.png
 | 用途 | 用哪個 slug |
 |------|-------------|
 | `raw/assets/` **目錄名** | **`<base-slug>`**（固定，不含日期／頁面範圍） |
-| `raw/sources/` 檔名、wiki `resource` | **`<archive-slug>`**（可含 `-頁1至5`、`YYYYMMDD_` 前綴） |
+| `raw/sources/` 檔名、wiki `archive_slug` | **`<archive-slug>`**（可含 `-頁1至5`、`YYYYMMDD_` 前綴） |
 | 部分 ingest 匯出 | 只匯出範圍內頁面，**目錄仍用 `<base-slug>`**，檔名仍用實際 PDF 頁碼（例：處理 1–5 頁 → `p01.png`…`p05.png`） |
 
 **範例**（`base-slug = 260701-金融業生成式AI平台工程-Justin`，ingest 第 1–5 頁）：
@@ -272,7 +272,7 @@ stdout 的 `exported_assets[].method`：
 - [ ] 符合 [visual-source-conversion.md → Vision 文字化原則](./visual-source-conversion.md#vision-文字化原則rag-導向)
 - [ ] `wiki-lint` 無 `weak Visual Evidence`／`Visual Evidence dumped at end`
 - [ ] 部分 ingest 已標未涵蓋頁
-- [ ] `resource` 使用 `<archive-slug>`，與 `raw/sources/` 檔名一致
+- [ ] `archive_slug` 使用 `<archive-slug>`，與 `raw/sources/` 檔名一致；`sources[].resource` 指向該歸檔稿
 - [ ] 輸入原件已於歸檔成功後清理（步驟 12）
 
 ---
@@ -303,5 +303,5 @@ stdout 的 `exported_assets[].method`：
 
 - [visual-source-conversion.md](./visual-source-conversion.md) — 視覺硬閘、Visual Evidence 格式
 - [ingest-pipeline.md](./ingest-pipeline.md) — 13 步管線
-- [okf.md](./okf.md) — `resource` slug 語意
+- [okf.md](./okf.md) — `archive_slug` 與 resource 語意
 - [Docling](https://github.com/docling-project/docling) — 本機文件解析

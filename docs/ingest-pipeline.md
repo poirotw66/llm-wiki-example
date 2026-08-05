@@ -11,6 +11,7 @@
 
 | 合併步驟 | 現行 8 步 | BU 10 步 | Graphify 概念 |
 |----------|-----------|----------|----------------|
+| **0** 資料治理閘 | — | — | 分類、PII、owner、准入與人工核可 |
 | **1** 讀取指定來源 | ① 讀取指定來源 | ① 讀取指定來源／批次 | 指定 `INPUT_PATH` |
 | **2** Detect／Triage | — | ② Triage 檔型與視覺 | `detect`：分類 code／docs／papers／images |
 | **3** 多模態轉 Markdown | — | ③ 轉換＋視覺閘 | 依副檔名 extractor |
@@ -30,6 +31,9 @@
 ## 合併後 13 步（階段 1 標準）
 
 ### A. 輸入與分流（借鑑 Graphify + BU）
+
+**0. 資料治理閘**
+依 [data-governance.md](./data-governance.md) 判定分類、PII、owner、scope、retention、redaction 與 Git 准入。未通過時不寫入 `raw/`、不送外部工具，改走人工核可／例外流程。
 
 **1. 讀取指定來源**  
 路徑可為：使用者訊息中的檔案、URL 下載檔、`raw/inbox/` 內待處理檔，或明確的 ingest 批次目錄。未提供時向使用者索取。
@@ -58,7 +62,7 @@
 **新增** `raw/sources/<slug>.md`（僅新檔；遵循 **檔案與路徑命名**）。  
 - **來源**：自 `raw/originals/` 轉寫、清理或補強（MD 可剝 HTML／補 metadata；PDF 等經 Docling／vision）。  
 - **粒度**：**盡可能詳盡還原**（非 wiki 級精簡）；逐頁／逐段、圖內標籤與表格須寫入正文（見 **visual-source-conversion.md** → **`raw/sources/` 與 `wiki/sources/` 分工**）。  
-- **slug**（`<archive-slug>`）：全檔／部分頁／修訂規則見 **docs/pdf-ingest-sop.md** 與 **docs/okf.md** → resource 語意。  
+- **slug**（`<archive-slug>`）：全檔／部分頁／修訂規則見 **docs/pdf-ingest-sop.md** 與 **docs/okf.md** → `archive_slug` 語意。
 - **修訂**：來源改版時 **另建新檔**（可選 `YYYYMMDD_<slug>.md` 或新 slug），勿就地改寫舊歸檔。  
 - 在歸檔稿文末或 log 簡述：triage 結果、是否執行視覺轉換、轉換限制；並註明對應 `raw/originals/` 檔名。
 
@@ -66,7 +70,7 @@
 
 **7. 建立／更新 `wiki/sources/<slug>.md`**  
 **摘要頁**（從步驟 6 歸檔稿抽取，非全文複製）；區塊標題須符合 **來源頁 Schema**（含 **`## Visual Assets`**：有圖時 embed `../../raw/assets/<base-slug>/p<NN>.png`）；版型：**page-template-source.md**。  
-`resource` 指向歸檔 slug（修訂稿則指向新 slug）。
+`archive_slug` 對應步驟 6 的歸檔檔名；`sources[].resource` 以相對路徑指向該歸檔稿，OKF `resource` 僅在有 canonical URI/path 時填寫。
 
 **8. 抽取 `wiki/concepts/*`、`wiki/entities/*`**  
 依歸檔與來源頁內容；版型：**page-template-concept.md**。
@@ -75,16 +79,17 @@
 **markdown 相對路徑**；盡量雙向。冷啟動時新頁至少連結一個其他 wiki 頁（常為 `../index.md`）。
 
 **10. 補齊 OKF 建議 frontmatter**  
-`description`、`resource`（slug 或 URL）、`timestamp`（ISO 8601）；見 **docs/okf.md**。
+`description`、URI/path 型 `resource`（若適用）、`sources`、`generated`、`status`，必要時 `verified`／`stale_after`、來源頁 `archive_slug` 與六個治理欄位；見 **docs/okf.md**、**docs/data-governance.md**。
 
 **11. 更新 `wiki/index.md`**  
 於 **Sources**、**Concepts**、**Entities** 等區加 **連結 + 一行說明**。
 
 **12. 輸入原件清理**  
 步驟 4（`raw/originals/`）與步驟 6（`raw/sources/`）成功後：若本次 **輸入路徑** 在 `raw/inbox/`、repo 根目錄等 **非** `raw/originals/`、`raw/sources/`、`raw/assets/` 的位置，**刪除該輸入檔**（原件已在 `raw/originals/`）。**禁止**刪除 `raw/` 內歸檔本體。
+清理腳本僅接受 `raw/inbox/` 或 repo 根目錄的明確支援檔案；須同時提供 byte-identical `raw/originals/` 與 canonical `raw/sources/` archive。先以預設 dry-run 檢查，再加 `--confirm` 才可刪除。
 
 **13. append `wiki/log.md`**  
-格式：`## [YYYY-MM-DD] ingest | <title>`；含 triage／轉檔摘要（或註明「無需視覺轉換」）；步驟 12 有刪檔時註明路徑。
+格式：於 `## YYYY-MM-DD` 日期分組下 append `- **ingest** | <title>`，細節使用縮排 bullet；含 triage／轉檔摘要（或註明「無需視覺轉換」），步驟 12 有刪檔時註明路徑。
 
 ---
 
@@ -136,4 +141,4 @@ raw/
 - [onboarding.md](./onboarding.md) — 第一輪上手
 - [visual-source-conversion.md](./visual-source-conversion.md) — 視覺內容轉換
 - [pdf-ingest-sop.md](./pdf-ingest-sop.md) — PDF 轉譯 SOP 與資產命名
-- [okf.md](./okf.md) — `resource` slug、連結、匯出
+- [okf.md](./okf.md) — `archive_slug`、resource、連結與匯出

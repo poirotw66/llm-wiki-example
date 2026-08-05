@@ -1,154 +1,102 @@
-# OKF 對照（主軸）
+# OKF v0.2 對照、治理與互通
 
-本 repo 的 `wiki/` 是符合 **[Open Knowledge Format v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)** 的 **Knowledge Bundle**。規格與範例 bundle 見 Google [knowledge-catalog/okf](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)。
-
-維護規約摘要：[**AGENTS.md**](../AGENTS.md) → **OKF 主軸**、**Frontmatter**、**連結規則**、**引用規則**。
-
----
+本 repo 的 `wiki/` 是純 **[Open Knowledge Format v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)** Knowledge Bundle；`raw/` 與企業治理規則是本倉擴充。完整決策見 [AGENTS.md](../AGENTS.md) 與 [data-governance.md](./data-governance.md)。
 
 ## Bundle 映射
 
 ```text
 repo/
-├── raw/                    # 本倉擴充：不可變歸檔（不在 OKF bundle 內）
-│   ├── inbox/              # 待處理原件
-│   ├── originals/          # 所有輸入原件（含 MD）
+├── raw/                    # 本倉擴充；不可變歸檔，非 bundle 本體
+│   ├── inbox/              # 待處理原件（僅通過治理閘後）
+│   ├── originals/          # 已准入的輸入原件位元副本
 │   ├── sources/            # canonical Markdown 歸檔稿
-│   └── assets/             # 視覺萃取附件
+│   └── assets/             # 視覺附件
 └── wiki/                   # OKF Knowledge Bundle 根
-    ├── index.md            # OKF 保留檔：目錄（§6）
-    ├── log.md              # OKF 保留檔：變更 log（§7）
-    ├── sources/            # Concept 子目錄（角色：來源摘要）
-    ├── concepts/
-    ├── entities/
-    ├── queries/
-    ├── faq/
-    ├── lint/
-    └── graph/
+    ├── index.md            # OKF 保留檔；可宣告 okf_version: "0.2"
+    ├── log.md              # OKF 保留檔；本倉另有操作留痕
+    └── sources/ concepts/ entities/ queries/ faq/ lint/ graph/
 ```
 
 | OKF | 本倉 |
-|-----|------|
+|---|---|
 | Knowledge Bundle | `wiki/` |
 | Concept | 任一 `wiki/**/*.md`（`index.md`、`log.md` 除外） |
-| Concept ID | 路徑去 `.md`，相對 `wiki/`（例：`entities/my-service`） |
-| 保留檔名 | 僅 `index.md`、`log.md`（[SPEC §3.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)） |
+| Concept ID | 相對 `wiki/` 的路徑去掉 `.md` |
+| `index.md`／`log.md` | 任意層級的保留檔名，不能作 Concept |
 
-`raw/` 為 **可追溯歸檔** 擴充：Concept 的 `resource` 填 **歸檔 slug** 或外部 URL（見下方 **resource 語意**）；消費端讀 bundle 時無須理解 `raw/` 目錄。
+## 合規與 v0.2 frontmatter
 
+OKF v0.2 的 Concept 核心要求是可解析 YAML frontmatter 與非空 `type`；保留檔存在時亦須符合 index／log 結構。未知欄位、未知 type、缺少選用家族或斷鏈不能使一般 consumer 拒收。本範例作為 producer 採更嚴格的規則：固定宣告 `okf_version: "0.2"`，並要求 provenance、lifecycle 與治理欄位通過 lint。
+
+| 家族 | 欄位 | 本倉決策 |
+|---|---|---|
+| 核心 | `type` | 必填；現行角色型別 `concept`、`entity`、`source`、`query`、`lint` 保留。 |
+| 核心 | `title`、`description`、`resource`、`tags` | 建議；`resource` 應為 URI 或 path，不把單獨 slug 當作新內容的 URI。 |
+| provenance | `sources`、`usage_window` | 新內容必填 `sources`（每項 `resource` 必填）；可加 `id`、`title`、`author`、`usage_count`、`last_modified`。 |
+| trust | `generated`、`verified` | 新內容必填 `generated.by`／`generated.at`；人工覆核才可寫 `verified` 的 `human:<id>`。 |
+| lifecycle | `status`、`stale_after` | 新內容的 `status` 用 `draft`、`stable`、`deprecated`；需要期限時填絕對日期。 |
+| governance extension | `classification`、`owner`、`access_scope`、`contains_pii`、`retention`、`redaction` | 新內容必填；完整 enum 與 Git 准入見 [data-governance.md](./data-governance.md)。 |
+
+```yaml
 ---
-
-## 合規檢查（OKF v0.1）
-
-依 [SPEC §9](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)：
-
-1. 每個非保留 `.md` 含可解析 YAML frontmatter。
-2. Frontmatter 含非空 `type`。
-3. 若存在 `index.md`／`log.md`，結構符合 §6／§7（本倉 `log.md` 另含操作留痕格式，見 AGENTS）。
-
-消費端 **不得** 因缺少選用欄位、未知 `type`、未知擴充鍵、斷鏈而拒收 bundle——本倉的 `status`、`source_count`、`updated` 屬 producer-defined keys。
-
+type: concept
+title: "<Page title>"
+description: "<一語摘要>"
+resource: "https://example.com/canonical-resource"
+tags: []
+sources:
+  - id: source-1
+    resource: "../sources/<source-page>.md"
+    title: "<來源標題>"
+generated: { by: "agent/model-version", at: "YYYY-MM-DDTHH:MM:SSZ" }
+status: draft
+stale_after: "YYYY-MM-DD"
+classification: internal
+owner: "team:<id>"
+access_scope: "team:<id>"
+contains_pii: false
+retention: "per-policy:<id>"
+redaction: none
 ---
-
-## Frontmatter 對照
-
-| OKF v0.1 | 本倉慣例 | 備註 |
-|----------|----------|------|
-| `type`（必填） | `concept` \| `entity` \| `source` \| `query` \| `lint` | OKF 不登錄型別；本倉以 **頁面角色** 作為 `type`。對外可另映射領域型別（見下方匯出） |
-| `title`（建議） | 同左 | |
-| `description`（建議） | 同左 | 宜與 Summary 首句一致 |
-| `resource`（建議） | **歸檔 slug** 或 HTTPS URL | 見下方 **resource 語意**；勿與 bundle 內 `/sources/....md` 路徑混淆 |
-| `tags`（建議） | 同左 | |
-| `timestamp`（建議） | ISO 8601 | |
-| — | `status` | 本倉擴充：審閱狀態 |
-| — | `updated` | 本倉擴充：維護日期 |
-| — | `source_count` | 本倉擴充：引用計數慣例 |
-| `okf_version` | 僅 `wiki/index.md` 可選 | 宣告 `"0.1"`（[SPEC §11](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)） |
-
-### resource 語意（本倉慣例）
-
-OKF `resource` 為底層資產識別。本倉採兩種填法：
-
-| `resource` 值 | 意義 | 範例 |
-|---------------|------|------|
-| **歸檔 slug**（`<archive-slug>`） | 對應 `raw/sources/<archive-slug>.md`（不含路徑、不含 `.md`） | `my-api-intro`；部分頁 `my-api-intro-頁1至5` |
-| **HTTPS URL** | 外部 canonical URI | `https://api.example.internal/v1` |
-
-* **來源頁**（`type: source`）與綁定實體的 **entity** 頁：優先填 **`<archive-slug>`**（與歸檔檔名一致）。
-* **視覺資產**（`raw/assets/<base-slug>/`）檔名 **`p<NN>.png`**，**不**使用 `<archive-slug>` 作目錄名；見 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)。`wiki/sources/*` 以 **`## Visual Assets`** + `![]()` 指向 `../../raw/assets/<base-slug>/p<NN>.png` 供檢索時顯示原圖（見 **visual-source-conversion.md**）。
-* **抽象 concept** 頁：通常省略 `resource`，或填外部標準文件 URL。
-* **Citations** 正文仍寫實際路徑 `../../raw/sources/<slug>.md`（自 `wiki/sources/`），與 frontmatter slug 對照。
-
-範例：來源頁 frontmatter 設 `resource: "my-api-intro"`，對應 `raw/sources/my-api-intro.md` 與 `wiki/sources/my-api-intro.md`。
-
----
-
-## 連結
-
-### 撰寫（`wiki/` 嵌於 repo — 本範本）
-
-GitHub／IDE **無法** 解析以 `/` 開頭的 OKF bundle 路徑。互連 **一律** 用 **markdown 相對路徑**：
-
-```md
-<!-- 自 wiki/concepts/my-concept.md -->
-[API 簡介](../sources/my-api-intro.md)
 ```
 
-| 情境 | 格式 |
-|------|------|
-| 跨型別子目錄 | `../sources/foo.md`、`../concepts/bar.md` |
-| 同子目錄 | `./neighbor.md` |
-| 自子目錄連 Index | `../index.md` |
-| `wiki/index.md` 列目錄 | `./concepts/foo.md` |
-| 歸檔稿（Citations） | `../../raw/sources/<slug>.md`（自 `wiki/sources/`） |
+`generated.by`／`verified[].by` 僅接受 `agent-or-tool/version`、`human:<id>`、`process:<id>` 的 actor 慣例。`verified` 可為單一 mapping 或事件 list；無 `verified` 是 unverified，只有非 human actor 是 machine-confirmed，含 `human:` 才是 human-reviewed。這些是信任訊號，不是 access control。
 
-**禁止** `[[concepts/...]]` 與撰寫時的 `/concepts/....md`（除非匯出獨立 bundle）。
+### `resource` 與歸檔
 
-### 匯出（獨立 OKF bundle）
+來源頁以 `archive_slug: "<slug>"` 作本倉 extension 對應 `raw/sources/<slug>.md`；OKF `resource` 必須是 underlying asset 的 URI 或可解析 path，不能填 bare slug。若 canonical 僅在本 repo，將 `../../raw/sources/<slug>.md` 放在 `sources[].resource`；匯出獨立 bundle 前，改為可分發的外部 URI 或將材料納入 bundle 的 `references/`。
 
-將 `wiki/` 打包為 bundle 根時，可將相對連結轉為 OKF 建議的 `/concepts/foo.md` 供 visualize 等工具使用。`resource: "my-api-intro"` 對應 `raw/sources/my-api-intro.md` 與 `wiki/sources/my-api-intro.md`。
+## 歸因、連結與索引
 
----
+逐項主張使用與 `sources[].id` 相同的 footnote label：
 
-## 引用（Citations）
+```md
+此主張由官方規格支持。[^okf-spec]
 
-| 來源類型 | 作法 |
-|----------|------|
-| Bundle 內來源 Concept | 相對路徑，例 `../sources/檔名.md` |
-| 歸檔稿 | `../../raw/sources/<slug>.md`（自 `wiki/sources/` 等） |
-| 外部 URL | 文末 `# Citations` 編號列表（[SPEC §8](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)） |
+[^okf-spec]: Open Knowledge Format specification
+```
 
-本倉 **來源頁 Schema**（Summary、Key Concepts…）為 producer 慣例，非 OKF 強制 body 區塊；與 OKF「結構化 markdown body」目標一致。
+```yaml
+sources:
+  - id: okf-spec
+    resource: https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md
+    title: Open Knowledge Format specification
+```
 
----
+本 repo 中，Concept 間仍用 markdown 相對連結，避免 GitHub／IDE 將 `/path.md` 解為 repo／網站根。獨立 bundle 匯出時可轉為 v0.2 建議的 `/path.md`。根 `wiki/index.md` 是唯一可帶 frontmatter 的 index，僅可含 `okf_version: "0.2"`。
 
-## 匯出／匯入
+## 匯入、匯出與治理 gate
 
-### 匯出（本倉 → 標準 OKF）
+匯入其他 bundle 前必須先正規化為 v0.2；不可臆造 `generated.by`、`verified` 或來源信號。匯出前應：
 
-1. 以 `wiki/` 為 bundle 根打包（git／tar）。
-2. 確保每 Concept 有 `type`；補齊建議欄位 `title`、`description`、`resource`、`tags`、`timestamp`。
-3. 可選：將 `type` 映射為領域字串（例：`entity` + 標籤 `api` → `API Service`）。
-4. 匯出獨立 bundle 時，可將相對連結轉為 OKF `/path.md`。
-5. 根 `index.md` 可加 `okf_version: "0.1"`。
+1. 檢查每個 Concept 的 `type` 與 YAML。
+2. 確認所有頁使用 `sources`、`generated`、v0.2 lifecycle 與治理欄位。
+3. 移除或轉換指向 repo 外 `raw/` 的相對來源，讓 bundle 可攜。
+4. 依 [data-governance.md](./data-governance.md) 重新判斷 classification、PII、redaction 與 Git／分享准入。
 
-### 匯入（他方 OKF → 本倉）
-
-1. 將 bundle 置於 `wiki/`（或合併子目錄）。
-2. 補本倉擴充：`status`、`updated`、`source_count`；主張須能對應 `wiki/sources/` 或 `# Citations`。
-3. 更新 `wiki/index.md`；append `wiki/log.md`。
-4. 若需歸檔原始檔，另走 Ingest 寫入 `raw/sources/`（勿改寫既有 `raw/` 檔）。
-
-### 勿為互通而捨棄
-
-* `raw/` 不可變歸檔契約
-* 來源頁 Schema 與不確定性標記（AGENTS）
-* 操作日誌 append 規則
-
----
+`raw/` 不可變契約、來源頁 Schema、相對連結與 append-only 操作日誌在互通時仍保留；但它們不會因 OKF 宣告而自動獲得 Git 或外部分享授權。
 
 ## 參考
 
-* [OKF SPEC.md](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
-* [knowledge-catalog/okf README](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)
-* [Google Cloud 部落格：OKF 介紹](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing/)
+* [OKF v0.2 SPEC.md](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
+* [knowledge-catalog/okf](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)

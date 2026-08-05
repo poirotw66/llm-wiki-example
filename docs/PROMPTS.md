@@ -12,7 +12,7 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 
 嚴格遵循 **AGENTS.md** → **操作：Ingest**（13 步）：
 
-0. 決定本次 `wiki/log.md` title 後，執行 `python3 scripts/wiki-usage.py start ingest --title "<title>"`。
+0. 決定本次 `wiki/log.md` title 後，執行 `python3 scripts/wiki-usage.py start ingest --title "<title>"`；**先行資料治理閘**：在讀取至 workspace、複製至 `raw/` 或準備 Git 前，依 [data-governance.md](./data-governance.md) 判定 classification、owner、access scope、PII、retention、redaction 與 Git 准入。`confidential`／`restricted`、PII 或未知 PII、`redaction: required`、秘密或不確定時，停止自動 Ingest 並要求 owner／資料治理人工核可；不得將原件送往未核准的外部工具。
 1. 讀取指定來源（路徑、`raw/inbox/` 或批次）；未提供時向使用者索取。
 2. **Detect／Triage**：副檔名、是否需轉 Markdown、是否含資訊性視覺（見 ingest-pipeline 支援類型表）。
 3. 必要時轉為結構化 Markdown。**PDF** 依 [**docs/pdf-ingest-sop.md**](./pdf-ingest-sop.md)（含 **前置（安裝）**：`uv sync --group pdf` + `uv run docling-tools models download -o models/docling`）：**Docling 預設**（`uv run python scripts/docling-pdf.py`，模型在 `models/docling/`）→ 結構化 MD 初稿；頁級分流後，文字／表格夠則直入歸檔；**僅**架構圖／流程圖／對照表／文字層極短頁再匯出圖（優先 Docling 內嵌／裁切，否則 `pdftoppm`）+ vision／VLM（資產 **`raw/assets/<base-slug>/p<NN>.png`**）。含視覺則依 [**docs/visual-source-conversion.md**](./visual-source-conversion.md)。**硬閘**：資訊圖頁禁止只抄標題；須寫「層／節點盤點」+ Visual Evidence；資產頁碼須與來源標註一致。**Vision 防呆**：對每張視覺閘資產 **必須讀圖**，並 **完整套用** [**visual-source-conversion.md → Agent 用提示詞（強制）**](./visual-source-conversion.md#agent-用提示詞強制可複製)（勿改寫成摘要版）；**禁止**「細節以原圖為準／請看原圖」等空殼；Visual Evidence 另須層／節點盤點＋主要資料流（含 `→`）。**讀圖一律 subagent（強制）**：依 [**平行 Vision 編排**](./visual-source-conversion.md#平行-vision-編排強制凡讀圖) — **每張圖派 subagent** 讀圖＋回傳 VE schema；多張平行（同時 3–5、每員 1–2 張）；主 Agent **禁止**自行 `Read` 圖片，只合併就地插入；結束前 `python3 scripts/wiki-lint.py` 不得出現 `weak Visual Evidence` 或 `Visual Evidence dumped at end`。
@@ -22,9 +22,9 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 7. 依歸檔稿建立或更新 `wiki/sources/*`（**摘要**，非歸檔全文複製），區塊標題須符合 **來源頁 Schema**（含 **`## Visual Assets`**：有資訊性視覺時 **必須** `![]()` embed `../../raw/assets/<base-slug>/p<NN>.png`）。版型：`docs/templates/page-template-source.md`。
 8. 抽取並更新 `wiki/concepts/*`、`wiki/entities/*`。
 9. 更新相關頁；建立雙向連結（**markdown 相對路徑**；勿用 `/path.md`）。
-10. 每個新建或更新的 **Concept** frontmatter 補齊 **OKF v0.1 建議欄位**：`description`、`resource`（**歸檔 slug** 如 `my-api-intro` → `raw/sources/my-api-intro.md`，或 **HTTPS URL**）、`timestamp`（ISO 8601）；對照 [**docs/okf.md**](./okf.md) → **resource 語意**。
+10. 每個新建或更新的 **Concept** frontmatter 補齊 **OKF v0.2**：`description`、URI/path 型 `resource`（若適用）、`sources`（每項必有 `resource`）、`generated`（actor + ISO 8601 `at`）、`status`（`draft|stable|deprecated`），必要時 `verified`／`stale_after`；來源頁另填 `archive_slug`，所有頁填 [data-governance.md](./data-governance.md) 的六個治理欄位。主張使用 keyed footnote 歸因。
 11. 更新 `wiki/index.md`。
-12. **輸入原件清理**：步驟 4（`raw/originals/`）與步驟 6（`raw/sources/`）成功後，若輸入路徑在 `raw/inbox/`、repo 根目錄等**非** `raw/originals/`／`raw/sources/`／`raw/assets/` 位置，執行 `python scripts/ingest-cleanup.py "<input-path>" --archive "<archive-path>" [--archive "<archive-path>"]` 刪除輸入副本（`--archive` 至少含 originals 與 sources 路徑）。**禁止**刪 `raw/` 歸檔本體。
+12. **輸入原件清理**：步驟 4（`raw/originals/`）與步驟 6（`raw/sources/`）成功後，僅可處理 `raw/inbox/` 或 repo 根目錄的明確支援檔案。先執行 `python3 scripts/ingest-cleanup.py "<input-path>" --archive "raw/originals/<original>" --archive "raw/sources/<slug>.md"`（預設 dry-run）；確認輸出與 byte-identical originals 相符後，**才**以相同參數加 `--confirm` 刪除輸入副本。**禁止**刪 `raw/` 歸檔本體、目錄、symlink 或非支援輸入。
 13. Append `wiki/log.md`（含 triage／轉檔摘要，或註明視覺閘未適用；步驟 12 有刪檔時註明路徑）。
 14. 執行 `python3 scripts/wiki-usage.py finish ingest --title "<title>"`；若 start 曾漏執行，finish 會自動復原量測邊界，不得改以手動 0 token 補記。
 
@@ -58,7 +58,7 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 遵循 **AGENTS.md** → **操作：Lint**。
 
 0. 決定本次 `wiki/log.md` title 後，執行 `python3 scripts/wiki-usage.py start lint --title "<title>"`。
-1. **先執行** `python scripts/wiki-lint.py`；依 stderr 修正後重跑至 exit 0。
+1. **先執行** `uv run --group test python3 scripts/wiki-lint.py`；依 stderr 修正後重跑至 exit 0。
 2. 再執行 Agent 深度檢查（見下方清單）。
 
 檢查：矛盾、過時資訊、孤兒頁、缺頁、重複概念、無來源頁、過時頁面、**斷鏈**（相對路徑目標不存在）、**`/path.md` 根路徑**（嵌於 repo 時必斷）、**`[[...]]` 混用**（見 **AGENTS.md** → 連結規則）、**視覺資產缺口**（`raw/assets/<base-slug>/` 有圖但對應 `wiki/sources/*` 缺 **`## Visual Assets`** 或缺 `![]()` embed；或 embed 路徑與 `raw/assets/<base-slug>/p<NN>.png` 不一致）、**空殼 Visual Evidence**（canonical `raw/sources/*` 出現「細節以原圖為準」等禁句，或缺層／節點盤點／資料流 — `wiki-lint` 報 `weak Visual Evidence`）、**文末彙整 Visual Evidence**（全部資產 embed 堆在單一 `## Visual Evidence` — 報 `Visual Evidence dumped at end`）。
@@ -113,7 +113,7 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 
 **AGENTS.md** 任一操作在 **無須改檔** 但仍須留痕時使用。
 
-1. 以 `## [YYYY-MM-DD] <operation> | <title>` 格式 append 至 `wiki/log.md`。
+1. 以 OKF v0.2 日期分組 append 至 `wiki/log.md`：`## YYYY-MM-DD` 下新增 `- **<operation>** | <title>`，細節用縮排 bullet；同日已有日期標題時只 append 新操作 bullet。
 2. 一至兩條 bullet：標 **pass**、**no-op** 或簡述結果。
 3. 勿改寫或刪除既有 log 章節。
 4. 操作開始／結束的 `start`／`finish` 由各提示詞執行；不可把未知 token／成本填成估算值。

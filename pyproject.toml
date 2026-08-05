@@ -15,6 +15,11 @@ dependencies = []
 #   uv run docling-tools models download -o models/docling
 # Models land in models/docling/ (gitignored; ~1.2GB). Do not pass only "rapidocr".
 [dependency-groups]
+test = [
+    "Pillow>=10.0",
+    "PyYAML>=6.0.1",
+    "pytest>=8.0",
+]
 pdf = [
     "docling>=2.0",
     "torch==2.2.2; platform_system == 'Darwin' and platform_machine == 'x86_64'",
