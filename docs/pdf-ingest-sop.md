@@ -366,6 +366,6 @@ uv run python scripts/docling-pdf.py "raw/inbox/手冊.pdf" \
 ## 相關文件
 
 - [visual-source-conversion.md](./visual-source-conversion.md) — 視覺硬閘、Visual Evidence 格式
-- [ingest-pipeline.md](./ingest-pipeline.md) — 13 步管線
+- [ingest-pipeline.md](./ingest-pipeline.md) — 13 個 Ingest 業務步驟
 - [okf.md](./okf.md) — `archive_slug` 與 resource 語意
 - [Docling](https://github.com/docling-project/docling) — 本機文件解析

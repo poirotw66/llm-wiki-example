@@ -1,7 +1,7 @@
 # 部門 Wiki 上手（Ingest 流程）
 
 本檔說明 **第一輪 Ingest**。本 repo 的 `wiki/` **刻意留白** — 請以你們自己的第一份文件走完流程。  
-**階段 1** 支援 **一鍵多模態**（PDF、Office、圖片等）；完整 13 步對照見 [**ingest-pipeline.md**](./ingest-pipeline.md)。
+**階段 1** 支援 **一鍵多模態**（PDF、Office、圖片等）；完整 13 個 Ingest 業務步驟見 [**ingest-pipeline.md**](./ingest-pipeline.md)（telemetry 為外層 wrapper）。
 
 - 規約：[AGENTS.md](../AGENTS.md)（**OKF 主軸**、**來源轉換政策**）
 - OKF 對照：[docs/okf.md](./okf.md)
@@ -71,7 +71,7 @@ Windows 注意：用 `uv run python`（勿依賴 Store 的 `python3`）；安裝
 
 ---
 
-## 快速流程（對照 13 步）
+## 快速流程（對照 13 個業務步驟）
 
 | 階段 | 做什麼 | 產物 |
 |------|--------|------|

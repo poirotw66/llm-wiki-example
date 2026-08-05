@@ -80,7 +80,7 @@
 
   * `docs/templates/page-template-concept.md` — 供 **`wiki/concepts/*`**、**`wiki/entities/*`**、**`wiki/queries/*`** 起稿（建議骨架）。
 
-  * `docs/ingest-pipeline.md` — **Ingest 13 步合併管線**（現行 8 步 + BU 10 步 + 多模態 triage）；對照表與支援檔型。
+  * `docs/ingest-pipeline.md` — **Ingest 13 個業務步驟合併管線**（現行 8 步 + BU 10 步 + 多模態 triage；telemetry 為外層 wrapper）；對照表與支援檔型。
 
   * `docs/visual-source-conversion.md` — 含資訊性視覺時之轉換與 Visual Evidence Block。
 
@@ -434,7 +434,7 @@ redaction: required
 
 # 🛠 操作：Ingest
 
-合併 **13 步**（對照 [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md)）：
+下列為合併後的 **13 個 Ingest 業務步驟**（對照 [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md)）。Token telemetry 是操作外層 wrapper，不計入 13 步：開始前以本次 log title 執行 `python3 scripts/wiki-usage.py start ingest --title "<title>"`；完成步驟 13 並 append log 後，執行 `python3 scripts/wiki-usage.py finish ingest --title "<title>"`。
 
 1. 讀取 **指定** 來源（路徑、`raw/inbox/` 或批次）。
 2. **Detect／Triage**（檔型、是否需轉檔、是否含資訊性視覺）。
@@ -449,7 +449,6 @@ redaction: required
 11. 更新 **`wiki/index.md`**。
 12. **輸入原件清理**：步驟 4（originals）與步驟 6（sources）成功後，僅限 `raw/inbox/` 或 repo 根目錄的明確支援輸入檔。清理前必須驗證 `raw/originals/` 有位元一致副本且 `raw/sources/` 有 canonical 歸檔；`scripts/ingest-cleanup.py` 預設 dry-run，只有人工確認輸出後加 `--confirm` 才可刪除。**禁止**刪除 `raw/` 歸檔本體、目錄、symlink 或非支援輸入。
 13. **Append** `wiki/log.md`（含 triage／轉檔摘要；步驟 12 有刪檔時註明路徑）。
-14. **Finish token measurement**：執行 `python3 scripts/wiki-usage.py finish ingest`（開始時須先以相同 log title 執行 `start ingest --title "<title>"`）；詳見 [docs/skill-usage.md](docs/skill-usage.md)。
 
 ---
 
@@ -462,7 +461,8 @@ redaction: required
 5. 標記不確定性
 6. 若答案可重用，持久化至 `wiki/queries/*` 並更新 `wiki/index.md`（**Queries** 區）。
 7. **一律** append `wiki/log.md`（僅回答、未改 wiki 頁時記 **pass**／**no-op**）。
-8. **Finish token measurement**：執行 `python3 scripts/wiki-usage.py finish query`（開始時須先以相同 log title 執行 `start query --title "<title>"`）；量測欄位僅可記錄 runtime 實際提供的數字。
+
+操作開始前／append log 後，分別以相同 title 執行 `python3 scripts/wiki-usage.py start query --title "<title>"`／`python3 scripts/wiki-usage.py finish query --title "<title>"`；量測欄位僅可記錄 runtime 實際提供的數字。
 
 ## Query 解析規則（強制）
 
@@ -503,7 +503,8 @@ redaction: required
 5. 持久化至 `wiki/faq/`
 6. 更新 `wiki/index.md`（FAQ 區：每條 = 連結 + 一行說明）
 7. Append `wiki/log.md`
-8. **Finish token measurement**：執行 `python3 scripts/wiki-usage.py finish faq`（開始時須先以相同 log title 執行 `start faq --title "<title>"`）。
+
+操作開始前／append log 後，分別以相同 title 執行 `python3 scripts/wiki-usage.py start faq --title "<title>"`／`python3 scripts/wiki-usage.py finish faq --title "<title>"`。
 
 ---
 
@@ -586,7 +587,7 @@ tags: ["faq"]
 
 **新增或實質變更** `wiki/lint/` 持久化產物時，若目錄需露出，更新 `wiki/index.md`（**Overview** 區：連結 + 一行說明）（例如 lint 摘要頁）。
 
-**每次** Lint **一律** append `wiki/log.md`（即使未寫新檔 — 記 pass 或簡短摘要），並在開始／結束以相同 log title 執行 `python3 scripts/wiki-usage.py start lint --title "<title>"`／`finish lint`；詳見 [docs/skill-usage.md](docs/skill-usage.md)。
+**每次** Lint **一律** append `wiki/log.md`（即使未寫新檔 — 記 pass 或簡短摘要），並在開始／結束以相同 log title 執行 `python3 scripts/wiki-usage.py start lint --title "<title>"`／`python3 scripts/wiki-usage.py finish lint --title "<title>"`；詳見 [docs/skill-usage.md](docs/skill-usage.md)。
 
 ---
 
@@ -602,7 +603,8 @@ tags: ["faq"]
 4. 產出 graph 摘要
 5. **新增或實質變更** graph 產物時，更新 `wiki/index.md`（**Overview** 區：連結 + 一行說明）（例如 `wiki/graph/knowledge-map.md`）
 6. Append `wiki/log.md` — **每次** Graph 皆執行，含可選輸出或未變更（記 pass／no-op）
-7. **Finish token measurement**：執行 `python3 scripts/wiki-usage.py finish graph`（開始時須先以相同 log title 執行 `start graph --title "<title>"`）。
+
+操作開始前／append log 後，分別以相同 title 執行 `python3 scripts/wiki-usage.py start graph --title "<title>"`／`python3 scripts/wiki-usage.py finish graph --title "<title>"`。
 
 可選輸出：
 
@@ -627,7 +629,7 @@ wiki/graph/knowledge-map.md
 
 日期標題須為 ISO `YYYY-MM-DD`；其他 heading 形式不合規。
 
-`.llm-wiki/usage/events.jsonl` 保存 runtime token telemetry。每次操作的 Agent 須在開始／結束自動執行 `python3 scripts/wiki-usage.py start <operation>`／`finish <operation>`；該 ledger 不取代 `wiki/log.md`。詳見 [docs/skill-usage.md](docs/skill-usage.md)。
+`.llm-wiki/usage/events.jsonl` 保存 runtime token telemetry。每次操作的 Agent 須在開始／結束以相同 log title 自動執行 `python3 scripts/wiki-usage.py start <operation> --title "<title>"`／`python3 scripts/wiki-usage.py finish <operation> --title "<title>"`；該 ledger 不取代 `wiki/log.md`。詳見 [docs/skill-usage.md](docs/skill-usage.md)。
 
 ---
 
@@ -637,7 +639,7 @@ wiki/graph/knowledge-map.md
 * 不可無標記地臆測
 * 一律引用
 * 一律建立頁面連結
-* 完成本文件定義之 **任一** 操作時，**一律** append `wiki/log.md`，並以相同 title 自動執行 `start <operation> --title "<title>"`／`finish <operation>` 寫入實測 token ledger（每次留痕；允許 pass／no-op）
+* 完成本文件定義之 **任一** 操作時，**一律** append `wiki/log.md`，並以相同 title 自動執行 `start <operation> --title "<title>"`／`finish <operation> --title "<title>"` 寫入實測 token ledger（每次留痕；允許 pass／no-op）
 * 操作 **新增／刪除／實質變更** wiki 頁或目錄所列產物時，更新 `wiki/index.md`；各操作若有更窄規則（例如 Graph：僅 graph 產物變更後才更新 index），**從其規定**
 
 ---

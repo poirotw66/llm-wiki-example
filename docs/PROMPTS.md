@@ -1,6 +1,6 @@
 # Operations Prompts（複製貼上）
 
-Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md**](../AGENTS.md)。每次操作一開始執行 `python3 scripts/wiki-usage.py start <operation> --title "<本次 log title>"`，append 相同 title 的 `wiki/log.md` 後執行 `python3 scripts/wiki-usage.py finish <operation> --title "<本次 log title>"`；兩者自動記錄 Codex Desktop 實測 token 差額。若意外漏掉 `start`，`finish` 會依前一筆有效量測自動復原，且拒絕寫入 0 token 假資料。說明見 [**skill-usage.md**](./skill-usage.md)。若操作新增／刪除／實質變更 wiki 頁或目錄所列產物，更新 `wiki/index.md`。
+Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md**](../AGENTS.md)。每次操作套用同一 telemetry wrapper：一開始執行 `python3 scripts/wiki-usage.py start <operation> --title "<本次 log title>"`，append 相同 title 的 `wiki/log.md` 後執行 `python3 scripts/wiki-usage.py finish <operation> --title "<本次 log title>"`；兩者自動記錄 Codex Desktop 實測 token 差額。Telemetry wrapper 不計入各操作的業務步驟。若意外漏掉 `start`，`finish` 會依前一筆有效量測自動復原，且拒絕寫入 0 token 假資料。說明見 [**skill-usage.md**](./skill-usage.md)。若操作新增／刪除／實質變更 wiki 頁或目錄所列產物，更新 `wiki/index.md`。
 
 **Cursor**：可用薄 Skill `/ingest`、`/query`、`/lint`、`/faq`、`/graph`（定義見 [`skills/`](../skills/)；以 `npx skills add` 安裝，見 [README](../README.md#cursor-skill-用法)）觸發；Skill 委派本檔對應章節，**勿在 Skill 內複製步驟**。`.cursor/` 為本機可選副本，**不進 Git**。
 
@@ -10,9 +10,10 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 
 將本 repository 作為以來源為根據的 wiki 系統。完整對照表見 [**docs/ingest-pipeline.md**](./ingest-pipeline.md)。
 
-嚴格遵循 **AGENTS.md** → **操作：Ingest**（13 步）：
+嚴格遵循 **AGENTS.md** → **操作：Ingest**（下列 1–13 為 13 個業務步驟；步驟 0 是寫入前的資料治理 gate；開始前／完成後指令是 telemetry wrapper，兩者皆不計入 13 步）：
 
-0. 決定本次 `wiki/log.md` title 後，執行 `python3 scripts/wiki-usage.py start ingest --title "<title>"`；**先行資料治理閘**：在讀取至 workspace、複製至 `raw/` 或準備 Git 前，依 [data-governance.md](./data-governance.md) 判定 classification、owner、access scope、PII、retention、redaction 與 Git 准入。`confidential`／`restricted`、PII 或未知 PII、`redaction: required`、秘密或不確定時，停止自動 Ingest 並要求 owner／資料治理人工核可；不得將原件送往未核准的外部工具。
+開始前：決定本次 `wiki/log.md` title 後，執行 `python3 scripts/wiki-usage.py start ingest --title "<title>"`。
+0. **先行資料治理閘**：在讀取至 workspace、複製至 `raw/` 或準備 Git 前，依 [data-governance.md](./data-governance.md) 判定 classification、owner、access scope、PII、retention、redaction 與 Git 准入。`confidential`／`restricted`、PII 或未知 PII、`redaction: required`、秘密或不確定時，停止自動 Ingest 並要求 owner／資料治理人工核可；不得將原件送往未核准的外部工具。
 1. 讀取指定來源（路徑、`raw/inbox/` 或批次）；未提供時向使用者索取。
 2. **Detect／Triage**：副檔名、是否需轉 Markdown、是否含資訊性視覺（見 ingest-pipeline 支援類型表）。
 3. 必要時轉為結構化 Markdown。**PDF** 依 [**docs/pdf-ingest-sop.md**](./pdf-ingest-sop.md)（含 **前置（安裝）**：`uv sync --group pdf` + `uv run docling-tools models download -o models/docling`）：**Docling 預設**（`uv run python scripts/docling-pdf.py`，模型在 `models/docling/`）→ 結構化 MD 初稿；頁級分流後，文字／表格夠則直入歸檔；**僅**架構圖／流程圖／對照表／文字層極短頁再匯出圖（優先 Docling 內嵌／裁切，否則 `pdftoppm`）+ vision／VLM（資產 **`raw/assets/<base-slug>/p<NN>.png`**）。含視覺則依 [**docs/visual-source-conversion.md**](./visual-source-conversion.md)。**硬閘**：資訊圖頁禁止只抄標題；須寫「層／節點盤點」+ Visual Evidence；資產頁碼須與來源標註一致。**Vision 防呆**：對每張視覺閘資產 **必須讀圖**，並 **完整套用** [**visual-source-conversion.md → Agent 用提示詞（強制）**](./visual-source-conversion.md#agent-用提示詞強制可複製)（勿改寫成摘要版）；**禁止**「細節以原圖為準／請看原圖」等空殼；Visual Evidence 另須層／節點盤點＋主要資料流（含 `→`）。**讀圖一律 subagent（強制）**：依 [**平行 Vision 編排**](./visual-source-conversion.md#平行-vision-編排強制凡讀圖) — **每張圖派 subagent** 讀圖＋回傳 VE schema；多張平行（同時 3–5、每員 1–2 張）；主 Agent **禁止**自行 `Read` 圖片，只合併就地插入。**合併前驗收閘**：缺頁／空殼／缺層節點／缺 `→` → **自動重派**（同圖最多再 2 次）；仍失敗則停止並報告，勿用空殼填檔；log 記 `vision_retries`。結束前 `python3 scripts/wiki-lint.py` 不得出現 `weak Visual Evidence` 或 `Visual Evidence dumped at end`。
@@ -27,7 +28,7 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 11. 更新 `wiki/index.md`。
 12. **輸入原件清理**：步驟 4（`raw/originals/`）與步驟 6（`raw/sources/`）成功後，僅可處理 `raw/inbox/` 或 repo 根目錄的明確支援檔案。先執行 `python3 scripts/ingest-cleanup.py "<input-path>" --archive "raw/originals/<original>" --archive "raw/sources/<slug>.md"`（預設 dry-run）；確認輸出與 byte-identical originals 相符後，**才**以相同參數加 `--confirm` 刪除輸入副本。**禁止**刪 `raw/` 歸檔本體、目錄、symlink 或非支援輸入。
 13. Append `wiki/log.md`（含 triage／轉檔摘要，或註明視覺閘未適用；步驟 12 有刪檔時註明路徑）。
-14. 執行 `python3 scripts/wiki-usage.py finish ingest --title "<title>"`；若 start 曾漏執行，finish 會自動復原量測邊界，不得改以手動 0 token 補記。
+完成後：執行 `python3 scripts/wiki-usage.py finish ingest --title "<title>"`；若 start 曾漏執行，finish 會自動復原量測邊界，不得改以手動 0 token 補記。
 
 所有可驗證主張須引用來源；不確定時標記（`（推測）`、`（未知）`）；有根據的主張不需另加標記。
 
@@ -47,8 +48,7 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 6. **視覺答案（強制）**：若問題涉及架構圖、流程圖、對照表等資訊性視覺，答案 **必須** 附上對應 `raw/assets/` 原圖的 Markdown embed（自當前回答脈絡選路徑：聊天中引用 wiki 頁時用 `../../raw/assets/<base-slug>/p<NN>.png` 或連至含 embed 的 [來源頁](../sources/....md)），並標明 PDF／投影片頁碼。**禁止**只描述圖內容而不給原圖。若須**重新讀圖分析**（歸檔 VE 不足），依 [**平行 Vision 編排**](./visual-source-conversion.md#平行-vision-編排強制凡讀圖) **派 subagent 讀圖**；主 Agent 禁止自行 `Read` 圖片。
 7. 若可重用，持久化至 `wiki/queries/*` 並更新 `wiki/index.md`（**Queries** 區：連結 + 一行說明）；持久化答案亦須保留步驟 6 的 embed。
 8. **一律** append `wiki/log.md` — 含僅回答、未持久化（記 **pass** 或 **no-op**，見下方 **Wiki log append**）。
-9. 執行 `python3 scripts/wiki-usage.py finish query --title "<title>"`；若 start 曾漏執行，finish 會自動復原量測邊界，不得改以手動 0 token 補記。
-10. 回覆結尾直接列出本次量測的 model、total tokens 與 API 等值 USD；若 runtime 無法提供數字，明確標示「未量測」，不可自行估算。
+完成後：執行 `python3 scripts/wiki-usage.py finish query --title "<title>"`；若 start 曾漏執行，finish 會自動復原量測邊界，不得改以手動 0 token 補記。回覆結尾直接列出本次量測的 model、total tokens 與 API 等值 USD；若 runtime 無法提供數字，明確標示「未量測」，不可自行估算。
 
 ---
 
@@ -68,7 +68,7 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 
 **一律** append `wiki/log.md`（即使未寫新 lint 檔）：一行摘要，例如 `pass`、`no issues` 或簡短發現。
 
-完成後執行 `python3 scripts/wiki-usage.py finish lint`。
+完成後執行 `python3 scripts/wiki-usage.py finish lint --title "<title>"`。
 
 ---
 
@@ -88,7 +88,7 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 5. 持久化至 `wiki/faq/`，使用規定 frontmatter 與 Scope／FAQ／Short Answer／Detailed Answer／Related Pages 結構。
 6. 更新 `wiki/index.md`（FAQ 區：連結 + 一行說明）。
 7. Append `wiki/log.md`。
-8. 執行 `python3 scripts/wiki-usage.py finish faq`。
+完成後：執行 `python3 scripts/wiki-usage.py finish faq --title "<title>"`。
 
 ---
 
@@ -106,7 +106,7 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 3. 產出或更新 graph 摘要（可選：`wiki/graph/knowledge-map.md`）。
 4. **新增或實質變更** graph 產物時，更新 `wiki/index.md`（**Overview** 區：連結 + 一行說明）。
 5. **一律** append `wiki/log.md` — 含可選輸出或 **未變更**（記 `pass`、`no-op` 或一行摘要）。
-6. 執行 `python3 scripts/wiki-usage.py finish graph`。
+完成後：執行 `python3 scripts/wiki-usage.py finish graph --title "<title>"`。
 
 ---
 

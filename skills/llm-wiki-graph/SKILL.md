@@ -12,5 +12,5 @@ description: LLM Wiki Graph。使用者輸入 /graph、graph、知識圖、關�
 ## 執行
 
 1. 遵循工作區根目錄 **AGENTS.md**（含 **操作：Graph**、連結與關係規則）。
-2. **依全文執行** 工作區根目錄 **docs/PROMPTS.md** 的 **## Graph 提示詞** — 勿在本 Skill 改寫或省略步驟。
-3. 操作一開始以本次 log title 執行 `python3 scripts/wiki-usage.py start graph --title "<title>"`；可選產物如 `wiki/graph/knowledge-map.md`；必要時更新 index **Overview**；**一律** append `wiki/log.md`，再執行 `python3 scripts/wiki-usage.py finish graph --title "<title>"`。
+2. **依全文執行**工作區根目錄 **docs/PROMPTS.md** 的 **## Graph 提示詞**。
+3. 使用 **docs/PROMPTS.md** 定義的共用 telemetry wrapper；勿在本 Skill 複製或改寫操作步驟。

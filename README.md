@@ -10,7 +10,7 @@
 | OKF 對照 | [**docs/okf.md**](docs/okf.md) |
 | 資料分類、PII 與 Git 准入 | [**docs/data-governance.md**](docs/data-governance.md) |
 | Agent 提示詞（步驟單一來源） | [**docs/PROMPTS.md**](docs/PROMPTS.md) |
-| Ingest 13 步管線 | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) |
+| Ingest 13 個業務步驟 | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) |
 | 第一輪 Ingest | [**docs/onboarding.md**](docs/onboarding.md) |
 | PDF 轉譯 SOP | [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) |
 | 視覺閘／Visual Evidence | [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md)（就地放置；**讀圖一律 subagent**） |
@@ -256,7 +256,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 1. 依 **AGENTS.md** 硬約束（引用、連結、OKF v0.2 frontmatter、治理欄位、`raw/` 不可變、讀圖 subagent 等）
 2. 依 **PROMPTS.md** 該操作步驟全文執行（Ingest：originals → sources → wiki）
 3. 必要時更新 [wiki/index.md](wiki/index.md)
-4. 開始／結束執行 `python3 scripts/wiki-usage.py start|finish <operation>`，並 **append** [wiki/log.md](wiki/log.md)（無變更時記 pass／no-op）
+4. 開始執行 `python3 scripts/wiki-usage.py start <operation> --title "<title>"`，append [wiki/log.md](wiki/log.md) 後執行 `python3 scripts/wiki-usage.py finish <operation> --title "<title>"`（無變更時記 pass／no-op）
 
 ### 不用 Skill 時
 
@@ -278,7 +278,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | [**docs/okf.md**](docs/okf.md) | OKF v0.2 對照、合規、遷移、匯出／匯入 |
 | [**docs/data-governance.md**](docs/data-governance.md) | 分類、owner、PII、保存、遮罩、人工核可與 Git 准入 |
 | [**docs/PROMPTS.md**](docs/PROMPTS.md) | Agent 提示詞（**步驟單一來源**） |
-| [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) | Ingest 13 步（多模態） |
+| [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) | Ingest 13 個業務步驟（多模態；telemetry 為外層 wrapper） |
 | [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) | PDF 轉譯 SOP（安裝前置、OCR 策略、部分頁範例／checklist、Docling + 視覺閘） |
 | [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md) | Visual Evidence 就地放置、讀圖一律 subagent、強制提示詞 |
 | [**docs/onboarding.md**](docs/onboarding.md) | 第一輪 Ingest |

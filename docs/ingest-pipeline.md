@@ -28,7 +28,9 @@
 
 ---
 
-## 合併後 13 步（階段 1 標準）
+## 合併後 13 個業務步驟（階段 1 標準）
+
+本節的步驟 1–13 是 Ingest 業務流程；步驟 0 是寫入前的資料治理 gate。`wiki-usage.py start|finish` 屬操作外層 telemetry wrapper，不納入 13 步計數，執行順序以 [PROMPTS.md](./PROMPTS.md) § Ingest 為準。
 
 ### A. 輸入與分流（借鑑 Graphify + BU）
 
