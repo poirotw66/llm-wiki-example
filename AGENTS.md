@@ -26,7 +26,7 @@
 
 # 📦 OKF 主軸
 
-本倉以 **[Open Knowledge Format（OKF）v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)** 為知識表示主軸（參考 [knowledge-catalog/okf](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)）。`wiki/` 即 **Knowledge Bundle**；其餘目錄與操作規則為在 OKF 之上的 **本倉擴充**（可追溯歸檔、Agent 維護流程）。
+本倉以 **[Open Knowledge Format（OKF）v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)** 為知識表示主軸（參考 [knowledge-catalog/okf](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)）。`wiki/` 即 **Knowledge Bundle**；其餘目錄與操作規則為在 OKF 之上的 **本倉擴充**（可追溯歸檔、Agent 維護流程）。
 
 | OKF 術語 | 本倉對應 |
 |----------|----------|
@@ -36,21 +36,21 @@
 | `index.md` | `wiki/index.md`（漸進式揭露總目錄） |
 | `log.md` | `wiki/log.md`（變更歷史；本倉另訂操作日誌格式） |
 
-**OKF 合規（v0.1）**：每個 Concept 須有可解析 YAML frontmatter，且含非空 `type`。其餘約束見下方 Frontmatter 與 [**docs/okf.md**](docs/okf.md)。
+**OKF 合規（v0.2）**：每個 Concept 須有可解析 YAML frontmatter，且含非空 `type`。其餘約束見下方 Frontmatter 與 [**docs/okf.md**](docs/okf.md)。
 
-**本倉擴充（不違反 OKF 消費端容忍未知鍵）**：`raw/` 不可變歸檔、`status`／`source_count`／`updated`、來源頁 Schema、五大操作與 `wiki/log.md` 操作留痕。
+**本倉擴充（不違反 OKF 消費端容忍未知鍵）**：`raw/` 不可變歸檔、企業資料治理欄位、來源頁 Schema、五大操作與 `wiki/log.md` 操作留痕。`status`、`sources`、`generated`、`verified` 與 `stale_after` 為 OKF v0.2 欄位，不是本倉私有欄位。
 
 ---
 
 # 📁 目錄契約
 
-* `raw/`：既有來源的 **不可變** 區（❗ 不可就地修改）。Ingest 依 [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) 寫入新檔。來源修訂時 **另建新歸檔檔**（勿改寫既有 `raw/` 檔）；slug 慣例見 [**docs/okf.md**](docs/okf.md) → **resource 語意**。
+* `raw/`：既有來源的 **不可變** 區（❗ 不可就地修改）。Ingest 依 [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) 寫入新檔。來源修訂時 **另建新歸檔檔**（勿改寫既有 `raw/` 檔）；slug 慣例見 [**docs/okf.md**](docs/okf.md) → **`archive_slug` 與 resource**。
 
 * `raw/inbox/`：使用者提供、**待處理** 之原件（PDF、Office、圖片、MD 等）；Ingest 可從此讀取。**成功歸檔後刪除** inbox／repo 根目錄等輸入副本（見 **操作：Ingest** 步驟 12）。
 
 * `raw/originals/`：**所有輸入原件**之不可變副本（**含 Markdown**、PDF、Office、圖片等；新檔歸檔；勿改寫既有檔）。保留原始檔名與位元內容（或與輸入一致之副檔名）。
 
-* `raw/sources/`：**canonical Markdown** 歸檔稿（**盡可能詳盡還原**，非 wiki 級精簡；可由原件轉寫、清理或補強）；`wiki/sources/` 為摘要頁，`resource` slug 主要對應歸檔 slug。
+* `raw/sources/`：**canonical Markdown** 歸檔稿（**盡可能詳盡還原**，非 wiki 級精簡；可由原件轉寫、清理或補強）；`wiki/sources/` 為摘要頁，以本倉 `archive_slug` 對應歸檔檔名，並以 OKF `sources[].resource` 引用歸檔稿。
 
 * `raw/assets/`：自視覺萃取之圖片／附件；**依 `<base-slug>` 分子目錄**（`raw/assets/<base-slug>/p<NN>.png`，見 **docs/pdf-ingest-sop.md**）；由歸檔稿或 wiki 頁引用（不解析為知識頁）。
 
@@ -90,7 +90,9 @@
 
   * `docs/PROMPTS.md` — **Operations Prompts（複製貼上）** 與範例指令；Agent **操作步驟**之唯一維護來源。
 
-  * `docs/okf.md` — **OKF v0.1 對照與互通**（bundle 映射、欄位、連結、匯出）；規格原文見 [SPEC.md](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)。
+  * `docs/okf.md` — **OKF v0.2 對照、治理與互通**（bundle 映射、欄位、連結、匯出）；規格原文見 [SPEC.md](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)。
+
+  * `docs/data-governance.md` — **企業資料治理與 Git 准入**（分類、owner、PII、保存、遮罩、人工核可與例外）。
 
   * `SKILL.md`（repo 根）— 總覽 Skill；指向子 Skill 與三步流程。
 
@@ -129,55 +131,72 @@ OKF **不**規定固定分類法；子目錄僅為組織 Concept 之用（[SPEC 
 
 每個 **Concept**（`wiki/**/*.md`，保留檔名除外）須含 YAML frontmatter。
 
-### OKF v0.1（規格層）
+### OKF v0.2（規格層）
 
 | 層級 | 鍵 | 說明 |
 |------|-----|------|
 | **必填** | `type` | 概念種類；本倉慣用 `concept`、`entity`、`source`、`query`、`lint`（亦符合 OKF「自描述型別字串」） |
 | **建議** | `title` | 顯示名稱 |
 | **建議** | `description` | 一語摘要（index、搜尋預覽） |
-| **建議** | `resource` | **歸檔 slug**（對應 `raw/sources/<slug>.md`）或外部 HTTPS URL；見 **`docs/okf.md`** → **resource 語意** |
+| **建議** | `resource` | 底層資產的 URI（HTTPS、bundle-relative 或相對路徑）；見 **`docs/okf.md`** → **resource 語意** |
 | **建議** | `tags` | 標籤列表 |
-| **建議** | `timestamp` | ISO 8601 最後有意義變更時間 |
+| **建議** | `sources` | 來源清單；每項須有 `resource`，主張以同項 `id` 的 footnote 對應 |
+| **建議** | `generated` | `{ by: <actor>, at: <ISO 8601> }`；記錄目前內容的產生者與最後有意義變更時間 |
+| **建議** | `verified` | 驗證事件（mapping 或 list）；`human:<id>` 代表人審 |
+| **建議** | `status` | `draft` \| `stable` \| `deprecated`；缺省為 `stable` |
+| **建議** | `stale_after` | `YYYY-MM-DD`；當日及之後視為 stale |
 
-規格與範例見 [OKF SPEC §4.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)。
+規格與範例見 [OKF SPEC §4–5](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)。
 
-### 本倉擴充（維護層）
+### 本倉擴充（資料治理層）
 
 | 鍵 | 說明 |
 |-----|------|
-| `status` | `draft` \| `active` \| `needs-review` |
-| `updated` | 維護用日期 `YYYY-MM-DD`（可與 `timestamp` 並存） |
-| `source_count` | 引用之來源 concept 數（慣例） |
+| `classification` | `public` \| `internal` \| `confidential` \| `restricted` |
+| `owner` | `team:<id>`、`human:<id>` 或 `process:<id>` |
+| `access_scope` | `public` \| `organization` \| `team:<id>` \| `named:<approved-group>` |
+| `contains_pii` | `true` \| `false` \| `unknown` |
+| `retention` | `permanent` \| `until:<YYYY-MM-DD>` \| `per-policy:<id>` |
+| `redaction` | `none` \| `applied` \| `required` |
 
 ```yaml
 ---
 type: concept
 title: "<Page title>"
 description: "<一語摘要>"
-resource: "<歸檔 slug 或 https://...>"
+resource: "<URI；抽象 concept 可省略>"
 tags: []
-timestamp: "YYYY-MM-DDTHH:MM:SSZ"
-status: "<draft|active|needs-review>"
-updated: "YYYY-MM-DD"
-source_count: 0
+sources:
+  - id: "<stable-source-id>"
+    resource: "<URL、bundle-relative 或相對路徑>"
+    title: "<來源標題>"
+generated: { by: "<agent/version|human:id|process:id>", at: "YYYY-MM-DDTHH:MM:SSZ" }
+status: draft
+stale_after: "YYYY-MM-DD"
+classification: internal
+owner: "team:<id>"
+access_scope: "team:<id>"
+contains_pii: unknown
+retention: "per-policy:<id>"
+redaction: required
 ---
 ```
 
 互通對照與匯出映射見 **`docs/okf.md`**。
 
+本範例僅接受 OKF v0.2 語法；lint 會拒絕非 v0.2 lifecycle、舊 metadata、bare `resource` slug 與非 keyed provenance。人審規則見 [docs/okf.md](docs/okf.md) 與 [docs/data-governance.md](docs/data-governance.md)。
+
 ### `wiki/index.md`（bundle 根 index）
 
-* 依 OKF [§6](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)，**一般不含 frontmatter**；本檔亦 **可不** 加 YAML。
-* 若宣告目標 OKF 版本，**僅** 可在 bundle 根 `index.md` 加 `okf_version: "0.1"`（[§11](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)）；其餘 frontmatter 鍵非 OKF 標準。
-* 必要結構為下方 **索引結構** 標題排版（`# Index`、`## Overview`…）；缺 frontmatter 不視為不合規。
+* 本範例在 bundle 根 `index.md` **必須**加 `okf_version: "0.2"`，且 frontmatter 僅可含此鍵（[§12](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)）。
+* 必要結構為下方 **索引結構** 標題排版（`# Index`、`## Overview`…）。
 * schema 中 `type: "overview"` 供團隊自訂之獨立概覽頁（例如 `wiki/overview.md`）；**非** `wiki/index.md` 必填。
 
 ---
 
 # 🔗 連結規則（強制）
 
-* 每頁至少連結 ≥1 頁（OKF 跨頁關係；見 [SPEC §5](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)）
+* 每頁至少連結 ≥1 頁（OKF 跨頁關係；見 [SPEC §6](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)）
 * 每個新頁須被別處引用
 * 盡量雙向連結
 
@@ -244,9 +263,9 @@ source_count: 0
 
 ---
 
-# 📌 引用規則（關鍵）
+# 📌 來源與引用規則（關鍵）
 
-* 所有可驗證主張須引用來源（與 OKF [§8 Citations](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) 一致）
+* 所有可驗證主張須引用 frontmatter `sources`（OKF [§5.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)）。每個 `sources[]` 項目須有 `resource`；欲逐一歸因的項目必有穩定 `id`，並用 `[^<id>]` footnote 連結。
 
 **Bundle 內來源 Concept**（路徑相對於**當前檔案**）：
 
@@ -254,15 +273,22 @@ source_count: 0
 [來源標題](../sources/ch1.md)
 ```
 
-**外部 URL**：建議在文末加 `# Citations` 區塊（編號列表），例如：
+**外部 URL 或歸檔稿**：先在 frontmatter 宣告，再在內文以 footnote 歸因，例如：
 
 ```md
-# Citations
+來源內容的主張。[^official-doc]
 
-[1] [官方文件](https://example.com/docs)
+[^official-doc]: 官方文件
 ```
 
-**歸檔稿**（`raw/sources/*`）可在 Citations 或內文以 repo 相對路徑標示，例如 `raw/sources/ch1.md`。
+```yaml
+sources:
+  - id: official-doc
+    resource: https://example.com/docs
+    title: 官方文件
+```
+
+**歸檔稿**（`raw/sources/*`）應以 `sources[].resource` 的相對路徑或核准外部識別記錄，例如 `../../raw/sources/ch1.md`（自 `wiki/sources/`）；主張一律使用與 `sources[].id` 相同的 keyed footnote。
 
 多個 bundle 內來源：
 
@@ -315,12 +341,20 @@ source_count: 0
 type: concept
 title: "<Page title>"
 description: "<一語摘要>"
-resource: "<歸檔 slug 或 https://...>"
+resource: "<URI；抽象 concept 可省略>"
 tags: []
-timestamp: "YYYY-MM-DDTHH:MM:SSZ"
+sources:
+  - id: "<stable-source-id>"
+    resource: "<URL、bundle-relative 或相對路徑>"
+    title: "<來源標題>"
+generated: { by: "<agent/version|human:id|process:id>", at: "YYYY-MM-DDTHH:MM:SSZ" }
 status: draft
-updated: "YYYY-MM-DD"
-source_count: 1
+classification: internal
+owner: "team:<id>"
+access_scope: "team:<id>"
+contains_pii: unknown
+retention: "per-policy:<id>"
+redaction: required
 ---
 ```
 
@@ -381,6 +415,7 @@ source_count: 1
 
 ## 轉換規則
 
+* **先資料治理，後落盤**：在複製至 workspace、`raw/` 或 Git 前，依 [docs/data-governance.md](docs/data-governance.md) 判定 `classification`、`owner`、`access_scope`、PII、retention 與 redaction。`confidential`／`restricted`、`contains_pii: true|unknown`、`redaction: required` 或疑似秘密時，停止自動 Ingest，待 owner／資料治理人工核可；不可因 `raw/` 不可變而繞過 Git 准入。
 * **一律**先將輸入原件複製至 `raw/originals/`（**含 Markdown**）。
 * 非 Markdown 或含不可讀視覺之來源 → 轉 **結構化 Markdown** 後寫入 `raw/sources/`（**詳盡還原稿**，見 **docs/visual-source-conversion.md**）；純 MD 輸入亦須另寫 canonical 至 `raw/sources/`（可清理／補強，不可省略 originals）。
 * 支援類型：`.md`、`.txt`、`.docx`、`.pdf`、`.ppt`/`.pptx`、`.xlsx`、常見圖片格式（見 ingest-pipeline 表）。
@@ -410,9 +445,9 @@ source_count: 1
 7. 建立或更新 **`wiki/sources/`**（來源頁 Schema）。
 8. 抽取 **concepts**、**entities**。
 9. 更新相關頁並 **雙向連結**（相對路徑）。
-10. 補齊 **OKF 建議 frontmatter**（`description`、`resource`、`timestamp`）。
+10. 補齊 **OKF v0.2 frontmatter**（`description`、URI/path 型 `resource`〔若適用〕、`sources`、`generated`、`status`、必要時 `verified`／`stale_after`）及資料治理欄位；來源頁另填 `archive_slug`，每個 `sources[]` 必有 `resource`，不可將 agent 自評寫成 `human:` 驗證。
 11. 更新 **`wiki/index.md`**。
-12. **輸入原件清理**：步驟 4（originals）與步驟 6（sources）成功後，若本次 **輸入路徑** 位於 `raw/inbox/`、repo 根目錄或其他 **非** `raw/originals/`／`raw/sources/`／`raw/assets/` 位置，**刪除該輸入檔**（原件已在 `raw/originals/`）。**禁止**刪除 `raw/` 歸檔本體。
+12. **輸入原件清理**：步驟 4（originals）與步驟 6（sources）成功後，僅限 `raw/inbox/` 或 repo 根目錄的明確支援輸入檔。清理前必須驗證 `raw/originals/` 有位元一致副本且 `raw/sources/` 有 canonical 歸檔；`scripts/ingest-cleanup.py` 預設 dry-run，只有人工確認輸出後加 `--confirm` 才可刪除。**禁止**刪除 `raw/` 歸檔本體、目錄、symlink 或非支援輸入。
 13. **Append** `wiki/log.md`（含 triage／轉檔摘要；步驟 12 有刪檔時註明路徑）。
 14. **Finish token measurement**：執行 `python3 scripts/wiki-usage.py finish ingest`（開始時須先以相同 log title 執行 `start ingest --title "<title>"`）；詳見 [docs/skill-usage.md](docs/skill-usage.md)。
 
@@ -478,9 +513,18 @@ source_count: 1
 ---
 title: "<FAQ title>"
 type: "query"
-status: "active"
-updated: "YYYY-MM-DD"
-source_count: 0
+sources:
+  - id: "<source-page>"
+    resource: "../sources/<source-page>.md"
+    title: "<來源標題>"
+status: stable
+generated: { by: "<agent/version|human:id|process:id>", at: "YYYY-MM-DDTHH:MM:SSZ" }
+classification: internal
+owner: "team:<id>"
+access_scope: "team:<id>"
+contains_pii: false
+retention: "per-policy:<id>"
+redaction: none
 tags: ["faq"]
 ---
 ```
@@ -503,6 +547,8 @@ tags: ["faq"]
 **Related Pages：**
 - [概念](../concepts/....md)
 - [來源](../sources/....md)
+
+[^<source-page>]: <來源標題>
 ```
 
 ---
@@ -520,7 +566,7 @@ tags: ["faq"]
 
 # 🧪 操作：Lint
 
-**自動檢查（優先）**：執行 `python scripts/wiki-lint.py`（斷鏈、`resource` ↔ `raw/sources/`、frontmatter `type`、視覺資產 embed）。exit code 非 0 時依輸出修正後再跑 Agent 深度 Lint。
+**自動檢查（優先）**：執行 `uv run --group test python3 scripts/wiki-lint.py`（真正 YAML/schema、斷鏈、catalog／孤兒頁、`resource` ↔ `raw/sources/`、生命週期、治理欄位、視覺資產；CI 另以 `--base` 檢查 raw immutability 與 log append-only）。exit code 非 0 時依輸出修正後再跑 Agent 深度 Lint。
 
 偵測：
 
@@ -568,15 +614,18 @@ wiki/graph/knowledge-map.md
 
 # 🪵 日誌規則
 
-`wiki/log.md` 對應 OKF 選用 [log.md](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)（§7）。本倉在日期分組之上，以 **操作類型** 留痕（Agent 維護用）。
+`wiki/log.md` 對應 OKF 選用 [log.md](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)（§9）。本倉在日期分組之上，以 **操作類型** 留痕（Agent 維護用）。
 
-僅可 append：
+僅可 append。新紀錄依 OKF v0.2 使用日期分組；同日多次操作各加一個頂層 bullet，細節使用縮排 bullet：
 
 ```md
-## [YYYY-MM-DD] <operation> | <title>
+## YYYY-MM-DD
+
+- **<operation>** | <title>
+  - <摘要或 pass／no-op>
 ```
 
-（日期標題須為 ISO `YYYY-MM-DD`，與 OKF log 日期標題相容。）
+日期標題須為 ISO `YYYY-MM-DD`；其他 heading 形式不合規。
 
 `.llm-wiki/usage/events.jsonl` 保存 runtime token telemetry。每次操作的 Agent 須在開始／結束自動執行 `python3 scripts/wiki-usage.py start <operation>`／`finish <operation>`；該 ledger 不取代 `wiki/log.md`。詳見 [docs/skill-usage.md](docs/skill-usage.md)。
 

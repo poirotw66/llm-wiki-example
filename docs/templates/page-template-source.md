@@ -2,17 +2,27 @@
 title: "<來源頁標題>"
 type: source
 description: "<一語摘要（OKF 建議）>"
-resource: "<歸檔 slug（對應 raw/sources/<slug>.md）或 URL>"
+resource: "<來源的 canonical URI；無 URI 時可省略>"
+archive_slug: "<對應 raw/sources/<slug>.md 的 slug>"
 tags: []
-timestamp: "YYYY-MM-DDTHH:MM:SSZ"
+sources:
+  - id: archive
+    resource: "../../raw/sources/<slug>.md"
+    title: "<歸檔稿標題>"
+generated: { by: "<agent/version|human:id|process:id>", at: "YYYY-MM-DDTHH:MM:SSZ" }
 status: draft
-updated: "YYYY-MM-DD"
-source_count: 1
+stale_after: "YYYY-MM-DD"
+classification: internal
+owner: "team:<id>"
+access_scope: "team:<id>"
+contains_pii: unknown
+retention: "per-policy:<id>"
+redaction: required
 ---
 
 # <來源頁標題>
 
-> 本版型 **僅** 供 `wiki/sources/*` 使用。區塊標題須與 **AGENTS.md** → **來源頁 Schema** 一致。Frontmatter 對齊 [OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) + 本倉擴充（見 [docs/okf.md](../okf.md)）。
+> 本版型 **僅** 供 `wiki/sources/*` 使用。區塊標題須與 **AGENTS.md** → **來源頁 Schema** 一致。Frontmatter 對齊 [OKF v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) + 本倉治理擴充（見 [docs/okf.md](../okf.md)、[data-governance.md](../data-governance.md)）。
 
 ## Summary
 
@@ -30,7 +40,7 @@ source_count: 1
 
 ## Notable Claims
 
-- 可驗證主張，附引用 [本來源頁](./<slug>.md) 或 `../../raw/sources/<slug>.md`
+- 可驗證主張，附引用 [本來源頁](./<slug>.md) 或 `../../raw/sources/<slug>.md`。[^archive]
 
 ## Visual Assets
 
@@ -49,6 +59,4 @@ source_count: 1
 - related_to: [概念](../concepts/....md)
 - used_in: [實體](../entities/....md)
 
-## Citations
-
-- 外部 URL 請列於此（OKF §8）；歸檔稿：`../../raw/sources/<slug>.md`
+[^archive]: `<歸檔稿標題>`

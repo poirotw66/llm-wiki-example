@@ -21,7 +21,8 @@ DEFAULT_ACTIVE_DIR = Path(".llm-wiki/usage/active")
 DEFAULT_PRICING = Path("config/skill-usage-pricing.json")
 VALID_OPERATIONS = ("ingest", "query", "lint", "faq", "graph")
 OPERATION_SKILLS = {operation: f"llm-wiki-{operation}" for operation in VALID_OPERATIONS}
-LOG_ENTRY = re.compile(r"^## \[(?P<date>\d{4}-\d{2}-\d{2})\] (?P<operation>ingest|query|lint|faq|graph) \| (?P<title>.+)$")
+LOG_DATE = re.compile(r"^## (?P<date>\d{4}-\d{2}-\d{2})$")
+LOG_OPERATION = re.compile(r"^- \*\*(?P<operation>ingest|query|lint|faq|graph)\*\* \| (?P<title>.+)$")
 
 
 def parse_timestamp(value: str) -> datetime:
@@ -463,12 +464,19 @@ def log_entries(log_path: Path) -> list[dict[str, str]]:
         return []
     entries: list[dict[str, str]] = []
     current: dict[str, str] | None = None
+    current_date: str | None = None
     for line in log_path.read_text(encoding="utf-8").splitlines():
-        match = LOG_ENTRY.match(line)
-        if match:
+        date_match = LOG_DATE.match(line)
+        operation_match = LOG_OPERATION.match(line)
+        if date_match:
             if current:
                 entries.append(current)
-            current = {**match.groupdict(), "body": ""}
+                current = None
+            current_date = date_match.group("date")
+        elif operation_match and current_date:
+            if current:
+                entries.append(current)
+            current = {"date": current_date, **operation_match.groupdict(), "body": ""}
         elif current:
             current["body"] += line + "\n"
     if current:
