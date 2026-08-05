@@ -2,6 +2,8 @@
 
 供各部門 **fork／GitHub Template** 後自建 wiki 的 **起步 repo**。`wiki/` 為 **[OKF v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) Knowledge Bundle**（**內容刻意留白**，以 `/ingest` 填入）；`raw/` 為不可變歸檔擴充；薄 Skill 見 [`skills/`](skills/)（**Git 追蹤的單一來源**；`.cursor/` 已 gitignore）。
 
+寫入或分享內容前，須依 [**docs/data-governance.md**](docs/data-governance.md) 完成分類、PII、遮罩、owner 與 Git 准入確認。
+
 | 需求 | 檔案／指令 |
 |------|------------|
 | 規約與五大操作 | [**AGENTS.md**](AGENTS.md) |
@@ -11,12 +13,14 @@
 | Ingest 13 步管線 | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) |
 | 第一輪 Ingest | [**docs/onboarding.md**](docs/onboarding.md) |
 | PDF 轉譯 SOP | [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) |
+| 視覺閘／Visual Evidence | [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md)（就地放置；**讀圖一律 subagent**） |
 | PDF 依賴（uv） | `uv sync --group pdf` 後 `uv run docling-tools models download -o models/docling`（詳見 [docs/pdf-ingest-sop.md](docs/pdf-ingest-sop.md)） |
-| Wiki lint | `python3 scripts/wiki-lint.py` |
+| Wiki lint | `uv run --group test python3 scripts/wiki-lint.py` |
 | Ingest 清理 | `python3 scripts/ingest-cleanup.py <input> --archive raw/originals/<original> --archive raw/sources/<slug>.md`（先 dry-run，確認後加 `--confirm`） |
-| PDF Docling helper | `uv run python scripts/docling-pdf.py ...` |
+| PDF Docling helper | `uv run python scripts/docling-pdf.py ...`（可 `--page-from`／`--page-to` 部分頁） |
 | Skill token 報表 | `python3 scripts/wiki-usage.py report --by skill`（[docs/skill-usage.md](docs/skill-usage.md)） |
 | 頁面版型 | [**docs/templates/**](docs/templates/) |
+| CI（schema／raw 不可變／log） | [`.github/workflows/wiki-quality.yml`](.github/workflows/wiki-quality.yml) |
 | npx skills 安裝 | [**SKILL.md**](SKILL.md) |
 
 ---
@@ -30,14 +34,15 @@ raw/                    # 不可變歸檔（非 OKF bundle 本體）
   sources/              # canonical Markdown 歸檔稿
   assets/               # 視覺萃取附件（raw/assets/<base-slug>/p<NN>.png）
 wiki/                   # OKF Knowledge Bundle（fork 後以 Ingest 填入）
-  index.md              # 總目錄（okf_version + catalog）
+  index.md              # 總目錄（okf_version: "0.2" + catalog）
   log.md                # 操作日誌（append only）
   sources/ concepts/ entities/ queries/ faq/ lint/ graph/
 docs/                   # 支援文件（非 wiki 知識本體）
   PROMPTS.md  ingest-pipeline.md  pdf-ingest-sop.md
   visual-source-conversion.md  onboarding.md  okf.md
-  skill-usage.md  templates/
+  data-governance.md  skill-usage.md  templates/
 scripts/                # wiki-lint、ingest-cleanup、docling-pdf、wiki-usage
+.github/workflows/      # wiki-quality CI
 models/docling/         # Docling 預設模型（本機下載；已 gitignore；約 1.2GB）
 config/                 # skill-usage 費率等設定
 .llm-wiki/usage/        # append-only Skill 使用量 ledger（events.jsonl）
@@ -68,9 +73,13 @@ pyproject.toml  uv.lock  .python-version
 輸入（路徑／raw/inbox／批次）
         │
         ▼
+ 資料治理閘（classification／PII／遮罩；見 data-governance）
+        │
+        ▼
  Detect／Triage（檔型、是否轉檔、是否含資訊圖）
         │
-        ├─ 需要時：轉 Markdown（PDF→Docling；資訊圖→vision）
+        ├─ PDF：Docling 初稿＋頁級分流（可只跑部分頁）
+        ├─ 資訊圖頁：匯出 raw/assets/ → **subagent 讀圖**寫 Visual Evidence
         │
         ▼
  raw/originals/     ← 一律位元複製原件（含 .md）
@@ -78,7 +87,7 @@ pyproject.toml  uv.lock  .python-version
         ├─（若有）raw/assets/<base-slug>/p<NN>.png
         │
         ▼
- raw/sources/<slug>.md   ← canonical 詳盡歸檔稿（新檔；修訂另建）
+ raw/sources/<archive-slug>.md   ← 詳盡歸檔（VE **就地**插入；修訂另建新檔）
         │
         ▼
  wiki/sources/ 摘要頁 ＋ 抽取 concepts／entities
@@ -94,9 +103,9 @@ pyproject.toml  uv.lock  .python-version
 |------|------|------|
 | 輸入 | 使用者路徑或 `raw/inbox/*` | MD／PDF／Office／圖片等 |
 | 原件 | `raw/originals/<原檔名>` | **不可變**；MD 也要複製，不可省略 |
-| 視覺 | `raw/assets/<base-slug>/p<NN>.png` | 僅資訊性視覺需要 |
-| 歸檔稿 | `raw/sources/<slug>.md` | 詳盡還原，非 wiki 精簡版 |
-| Wiki | `wiki/sources`、`concepts`、`entities` | 摘要與知識頁；更新 `index.md` |
+| 視覺 | `raw/assets/<base-slug>/p<NN>.png` | 僅資訊性視覺；目錄用 `<base-slug>`（部分頁亦同） |
+| 歸檔稿 | `raw/sources/<archive-slug>.md` | 詳盡還原；部分頁 slug 例：`<base-slug>-頁1至5` |
+| Wiki | `wiki/sources`、`concepts`、`entities` | 摘要與知識頁；OKF v0.2 frontmatter＋治理欄位；更新 `index.md` |
 | 收尾 | 刪輸入副本；append `log.md` | 原件已在 `originals/` |
 
 **觸發範例**
@@ -105,9 +114,18 @@ pyproject.toml  uv.lock  .python-version
 /ingest raw/inbox/某規格.pdf
 /ingest raw/inbox/                 # 批次處理 inbox 內待處理檔
 /ingest ./內部說明.md              # 根目錄 MD：先入 originals，再寫 sources
+/ingest ./手冊.pdf 前五頁          # 部分頁 → archive-slug `…-頁1至5`
 ```
 
-**硬約束（摘要）**：勿改寫既有 `raw/` 檔；修訂請另建新歸檔；有架構圖／流程圖時禁止只抄標題（見 [docs/visual-source-conversion.md](docs/visual-source-conversion.md)、[docs/pdf-ingest-sop.md](docs/pdf-ingest-sop.md)）。
+**硬約束（摘要）**
+
+- 勿改寫既有 `raw/` 檔；修訂請另建新歸檔
+- 架構圖／流程圖禁止只抄標題；Visual Evidence **就地**放置，禁止文末彙整
+- **讀圖一律 subagent**（主 Agent 禁止自行 `Read` 圖片）；多張平行派工
+- Concept 須合 OKF v0.2（`type`、`generated`、lifecycle）與本倉治理欄位（見 [docs/okf.md](docs/okf.md)、[docs/data-governance.md](docs/data-governance.md)）
+- 寫入前通過資料治理 Git 准入
+
+細節：[docs/visual-source-conversion.md](docs/visual-source-conversion.md)、[docs/pdf-ingest-sop.md](docs/pdf-ingest-sop.md)。
 
 ### Python 依賴與 Docling 模型（uv）
 
@@ -126,7 +144,9 @@ uv run python scripts/docling-pdf.py --help
 | 模型目錄 | `models/docling/`（`scripts/docling-pdf.py` 預設） |
 | 覆寫 | `DOCLING_ARTIFACTS_PATH` |
 | CLI | 用 `uv run docling-tools ...`（勿直接打 `docling-tools`） |
-| Python | **3.12** 建議（`.python-version`）；`>=3.10,<3.14`；Intel Mac torch 鎖定見 `pyproject.toml` |
+| Python | **3.12** 建議（`.python-version`）；`>=3.10,<3.14` |
+| 平台 | **Apple Silicon**（含 M 系列）：`torch>=2.4`，可用 **MPS** 加速 Docling；**Intel Mac**：torch 鎖定 `2.2.2`（見 `pyproject.toml`） |
+| 部分頁 | `uv run python scripts/docling-pdf.py <pdf> --page-from 1 --page-to 5 --export-vision-assets` |
 
 ---
 
@@ -137,7 +157,7 @@ uv run python scripts/docling-pdf.py --help
 ### 三步開始
 
 1. **建立部門專用 repo** — **Use this template** 或 fork 後改名；**勿**在本 example 倉寫部門內容。
-2. **客製化** — 編輯 [`wiki/index.md`](wiki/index.md) 的 **Overview**（部門名稱、範圍）；必要時微調 [**AGENTS.md**](AGENTS.md)。
+2. **客製化** — 編輯 [`wiki/index.md`](wiki/index.md) 的 **Overview**（部門名稱、範圍）；設定資料 owner／分類規則（[data-governance.md](docs/data-governance.md)）；必要時微調 [**AGENTS.md**](AGENTS.md)。
 3. **安裝 Skill 並第一次 Ingest** — 見下方 **npx skills 安裝** 與 [docs/onboarding.md](docs/onboarding.md)；在 Cursor 輸入 **`/ingest <路徑>`**（或把檔案放入 `raw/inbox/` 後 `/ingest raw/inbox`）。
 
 ### 日常操作
@@ -203,6 +223,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 /ingest ./規格.md
 /ingest raw/inbox/
 /ingest raw/inbox/某規格.pdf
+/ingest ./手冊.pdf 前五頁
 /query <你的問題>
 /lint
 /faq
@@ -211,7 +232,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 
 ### 執行後 Agent 應完成
 
-1. 依 **AGENTS.md** 硬約束（引用、連結、frontmatter、`raw/` 不可變等）
+1. 依 **AGENTS.md** 硬約束（引用、連結、OKF v0.2 frontmatter、治理欄位、`raw/` 不可變、讀圖 subagent 等）
 2. 依 **PROMPTS.md** 該操作步驟全文執行（Ingest：originals → sources → wiki）
 3. 必要時更新 [wiki/index.md](wiki/index.md)
 4. 開始／結束執行 `python3 scripts/wiki-usage.py start|finish <operation>`，並 **append** [wiki/log.md](wiki/log.md)（無變更時記 pass／no-op）
@@ -224,7 +245,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 
 ## 專案目的
 
-建立 **符合 OKF、以來源為根據、可追溯、可連結演進** 的 Markdown 知識包，供 LLM／人類維護，並支援 FAQ、onboarding、RAG、Agent 與他方 OKF 工具互通。
+建立 **符合 OKF v0.2、以來源為根據、可追溯、可連結演進** 的 Markdown 知識包，供 LLM／人類維護，並支援 FAQ、onboarding、RAG、Agent 與他方 OKF 工具互通；同時以本倉治理欄位與 CI lint 強化企業准入。
 
 ---
 
@@ -237,18 +258,19 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | [**docs/data-governance.md**](docs/data-governance.md) | 分類、owner、PII、保存、遮罩、人工核可與 Git 准入 |
 | [**docs/PROMPTS.md**](docs/PROMPTS.md) | Agent 提示詞（**步驟單一來源**） |
 | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) | Ingest 13 步（多模態） |
-| [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) | PDF 轉譯 SOP（安裝前置、`models/docling/`、Docling + 視覺閘） |
-| [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md) | 視覺來源轉換 |
+| [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) | PDF 轉譯 SOP（安裝前置、`models/docling/`、Docling + 視覺閘、部分頁） |
+| [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md) | Visual Evidence 就地放置、讀圖一律 subagent、強制提示詞 |
 | [**docs/onboarding.md**](docs/onboarding.md) | 第一輪 Ingest |
 | [**docs/skill-usage.md**](docs/skill-usage.md) | Skill token／usage ledger |
 | [**docs/templates/**](docs/templates/) | 來源頁／概念頁版型 |
-| [**wiki/index.md**](wiki/index.md) | OKF bundle 總目錄（預設空白） |
+| [**wiki/index.md**](wiki/index.md) | OKF bundle 總目錄（預設空白；`okf_version: "0.2"`） |
 | [**wiki/README.md**](wiki/README.md) | `wiki/` 目錄導覽 |
 | [**SKILL.md**](SKILL.md) | npx skills 安裝 |
 | [**skills/**](skills/) | 薄 Skill（**唯一 Git 來源**） |
 | [**pyproject.toml**](pyproject.toml)／[**uv.lock**](uv.lock) | uv 依賴；PDF 組見 `uv sync --group pdf` + 模型下載 |
 | [**config/**](config/) | usage 費率等設定 |
 | [**scripts/**](scripts/) | lint、cleanup、docling-pdf、wiki-usage |
+| [**.github/workflows/wiki-quality.yml**](.github/workflows/wiki-quality.yml) | PR／push：pytest + wiki-lint |
 
 ---
 
@@ -258,3 +280,4 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 - **Skill** → [skills/llm-wiki-example/](skills/llm-wiki-example/SKILL.md) · **npx** → [SKILL.md](SKILL.md)
 - **wiki 總目錄** → [wiki/index.md](wiki/index.md)
 - **部門上手** → [docs/onboarding.md](docs/onboarding.md)
+- **資料治理** → [docs/data-governance.md](docs/data-governance.md)
