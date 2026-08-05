@@ -40,6 +40,28 @@ Windows 注意：用 `uv run python`（勿依賴 Store 的 `python3`）；安裝
 - **優先**：可選取文字的 PDF、Markdown、Word／簡報（文字層完整 → Docling／文字直入，vision 只打資訊圖頁）。
 - **避免當首選**：純圖／掃描／整頁點陣簡報（文字層 0 → 幾乎全頁 vision，成本高、較易空殼需重派）。
 - 若只有純圖 PDF，仍可 ingest，但請預期較久，並依 [visual-source-conversion.md](./visual-source-conversion.md) 做 vision 驗收／自動重派。
+- **OCR**：Docling OCR 對繁中簡報常不穩。文字層空時 **以 vision 為正文**，不必為 OCR 調參；細節見 [pdf-ingest-sop.md → OCR 策略](./pdf-ingest-sop.md#ocr-策略刻意不硬優化)。
+
+---
+
+## 部分頁 Ingest（第一次用建議）
+
+長 PDF 可先只收一段，確認流程再全檔。
+
+**跟 Agent 說：**
+
+```text
+/ingest raw/inbox/手冊.pdf 第 1–5 頁
+/ingest ./架構說明.pdf 前五頁
+```
+
+**預期產物：**
+
+- `raw/sources/<base-slug>-頁1至5.md`
+- 資產仍在 `raw/assets/<base-slug>/p01.png`…（頁碼 = PDF 實際頁）
+- Limitations 註明未涵蓋頁
+
+完整互動範例與 checklist：[pdf-ingest-sop.md → 部分頁 Ingest](./pdf-ingest-sop.md#部分頁-ingest第一次用)。
 
 ---
 

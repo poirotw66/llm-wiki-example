@@ -114,7 +114,15 @@ PDF
 |------|------|--------|
 | **文字／表格型** | Docling／文字層段落完整，無資訊圖硬閘 | Docling 初稿 → 直接整理進 `raw/sources/` |
 | **資訊圖頁** | 架構圖、流程圖、對照表、KPI；或文字層極短 | Docling 保留文字；**另** `pdftoppm` + vision／VLM |
-| **掃描型** | 幾乎無可抽取文字 | Docling OCR 優先；不足再 vision；標 Limitations |
+| **掃描／純圖型** | `pdftotext` 字元近 0、或僅點陣頁 | **以 vision 為正文來源**；Docling OCR 僅供參考，**不**當繁中定稿；標 Limitations |
+
+#### OCR 策略（刻意不硬優化）
+
+Docling／RapidOCR 對**繁體中文簡報**常出現簡體、缺字、亂碼。本倉政策：
+
+- 文字層（`pdftotext`）夠用 → 以文字層／Docling 結構化初稿為主。
+- 文字層空或極短 → **直接進視覺閘**，正文＋Visual Evidence 以 **subagent 讀圖**為準。
+- **不要**為了救 OCR 另裝模型、調參或把 OCR 亂稿當 canonical；衝突時以圖為準。
 
 **前置（安裝）**
 
@@ -259,6 +267,56 @@ stdout 的 `exported_assets[].method`：
 
 ---
 
+## 部分頁 Ingest（第一次用）
+
+適合：長 PDF 只要開頭／某一章、先試跑一輪再決定是否全檔。
+
+### 你跟 Agent 怎麼說
+
+```text
+/ingest raw/inbox/手冊.pdf 第 1–5 頁
+/ingest ./架構說明.pdf 前五頁
+/ingest ./規格.pdf 頁 8 至 12
+```
+
+未指定範圍 = **全檔**。
+
+### Agent／CLI 對照
+
+```bash
+# 先看總頁數與文字層粗況
+pdfinfo "raw/inbox/手冊.pdf"
+
+# 只跑指定頁的 Docling＋triage（例：1–5）
+uv run python scripts/docling-pdf.py "raw/inbox/手冊.pdf" \
+  --base-slug "手冊" --page-from 1 --page-to 5
+
+# 只匯出該範圍內的視覺閘頁
+uv run python scripts/docling-pdf.py "raw/inbox/手冊.pdf" \
+  --base-slug "手冊" --page-from 1 --page-to 5 \
+  --export-vision-assets --triage-only
+```
+
+### 產物命名（強制）
+
+| 產物 | 路徑 |
+|------|------|
+| 歸檔稿 | `raw/sources/<base-slug>-頁1至5.md` |
+| wiki `archive_slug` | 同上（含 `-頁1至5`） |
+| 資產目錄 | 仍用 **`<base-slug>`**（不含頁範圍） |
+| 資產檔名 | 實際 PDF 頁碼：`p01.png`…`p05.png`（處理 8–12 則為 `p08`…`p12`） |
+
+### 部分頁 checklist
+
+- [ ] 指令已寫明頁碼範圍（或確認要全檔）
+- [ ] `archive_slug`／檔名含 `-頁<start>至<end>`（勿用全檔 slug）
+- [ ] 資產目錄為 `<base-slug>`；檔名頁碼 = PDF 實際頁碼
+- [ ] 歸檔稿與 wiki 來源頁 **Limitations** 寫明「未涵蓋：第 N 頁起…」
+- [ ] `## 來源資訊` 註明頁面範圍與全檔總頁數
+- [ ] 後續若補其餘頁：另建新歸檔（或修訂前綴 `YYYYMMDD_`），**勿改寫**既有 `raw/sources/` 檔
+
+---
+
 ## 品質驗收清單
 
 完成 PDF ingest 前確認：
@@ -267,6 +325,7 @@ stdout 的 `exported_assets[].method`：
 - [ ] 已跑 `scripts/docling-pdf.py`（或同等 Docling 轉檔）並保留／合併初稿
 - [ ] 每個處理頁有 `### 第 N 頁`（或等效分節）
 - [ ] 非視覺閘頁未無謂送雲端 vision
+- [ ] 文字層空／極短頁：正文以 vision 為準（未把 OCR 亂稿當定稿）
 - [ ] 視覺閘頁資產在 `raw/assets/<base-slug>/p<NN>.png`，且有 Visual Evidence + `![]()` embed，且 **就地**放在該頁／該節下（非文末總庫）
 - [ ] 視覺閘已採 **讀圖一律 subagent**（多張平行），log 註明 `vision_via: subagent`
 - [ ] `wiki/sources/*` 含 **`## Visual Assets`**（有資訊圖時），embed 路徑正確
@@ -291,6 +350,7 @@ stdout 的 `exported_assets[].method`：
 | 第 4 頁圖檔卻標「第 5 頁」 | 檔名、來源位置、正文三者頁碼一致 |
 | 描述「藍色方塊」「現代感設計」 | 見 visual-source-conversion → Vision 文字化原則 |
 | 部分 ingest 卻用全檔 `<archive-slug>` | slug 加 `-頁<start>至<end>` |
+| 把 OCR 亂碼／簡體稿當繁中定稿 | 文字層空 → vision 為準；勿為 OCR 另調參（見上方 **OCR 策略**） |
 | 把 wiki 摘要貼進 `raw/sources/` | 歸檔詳盡、wiki 摘要分離 |
 | 未安裝 docling／相容 torch 就略過轉檔 | `uv sync --group pdf`（Intel Mac 勿強裝 torch≥2.4；見 `pyproject.toml`） |
 | 只下 RapidOCR、缺 layout／tableformer | 下完整預設組：`uv run docling-tools models download -o models/docling`（勿只傳 `rapidocr`） |

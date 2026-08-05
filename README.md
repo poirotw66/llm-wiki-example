@@ -120,6 +120,8 @@ pyproject.toml  uv.lock  .python-version
 /ingest ./手冊.pdf 前五頁          # 部分頁 → archive-slug `…-頁1至5`
 ```
 
+部分頁的產物命名、CLI 與 checklist 見 [docs/pdf-ingest-sop.md → 部分頁 Ingest](docs/pdf-ingest-sop.md#部分頁-ingest第一次用)、[docs/onboarding.md](docs/onboarding.md#部分頁-ingest第一次用建議)。文字層空時以 vision 為準（不硬優化 OCR）。
+
 **硬約束（摘要）**
 
 - 勿改寫既有 `raw/` 檔；修訂請另建新歸檔
@@ -277,7 +279,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | [**docs/data-governance.md**](docs/data-governance.md) | 分類、owner、PII、保存、遮罩、人工核可與 Git 准入 |
 | [**docs/PROMPTS.md**](docs/PROMPTS.md) | Agent 提示詞（**步驟單一來源**） |
 | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) | Ingest 13 步（多模態） |
-| [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) | PDF 轉譯 SOP（安裝前置、`models/docling/`、Docling + 視覺閘、部分頁）；README 有初始化建議指令 |
+| [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) | PDF 轉譯 SOP（安裝前置、OCR 策略、部分頁範例／checklist、Docling + 視覺閘） |
 | [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md) | Visual Evidence 就地放置、讀圖一律 subagent、強制提示詞 |
 | [**docs/onboarding.md**](docs/onboarding.md) | 第一輪 Ingest |
 | [**docs/skill-usage.md**](docs/skill-usage.md) | Skill token／usage ledger |
