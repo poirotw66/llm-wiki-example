@@ -419,7 +419,7 @@ redaction: required
 * **一律**先將輸入原件複製至 `raw/originals/`（**含 Markdown**）。
 * 非 Markdown 或含不可讀視覺之來源 → 轉 **結構化 Markdown** 後寫入 `raw/sources/`（**詳盡還原稿**，見 **docs/visual-source-conversion.md**）；純 MD 輸入亦須另寫 canonical 至 `raw/sources/`（可清理／補強，不可省略 originals）。
 * 支援類型：`.md`、`.txt`、`.docx`、`.pdf`、`.ppt`/`.pptx`、`.xlsx`、常見圖片格式（見 ingest-pipeline 表）。
-* 含流程圖、架構圖、截圖、ER、掃描頁等 → 依 [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md)；資產入 `raw/assets/`。**PDF** 預設 [Docling](https://github.com/docling-project/docling)（`scripts/docling-pdf.py`）→ 結構化初稿；**僅**資訊圖／文字層極短頁再 vision／VLM（見 [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md)）。**文字層極短但頁面有架構圖時，必須 vision 寫層／節點盤點，禁止只抄標題。** Visual Evidence **就地**寫在該頁／該節下，**禁止**文末彙整所有圖。**讀圖一律 subagent**（見 visual-source-conversion → 平行 Vision 編排）；主 Agent **禁止**自行讀圖。
+* 含流程圖、架構圖、截圖、ER、掃描頁等 → 依 [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md)；資產入 `raw/assets/`。**PDF** 預設 **fast**：`pdftotext` + 頁級分流（`scripts/docling-pdf.py`，`--engine fast`）→ 文字頁直入；**僅**資訊圖／文字層極短頁再 `pdftoppm` + vision／VLM（見 [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md)）。**僅使用者明確指定** full／Docling 時才用 `--engine docling`；Agent 不得自行升級。[Docling](https://github.com/docling-project/docling) 為可選路徑。**文字層極短但頁面有架構圖時，必須 vision 寫層／節點盤點，禁止只抄標題。** Visual Evidence **就地**寫在該頁／該節下，**禁止**文末彙整所有圖。**讀圖一律 subagent**（見 visual-source-conversion → 平行 Vision 編排）；主 Agent **禁止**自行讀圖。
 * 無資訊性視覺 → log 或歸檔稿註明「視覺轉換閘：未適用」。
 * 視覺無法辨識 → 保留資產（若可）、標 `（未知）`、寫入 **Limitations / Gaps**。
 * 資產路徑為 **`raw/assets/<base-slug>/p<NN>.png`**（見 **docs/pdf-ingest-sop.md**）；頁碼須與「來源位置」一致；修訂歸檔時 **另建新檔**（如 `YYYYMMDD_<base-slug>.md`），勿改寫既有 `raw/sources/`。

@@ -14,11 +14,11 @@
 | 第一輪 Ingest | [**docs/onboarding.md**](docs/onboarding.md) |
 | PDF 轉譯 SOP | [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) |
 | 視覺閘／Visual Evidence | [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md)（就地放置；**讀圖一律 subagent**） |
-| PDF 初始化安裝 | 見下方 **初始化安裝**（`uv sync --group pdf`、Docling 模型、Poppler）；詳見 [docs/pdf-ingest-sop.md](docs/pdf-ingest-sop.md) |
+| PDF 初始化安裝 | 見下方 **初始化安裝**（預設只需 **Poppler**；Docling 可選）；詳見 [docs/pdf-ingest-sop.md](docs/pdf-ingest-sop.md) |
 | Wiki lint | `uv run --group test python3 scripts/wiki-lint.py` |
 | Ingest 清理 | `python3 scripts/ingest-cleanup.py <input> --archive raw/originals/<original> --archive raw/sources/<slug>.md`（先 dry-run，確認後加 `--confirm`） |
 | Wiki 重置為空白 | `uv run python scripts/wiki-reset.py`（dry-run）→ `--confirm`（保留 `wiki/lint/`；append log） |
-| PDF Docling helper | `uv run python scripts/docling-pdf.py ...`（可 `--page-from`／`--page-to` 部分頁） |
+| PDF helper | `uv run python scripts/docling-pdf.py ...`（**預設 fast**；**僅使用者指定**才 `--engine docling`／full） |
 | Skill token 報表 | `python3 scripts/wiki-usage.py report --by skill`（[docs/skill-usage.md](docs/skill-usage.md)） |
 | 頁面版型 | [**docs/templates/**](docs/templates/) |
 | CI（schema／raw 不可變／log） | [`.github/workflows/wiki-quality.yml`](.github/workflows/wiki-quality.yml) |
@@ -44,7 +44,7 @@ docs/                   # 支援文件（非 wiki 知識本體）
   data-governance.md  skill-usage.md  templates/
 scripts/                # wiki-lint、ingest-cleanup、wiki-reset、docling-pdf、wiki-usage
 .github/workflows/      # wiki-quality CI
-models/docling/         # Docling 預設模型（本機下載；已 gitignore；約 1.2GB）
+models/docling/         # 可選 Docling 模型（本機下載；已 gitignore；約 1.2GB）
 config/                 # skill-usage 費率等設定
 .llm-wiki/usage/        # append-only Skill 使用量 ledger（events.jsonl）
 skills/                 # 薄 Skill 單一來源（npx / 本機同步）
@@ -81,7 +81,7 @@ pyproject.toml  uv.lock  .python-version
         ▼
  Detect／Triage（檔型、是否轉檔、是否含資訊圖）
         │
-        ├─ PDF：Docling 初稿＋頁級分流（可只跑部分頁）
+        ├─ PDF：pdftotext 初稿＋頁級分流（預設 fast；可只跑部分頁）
         ├─ 資訊圖頁：匯出 raw/assets/ → **subagent 讀圖**寫 Visual Evidence
         │
         ▼
@@ -134,37 +134,36 @@ pyproject.toml  uv.lock  .python-version
 
 ### 初始化安裝（建議；含 PDF Ingest）
 
-核心 wiki 腳本（lint、cleanup、usage）**不必**裝 PDF 組。若會 `/ingest` PDF，請在本機**一次備齊**下列前置（之後可跳過）。細節與常見錯誤見 [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) → **前置（安裝）**。
+核心 wiki 腳本（lint、cleanup、usage）**不必**裝 PDF 組。若會 `/ingest` PDF，**預設 fast 路徑只需 Poppler**（不必下載 ~1.2GB Docling 模型）。細節見 [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md)。
+
+**PDF 引擎政策**：**一律預設 `fast`**（`pdftotext` + 頁級視覺閘）。**僅當使用者明確指定**（例如「用 full」「用 Docling」「`--engine docling`」）才改走 Docling；Agent **不得**自行因「複雜表格／有 GPU」升級。
 
 ```bash
 # 0) 安裝 uv（若尚未安裝）
 #    https://docs.astral.sh/uv/getting-started/installation/
 
-# 1) Python 依賴（Docling／torch）
-uv sync --group pdf
-
-# 2) Docling 預設模型組 → models/docling/（gitignore；約 1.2GB）
-#    勿只傳 rapidocr，否則缺 layout／tableformer
-uv run docling-tools models download -o models/docling
-
-# 3) 系統工具：pdfinfo／pdftotext／pdftoppm（Poppler）
+# 1) 系統工具：pdfinfo／pdftotext／pdftoppm（Poppler）— 預設 fast 必備
 #    macOS:   brew install poppler
 #    Ubuntu:  sudo apt install poppler-utils
 #    Windows: winget install --id oschwartz10612.Poppler -e
 #             （安裝後重新開一個終端機，讓 PATH 生效）
 
-# 4) 確認 helper
+# 2) 確認 helper（預設 --engine fast，不載入 Docling）
 uv run python scripts/docling-pdf.py --help
 pdfinfo -v
+
+# --- 可選：僅在使用者指定 full／Docling 時 ---
+# uv sync --group pdf
+# uv run docling-tools models download -o models/docling
 ```
 
 | 項目 | 說明 |
 |------|------|
-| 模型目錄 | `models/docling/`（`scripts/docling-pdf.py` 預設） |
-| 覆寫 | `DOCLING_ARTIFACTS_PATH` |
-| CLI | 用 `uv run docling-tools ...`／`uv run python ...`（勿直接打 `docling-tools`；Windows 上 `python3` 常不可用） |
+| 預設引擎 | **`fast`**（`pdftotext` + `pdftoppm`）；**不需** Docling 模型 |
+| full／Docling | **僅使用者指定**時用 `--engine docling`；需先裝模型（`models/docling/`） |
+| 覆寫 | `DOCLING_ARTIFACTS_PATH`（僅 docling 引擎） |
+| CLI | 用 `uv run python ...`（Windows 上 `python3` 常不可用） |
 | Python | **3.12** 建議（`.python-version`）；`>=3.10,<3.14` |
-| 平台 | **Apple Silicon**（含 M 系列）：`torch>=2.4`，可用 **MPS**；**Intel Mac**：torch 鎖定 `2.2.2`（見 `pyproject.toml`）；**Windows**：CPU 可跑，首次 `uv sync --group pdf` 與模型下載較久 |
 | 部分頁 | `uv run python scripts/docling-pdf.py <pdf> --page-from 1 --page-to 5 --export-vision-assets` |
 | 輸入偏好 | **可選文字** PDF／MD／Office 優先；純圖簡報會全頁 vision |
 | 回到空白 | `uv run python scripts/wiki-reset.py` → 確認後 `--confirm`（見 [onboarding](docs/onboarding.md#回到範本空白可選)） |
@@ -279,7 +278,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | [**docs/data-governance.md**](docs/data-governance.md) | 分類、owner、PII、保存、遮罩、人工核可與 Git 准入 |
 | [**docs/PROMPTS.md**](docs/PROMPTS.md) | Agent 提示詞（**步驟單一來源**） |
 | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) | Ingest 13 個業務步驟（多模態；telemetry 為外層 wrapper） |
-| [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) | PDF 轉譯 SOP（安裝前置、OCR 策略、部分頁範例／checklist、Docling + 視覺閘） |
+| [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) | PDF 轉譯 SOP（預設 fast；full／Docling 僅使用者指定） |
 | [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md) | Visual Evidence 就地放置、讀圖一律 subagent、強制提示詞 |
 | [**docs/onboarding.md**](docs/onboarding.md) | 第一輪 Ingest |
 | [**docs/skill-usage.md**](docs/skill-usage.md) | Skill token／usage ledger |
@@ -288,7 +287,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | [**wiki/README.md**](wiki/README.md) | `wiki/` 目錄導覽 |
 | [**SKILL.md**](SKILL.md) | npx skills 安裝 |
 | [**skills/**](skills/) | 薄 Skill（**唯一 Git 來源**） |
-| [**pyproject.toml**](pyproject.toml)／[**uv.lock**](uv.lock) | uv 依賴；PDF 組見 `uv sync --group pdf` + 模型下載 |
+| [**pyproject.toml**](pyproject.toml)／[**uv.lock**](uv.lock) | uv 依賴；可選 PDF／Docling 組見 `uv sync --group pdf` |
 | [**config/**](config/) | usage 費率等設定 |
 | [**scripts/**](scripts/) | lint、cleanup、wiki-reset、docling-pdf、wiki-usage |
 | [**.github/workflows/wiki-quality.yml**](.github/workflows/wiki-quality.yml) | PR／push：pytest + wiki-lint |

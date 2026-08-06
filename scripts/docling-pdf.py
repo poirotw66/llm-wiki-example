@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Docling-first PDF draft + page triage for the vision gate.
+"""PDF draft + page triage for the vision gate.
 
-Default path: Docling → structured Markdown draft.
+Default engine ``fast``: pdftotext draft + triage + pdftoppm for vision pages.
+Optional engine ``docling``: Docling structured Markdown (+ optional picture crop).
+
 Vision path: only pages flagged by triage (short text layer and/or diagram cues).
-
-Vision assets prefer Docling embedded / cropped pictures; fall back to full-page
-pdftoppm when no usable picture is available (e.g. vector-only diagrams).
 """
 from __future__ import annotations
 
@@ -33,10 +32,14 @@ def os_temp_dir() -> Path:
 def temp_path(name: str) -> Path:
     """Build a path under the OS temp directory."""
     return os_temp_dir() / name
+
+
 # Fixed Docling artifacts dir (contains RapidOcr/). Override with DOCLING_ARTIFACTS_PATH.
 DEFAULT_DOCLING_ARTIFACTS = ROOT / "models" / "docling"
 DEFAULT_CHAR_THRESHOLD = 200
 DEFAULT_IMAGE_AREA = 80_000
+ENGINE_FAST = "fast"
+ENGINE_DOCLING = "docling"
 VISION_KEYWORDS = (
     "架構圖",
     "架構",
@@ -79,7 +82,10 @@ class DoclingConvertResult:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Convert PDF with Docling and triage pages for vision."
+        description=(
+            "Convert PDF to a Markdown draft and triage pages for vision. "
+            "Default engine is fast (pdftotext); use --engine docling for full parse."
+        )
     )
     parser.add_argument("pdf", help="PDF path (repo-relative or absolute)")
     parser.add_argument(
@@ -90,7 +96,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--out",
         help=(
             "Draft Markdown output path; "
-            "default = <OS-temp>/<base-slug>-docling-draft.md"
+            "default = <OS-temp>/<base-slug>-pdf-draft.md"
+        ),
+    )
+    parser.add_argument(
+        "--engine",
+        choices=(ENGINE_FAST, ENGINE_DOCLING),
+        default=ENGINE_FAST,
+        help=(
+            "Draft engine: fast = pdftotext + pdftoppm (default); "
+            "docling = Docling structured MD (optional; needs models)"
         ),
     )
     parser.add_argument("--page-from", type=int, default=1, help="First page (1-based)")
@@ -110,14 +125,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--triage-only",
         action="store_true",
-        help="Skip Markdown draft; still may run Docling when exporting pictures",
+        help="Skip Markdown draft; Docling runs only when --engine docling exports pictures",
     )
     parser.add_argument(
         "--export-vision-assets",
         action="store_true",
         help=(
             "Export vision-flagged pages into raw/assets/<base-slug>/; "
-            "prefer Docling pictures, else full-page pdftoppm"
+            "fast engine uses pdftoppm; docling prefers pictures then pdftoppm"
         ),
     )
     parser.add_argument(
@@ -134,7 +149,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--no-fallback",
         action="store_true",
-        help="Fail if Docling is unavailable (default: fall back to pdftotext)",
+        help="With --engine docling, fail if Docling is unavailable",
     )
     return parser
 
@@ -477,9 +492,22 @@ def wrap_draft(
     engine: str,
 ) -> str:
     vision_pages = [item.page for item in triage if item.needs_vision]
-    draft_heading = (
-        "## Docling 初稿" if engine == "docling" else "## 文字層初稿（Docling 後備）"
-    )
+    if engine == ENGINE_DOCLING:
+        draft_heading = "## Docling 初稿"
+        export_note = (
+            "候選頁匯出資產時優先 Docling 內嵌／裁切圖，"
+            "抽不到再用整頁 `pdftoppm`，並以 vision／VLM 補 Visual Evidence"
+        )
+    elif engine == "pdftotext-fallback":
+        draft_heading = "## 文字層初稿（Docling 後備）"
+        export_note = (
+            "候選頁以整頁 `pdftoppm` 匯出，並以 vision／VLM 補 Visual Evidence"
+        )
+    else:
+        draft_heading = "## 文字層初稿（pdftotext／fast）"
+        export_note = (
+            "候選頁以整頁 `pdftoppm` 匯出，並以 vision／VLM 補 Visual Evidence"
+        )
     meta = "\n".join(
         [
             "## 來源資訊",
@@ -490,8 +518,7 @@ def wrap_draft(
             f"- 轉檔引擎：`{engine}`",
             f"- 視覺閘候選頁：{vision_pages or '無'}",
             "- 說明：文字／表格足夠之頁可直接整理進 `raw/sources/`；"
-            "候選頁匯出資產時優先 Docling 內嵌／裁切圖，"
-            "抽不到再用整頁 `pdftoppm`，並以 vision／VLM 補 Visual Evidence"
+            f"{export_note}"
             "（見 docs/pdf-ingest-sop.md）。",
             "",
             "---",
@@ -529,6 +556,7 @@ def main() -> int:
         summary = {
             "pdf": str(pdf.relative_to(ROOT)) if pdf.is_relative_to(ROOT) else str(pdf),
             "base_slug": base_slug,
+            "engine": args.engine,
             "page_from": page_from,
             "page_to": page_to,
             "char_threshold": args.char_threshold,
@@ -540,12 +568,14 @@ def main() -> int:
 
         need_draft = not args.triage_only
         need_export = args.export_vision_assets
-        extract_images = need_export and not args.force_page_render
+        use_docling = args.engine == ENGINE_DOCLING
+        force_page_render = args.force_page_render or not use_docling
+        extract_images = need_export and use_docling and not force_page_render
         docling_document = None
-        engine = "docling"
+        engine = args.engine if use_docling else ENGINE_FAST
         markdown = ""
 
-        if need_draft or extract_images:
+        if use_docling and (need_draft or extract_images):
             try:
                 converted = convert_with_docling(
                     pdf,
@@ -556,6 +586,7 @@ def main() -> int:
                 )
                 markdown = converted.markdown
                 docling_document = converted.document
+                engine = ENGINE_DOCLING
             except RuntimeError as error:
                 if need_draft and args.no_fallback:
                     raise
@@ -575,6 +606,9 @@ def main() -> int:
                         f"using pdftoppm ({error})",
                         file=sys.stderr,
                     )
+        elif need_draft:
+            markdown = convert_with_pdftotext_fallback(pdf, page_from, page_to)
+            engine = ENGINE_FAST
 
         if need_export:
             written = export_vision_assets(
@@ -585,7 +619,7 @@ def main() -> int:
                 args.dpi,
                 min_image_area=args.image_area,
                 document=docling_document,
-                force_page_render=args.force_page_render,
+                force_page_render=force_page_render,
                 page_from=page_from,
                 page_to=page_to,
             )
@@ -614,7 +648,7 @@ def main() -> int:
         out = (
             resolve_path(args.out)
             if args.out
-            else temp_path(f"{base_slug}-docling-draft.md")
+            else temp_path(f"{base_slug}-pdf-draft.md")
         )
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(

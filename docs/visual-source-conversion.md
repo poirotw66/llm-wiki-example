@@ -11,7 +11,7 @@
 |------|----------------------------------|----------------|
 | Vision **怎麼寫**（RAG、資訊圖／裝飾圖、轉譯指令） | **單一來源** | 引用本檔 |
 | Visual Evidence、embed 原圖、wiki Visual Assets | **單一來源** | 引用本檔 |
-| PDF **怎麼跑**（Docling、頁級分流、pdftoppm、slug） | 引用 pdf-ingest-sop | **單一來源** |
+| PDF **怎麼跑**（fast／docling、頁級分流、pdftoppm、slug） | 引用 pdf-ingest-sop | **單一來源** |
 
 ---
 
@@ -63,7 +63,7 @@
 
 本節為 **所有含資訊性視覺來源**（PDF、PPTX、截圖等）的 vision 轉譯品質標準。產出寫入 `raw/sources/<archive-slug>.md`，供 RAG／檢索使用。
 
-PDF 執行時機與 CLI 見 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)（Docling 預設；**僅**視覺閘候選頁進本節）。
+PDF 執行時機與 CLI 見 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)（預設 fast；**僅**視覺閘候選頁進本節）。
 
 **強制**：對每一張視覺閘資產（`raw/assets/<base-slug>/pNN.png`），**必須讀圖**，並 **逐字套用**下方 **Agent 用提示詞**；不得改寫成摘要版提示、不得用未讀圖的空殼範本填寫。  
 **讀圖一律 subagent（強制）**：凡需開啟／分析圖片（視覺閘資產、資訊圖、截圖等）以產出 Visual Evidence 或圖內轉寫，**一律**派 **subagent** 讀圖；**禁止**主 Agent 自行 `Read` 圖片。多張時平行派工（見下方 **平行 Vision 編排**）。
@@ -74,7 +74,7 @@ PDF 執行時機與 CLI 見 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)（Docli
 
 ```text
 主 Agent（Ingest 編排）
-  ├─ Docling／匯出資產／文字頁歸檔骨架（不讀圖）
+  ├─ pdftotext／可選 Docling／匯出資產／文字頁歸檔骨架（不讀圖）
   ├─ 每張視覺閘圖 → 一個（或一組）subagent 讀圖＋轉寫
   │     每員只產出「可就地插入」的 #### Visual Evidence 區塊
   ├─ 依頁碼合併進 raw/sources/<archive-slug>.md 對應節

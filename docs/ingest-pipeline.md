@@ -50,7 +50,7 @@
 | 可否直達 Ingest | `.md` 且內容已結構化 → 可跳過轉檔 |
 
 **3. 多模態轉 Markdown**（非 `.md` 或 `.md` 內嵌不可讀視覺時）  
-依類型轉為 **結構化繁體中文 Markdown**（技術詞保留英文）。**PDF** 依 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)：`scripts/docling-pdf.py`（Docling 初稿 + 頁級分流）→ 文字／表格直入；**僅**資訊圖／短文字頁 `pdftoppm` + vision／VLM。含資訊性視覺時 **必須** 依 [**visual-source-conversion.md**](./visual-source-conversion.md)（含 **硬閘**、**就地放置**、**讀圖一律 subagent** 之平行 Vision 編排）。使用者無須另下「請轉視覺」指令。
+依類型轉為 **結構化繁體中文 Markdown**（技術詞保留英文）。**PDF** 依 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)：`scripts/docling-pdf.py`（預設 `--engine fast`：`pdftotext` 初稿 + 頁級分流）→ 文字／表格直入；**僅**資訊圖／短文字頁 `pdftoppm` + vision／VLM。**僅使用者指定**時才 `--engine docling`。含資訊性視覺時 **必須** 依 [**visual-source-conversion.md**](./visual-source-conversion.md)（含 **硬閘**、**就地放置**、**讀圖一律 subagent** 之平行 Vision 編排）。使用者無須另下「請轉視覺」指令。
 
 ### B. 不可變歸檔（BU + OKF）
 
@@ -62,7 +62,7 @@
 
 **6. 歸檔 canonical Markdown**  
 **新增** `raw/sources/<slug>.md`（僅新檔；遵循 **檔案與路徑命名**）。  
-- **來源**：自 `raw/originals/` 轉寫、清理或補強（MD 可剝 HTML／補 metadata；PDF 等經 Docling／vision）。  
+- **來源**：自 `raw/originals/` 轉寫、清理或補強（MD 可剝 HTML／補 metadata；PDF 等經 `pdftotext`／可選 Docling／vision）。  
 - **粒度**：**盡可能詳盡還原**（非 wiki 級精簡）；逐頁／逐段、圖內標籤與表格須寫入正文（見 **visual-source-conversion.md** → **`raw/sources/` 與 `wiki/sources/` 分工**）。  
 - **slug**（`<archive-slug>`）：全檔／部分頁／修訂規則見 **docs/pdf-ingest-sop.md** 與 **docs/okf.md** → `archive_slug` 語意。
 - **修訂**：來源改版時 **另建新檔**（可選 `YYYYMMDD_<slug>.md` 或新 slug），勿就地改寫舊歸檔。  
@@ -102,7 +102,7 @@
 | Markdown | `.md` | **先**入 `raw/originals/`；再寫 canonical 至 `raw/sources/`（可清理／補強）；內嵌視覺仍走視覺閘 |
 | 純文字 | `.txt` | 轉 Markdown 標題結構 |
 | Word | `.docx` | 轉 Markdown（標題、表格、列表） |
-| PDF | `.pdf` | 依 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)：Docling 預設 + 頁級視覺閘；支援全檔或頁面範圍 |
+| PDF | `.pdf` | 依 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)：預設 fast；**僅使用者指定**才 `--engine docling`；支援全檔或頁面範圍 |
 | 簡報 | `.ppt` `.pptx` | 每張投影片一節（投影片編號、標題、表格、圖） |
 | 試算表 | `.xlsx` | 每工作表一節或表格 |
 | 圖片 | `.png` `.jpg` `.webp` | 視覺閘 → 文字描述 + `raw/assets/` |
