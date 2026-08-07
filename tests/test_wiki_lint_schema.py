@@ -24,6 +24,7 @@ def _bundle(tmp_path: Path) -> tuple[Path, Path]:
         encoding="utf-8",
     )
     (wiki / "log.md").write_text("# Wiki Log\n", encoding="utf-8")
+    (wiki / "purpose.md").write_text("# Purpose\n\n## Goals\n\n- demo\n", encoding="utf-8")
     page = wiki / "concepts/api.md"
     page.write_text(
         """---\ntype: concept\ntitle: API\ndescription: Application programming interface\ntags: [api]\nstatus: stable\nsources:\n  - id: spec\n    resource: https://example.com/spec\ngenerated: {by: agent/test, at: 2026-08-05T12:00:00Z}\nstale_after: 2099-01-01\nclassification: internal\nowner: team:platform\naccess_scope: team:platform\ncontains_pii: false\nretention: permanent\nredaction: none\n---\n\n# API\n\nSee [Index](../index.md).\n""",
@@ -145,6 +146,16 @@ def test_source_schema_and_forbidden_wiki_link_are_checked(tmp_path: Path, capsy
     output = capsys.readouterr().err
     assert "source page missing required headings" in output
     assert "wiki-style link is forbidden" in output
+
+
+def test_raw_archive_requires_wiki_source_page(tmp_path: Path, capsys) -> None:
+    module = _load_lint()
+    _bundle(tmp_path)
+    (tmp_path / "raw/sources/missing-summary.md").write_text("# archive\n", encoding="utf-8")
+    _configure(module, tmp_path)
+
+    assert module.main([]) == 1
+    assert "raw archive missing wiki/sources summary page" in capsys.readouterr().err
 
 
 def test_history_checks_reject_raw_changes_and_log_rewrites(tmp_path: Path, monkeypatch, capsys) -> None:

@@ -1,7 +1,7 @@
 # 部門 Wiki 上手（Ingest 流程）
 
 本檔說明 **第一輪 Ingest**。本 repo 的 `wiki/` **刻意留白** — 請以你們自己的第一份文件走完流程。  
-**階段 1** 支援 **一鍵多模態**（PDF、Office、圖片等）；完整 13 個 Ingest 業務步驟見 [**ingest-pipeline.md**](./ingest-pipeline.md)（telemetry 為外層 wrapper）。
+**階段 1** 支援 **一鍵多模態**（PDF、Office、圖片等）；完整 Ingest 步驟見 [**PROMPTS.md**](./PROMPTS.md)／[**AGENTS.md**](../AGENTS.md)（對照表：[ingest-pipeline.md](./ingest-pipeline.md)）。
 
 - 規約：[AGENTS.md](../AGENTS.md)（**OKF 主軸**、**來源轉換政策**）
 - OKF 對照：[docs/okf.md](./okf.md)
@@ -17,7 +17,7 @@
 
 1. 以 **GitHub Template** 或 **fork** 建立新 repo。
 2. **不要**在共用的 `llm-wiki-example` 上寫部門知識。
-3. 編輯 `wiki/index.md` 的 **Overview**（部門名稱、範圍、維護方式）。
+3. 編輯 `wiki/purpose.md`（目標、關鍵問題、範圍）與 `wiki/index.md` 的 **Overview**。
 4. 先指定資料 owner、分類／PII 規則與核准私有 repo；依 [data-governance.md](./data-governance.md) 完成 Git 准入與例外流程設定。
 5. 若會 ingest PDF：完成下方 **PDF 前置（與 README 對齊）**（預設只需 Poppler）。
 
@@ -74,7 +74,7 @@ Windows 注意：用 `uv run python`（勿依賴 Store 的 `python3`）；安裝
 
 ---
 
-## 快速流程（對照 13 個業務步驟）
+## 快速流程（對照 Ingest 步驟）
 
 | 階段 | 做什麼 | 產物 |
 |------|--------|------|
@@ -95,7 +95,7 @@ Windows 注意：用 `uv run python`（勿依賴 Store 的 `python3`）；安裝
    - 原件 → `raw/originals/`（位元副本）
    - 圖片（若有）→ `raw/assets/<base-slug>/p<NN>.png`
    - canonical 正文 → **`raw/sources/<archive-slug>.md`**（新檔；修訂另建新檔）
-4. 歸檔成功後，依 cleanup dry-run／`--confirm` 防呆流程 **刪除** `raw/inbox/` 或 repo 根目錄的輸入副本（原件已在 `raw/originals/`；見 **ingest-pipeline** 步驟 12）。
+4. 歸檔成功後，依 cleanup dry-run／`--confirm` 防呆流程 **刪除** `raw/inbox/` 或 repo 根目錄的輸入副本（原件已在 `raw/originals/`；見 **AGENTS／PROMPTS** 輸入清理步驟）。
 
 命名：`<base-slug>`（資產用）、`<archive-slug>`（歸檔檔名與 `resource`）；全檔／部分頁／修訂規則見 **pdf-ingest-sop.md** 與 **AGENTS.md**。
 

@@ -8,3 +8,5 @@ wiki/.obsidian/
 __pycache__/
 # Docling / RapidOCR model weights (download locally; ~100MB+)
 models/docling/
+# Ingest working products (SHA cache + two-step analyses)
+.llm-wiki/ingest/

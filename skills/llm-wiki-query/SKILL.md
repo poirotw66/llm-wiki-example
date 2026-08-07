@@ -1,6 +1,6 @@
 ---
 name: llm-wiki-query
-description: LLM Wiki Query。使用者輸入 /query、query、向 wiki 提問、查知識庫時使用。步驟見 docs/PROMPTS.md 的 Query 提示詞；規約見 AGENTS.md。
+description: LLM Wiki Query。使用者輸入 /query、query、向 wiki 提問、查知識庫、僅讀歸檔、read sources only 時使用。步驟見 docs/PROMPTS.md 的 Query 提示詞；規約見 AGENTS.md。
 ---
 
 # /query
@@ -17,4 +17,4 @@ description: LLM Wiki Query。使用者輸入 /query、query、向 wiki 提問�
 
 ## 使用者輸入
 
-訊息中的問題為本次查詢；答案須附引用與不確定性標記。
+訊息中的問題為本次查詢；答案須附引用與不確定性標記。若含「僅讀歸檔」「read sources only」「--sources-only」，啟用 Read Sources Only 模式。

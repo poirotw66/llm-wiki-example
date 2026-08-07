@@ -44,19 +44,23 @@ def test_lint_measurement_starts_before_automatic_lint() -> None:
     assert section.index("wiki-usage.py start lint") < section.index("scripts/wiki-lint.py")
 
 
-def test_ingest_has_thirteen_business_steps_and_external_telemetry() -> None:
+def test_ingest_has_numbered_business_steps_and_external_telemetry() -> None:
     prompt = prompt_section("ingest")
-    assert re.findall(r"(?m)^(\d+)\. ", prompt) == [str(number) for number in range(14)]
-    assert "1–13 為 13 個業務步驟" in prompt
-    assert "步驟 0 是寫入前的資料治理 gate" in prompt
-    assert "telemetry wrapper，兩者皆不計入 13 步" in prompt
+    assert re.findall(r"(?m)^(\d+)\. ", prompt) == [str(number) for number in range(17)]
+    assert "步驟 0 為資料治理 gate" in prompt
+    assert "telemetry wrapper 不計入業務步驟" in prompt
+    assert "兩段式" in prompt
+    assert "ingest-cache.py" in prompt
 
     agents = read(ROOT / "AGENTS.md")
     start = agents.index("# 🛠 操作：Ingest")
     end = agents.index("\n# ❓ 操作：Query", start)
     ingest_contract = agents[start:end]
-    assert re.findall(r"(?m)^(\d+)\. ", ingest_contract) == [str(number) for number in range(1, 14)]
-    assert "13 個 Ingest 業務步驟" in ingest_contract
+    assert re.findall(r"(?m)^(\d+)\. ", ingest_contract) == [
+        str(number) for number in range(1, 17)
+    ]
+    assert "兩段式" in ingest_contract
+    assert "ingest-cache.py" in ingest_contract
 
 
 def test_action_skills_remain_thin_delegators() -> None:

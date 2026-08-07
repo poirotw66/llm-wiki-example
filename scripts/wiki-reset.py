@@ -43,6 +43,8 @@ okf_version: "0.2"
 ## Overview
 
 - 本 repo **llm-wiki-example** 為各部門可 fork 的 **OKF v0.2 Knowledge Bundle 範本**（見 [docs/okf.md](../docs/okf.md)）。
+- **方向**：[Purpose](./purpose.md) — 目標、關鍵問題、範圍（與 AGENTS／PROMPTS 操作 schema 分離）。
+- **人審佇列**：[Review Queue](./review/queue.md) — Ingest 非同步標出需人工項目。
 - 寫入或分享內容前，須依 [企業資料治理](../docs/data-governance.md) 完成分類、PII、遮罩、owner 與 Git 准入確認。
 - [企業治理與 OKF v0.2 生產化強化](./lint/企業治理與OKF-v0.2強化.md) — 本輪治理、cleanup、schema lint、CI 與遷移驗證摘要。
 - 採用見 [README](../README.md)、[docs/onboarding.md](../docs/onboarding.md)、[SKILL.md](../SKILL.md)。
@@ -68,6 +70,17 @@ okf_version: "0.2"
 ## FAQ
 
 （尚無內容 — 請 FAQ 操作後更新）
+"""
+
+BLANK_REVIEW = """\
+# Review Queue
+
+Async human-in-the-loop items. Ingest／Lint may append here without blocking wiki writes.
+Close items with `python3 scripts/ingest-review.py close --id <id>`.
+
+## Open
+
+## Done
 """
 
 
@@ -150,6 +163,11 @@ def reset_wiki(*, confirmed: bool, skip_log: bool) -> int:
     for path in targets:
         print(f"  - {path.relative_to(ROOT)}")
     print(f"  - rewrite {index_path.relative_to(ROOT)} (blank catalog)")
+    review_path = WIKI / "review" / "queue.md"
+    print(f"  - rewrite {review_path.relative_to(ROOT)} (empty queue)")
+    cache_path = ROOT / ".llm-wiki" / "ingest" / "cache.json"
+    analyses_dir = ROOT / ".llm-wiki" / "ingest" / "analyses"
+    print(f"  - clear ingest cache/analyses under .llm-wiki/ingest/")
     if not skip_log:
         print(f"  - append {log_path.relative_to(ROOT)}")
 
@@ -161,13 +179,19 @@ def reset_wiki(*, confirmed: bool, skip_log: bool) -> int:
         remove_path(path)
     ensure_gitkeeps()
     index_path.write_text(BLANK_INDEX, encoding="utf-8")
+    review_path.parent.mkdir(parents=True, exist_ok=True)
+    review_path.write_text(BLANK_REVIEW, encoding="utf-8")
+    if cache_path.is_file():
+        cache_path.unlink()
+    if analyses_dir.is_dir():
+        shutil.rmtree(analyses_dir)
     if not skip_log:
         append_log(
             log_path,
             "初始化 wiki 回範本空白",
             [
                 "執行 `scripts/wiki-reset.py --confirm`：清除 knowledge 頁與 raw 歸檔／inbox 內容。",
-                "還原 `wiki/index.md` 為刻意留白；保留 `wiki/lint/`。",
+                "還原 `wiki/index.md` 為刻意留白；清空 review queue 與 ingest cache；保留 `wiki/lint/`、`wiki/purpose.md`。",
             ],
         )
     print("reset complete")

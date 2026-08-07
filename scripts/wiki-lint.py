@@ -24,7 +24,9 @@ WIKI = ROOT / "wiki"
 RAW = ROOT / "raw"
 RAW_SOURCES = RAW / "sources"
 RAW_ASSETS = RAW / "assets"
-SKIP = frozenset({"index.md", "log.md", "README.md"})
+SKIP = frozenset(
+    {"index.md", "log.md", "README.md", "purpose.md", "queue.md", "insights.md"}
+)
 FM = re.compile(r"\A---[ \t]*\r?\n(.*?)\r?\n---[ \t]*(?:\r?\n|\Z)", re.DOTALL)
 LINKS = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")
 IMG = re.compile(r"!\[[^\]]*\]\(([^)]+)\)")
@@ -335,6 +337,33 @@ def archive_slug(meta: dict[str, Any]) -> str | None:
     return None
 
 
+def check_purpose(err: list[str]) -> None:
+    path = WIKI / "purpose.md"
+    if not path.is_file():
+        err.append("missing wiki purpose file: wiki/purpose.md")
+        return
+    text = path.read_text(encoding="utf-8")
+    if "# Purpose" not in text and "# 目的" not in text:
+        err.append("wiki/purpose.md must contain '# Purpose' or '# 目的'")
+
+
+def check_archive_has_source_page(err: list[str]) -> None:
+    """Every raw/sources archive must have a matching wiki/sources summary page."""
+    if not RAW_SOURCES.is_dir():
+        return
+    wiki_stems = {
+        path.stem
+        for path in (WIKI / "sources").glob("*.md")
+        if path.is_file()
+    } if (WIKI / "sources").is_dir() else set()
+    for archive in sorted(RAW_SOURCES.glob("*.md")):
+        if archive.stem not in wiki_stems:
+            err.append(
+                "raw archive missing wiki/sources summary page: "
+                f"raw/sources/{archive.name} (expected wiki/sources/{archive.stem}.md)"
+            )
+
+
 def check_resources(pages: dict[Path, tuple[str, dict[str, Any]]], err: list[str]) -> None:
     for path, (_, meta) in pages.items():
         slug = archive_slug(meta)
@@ -527,9 +556,11 @@ def main(argv: list[str] | None = None) -> int:
     err: list[str] = []
     check_index(err)
     check_log(err)
+    check_purpose(err)
     pages = load_pages(err)
     backlinks = check_links(pages, err)
     check_resources(pages, err)
+    check_archive_has_source_page(err)
     check_staleness(pages, err)
     check_source_schema(pages, err)
     check_catalog_and_backlinks(pages, backlinks, err)

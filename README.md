@@ -10,7 +10,7 @@
 | OKF 對照 | [**docs/okf.md**](docs/okf.md) |
 | 資料分類、PII 與 Git 准入 | [**docs/data-governance.md**](docs/data-governance.md) |
 | Agent 提示詞（步驟單一來源） | [**docs/PROMPTS.md**](docs/PROMPTS.md) |
-| Ingest 13 個業務步驟 | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) |
+| Ingest 步驟（含快取／兩段式／Review） | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md)／[PROMPTS](docs/PROMPTS.md) |
 | 第一輪 Ingest | [**docs/onboarding.md**](docs/onboarding.md) |
 | PDF 轉譯 SOP | [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) |
 | 視覺閘／Visual Evidence | [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md)（就地放置；**讀圖一律 subagent**） |
@@ -19,6 +19,9 @@
 | Ingest 清理 | `python3 scripts/ingest-cleanup.py <input> --archive raw/originals/<original> --archive raw/sources/<slug>.md`（先 dry-run，確認後加 `--confirm`） |
 | Wiki 重置為空白 | `uv run python scripts/wiki-reset.py`（dry-run）→ `--confirm`（保留 `wiki/lint/`；append log） |
 | PDF helper | `uv run python scripts/docling-pdf.py ...`（**預設 fast**；**僅使用者指定**才 `--engine docling`／full） |
+| Ingest SHA 快取 | `python3 scripts/ingest-cache.py lookup\|record …` |
+| Review 佇列 | `python3 scripts/ingest-review.py append\|close …` → `wiki/review/queue.md` |
+| Graph 洞見 | `python3 scripts/wiki-graph-insights.py` → `wiki/graph/insights.md` |
 | Skill token 報表 | `python3 scripts/wiki-usage.py report --by skill`（[docs/skill-usage.md](docs/skill-usage.md)） |
 | 頁面版型 | [**docs/templates/**](docs/templates/) |
 | CI（schema／raw 不可變／log） | [`.github/workflows/wiki-quality.yml`](.github/workflows/wiki-quality.yml) |
@@ -36,17 +39,21 @@ raw/                    # 不可變歸檔（非 OKF bundle 本體）
   assets/               # 視覺萃取附件（raw/assets/<base-slug>/p<NN>.png）
 wiki/                   # OKF Knowledge Bundle（fork 後以 Ingest 填入）
   index.md              # 總目錄（okf_version: "0.2" + catalog）
+  purpose.md            # wiki 方向（目標／關鍵問題／範圍）
+  review/queue.md       # 非同步人審佇列
   log.md                # 操作日誌（append only）
   sources/ concepts/ entities/ queries/ faq/ lint/ graph/
 docs/                   # 支援文件（非 wiki 知識本體）
   PROMPTS.md  ingest-pipeline.md  pdf-ingest-sop.md
   visual-source-conversion.md  onboarding.md  okf.md
   data-governance.md  skill-usage.md  templates/
-scripts/                # wiki-lint、ingest-cleanup、wiki-reset、docling-pdf、wiki-usage
+scripts/                # wiki-lint、ingest-cleanup、ingest-cache、ingest-review、
+                        # wiki-graph-insights、wiki-reset、docling-pdf、wiki-usage
 .github/workflows/      # wiki-quality CI
 models/docling/         # 可選 Docling 模型（本機下載；已 gitignore；約 1.2GB）
 config/                 # skill-usage 費率等設定
 .llm-wiki/usage/        # append-only Skill 使用量 ledger（events.jsonl）
+.llm-wiki/ingest/       # SHA 快取＋兩段式分析稿（本機；已 gitignore）
 skills/                 # 薄 Skill 單一來源（npx / 本機同步）
 AGENTS.md  SKILL.md  README.md
 pyproject.toml  uv.lock  .python-version
@@ -177,8 +184,8 @@ pdfinfo -v
 ### 三步開始
 
 1. **建立部門專用 repo** — **Use this template** 或 fork 後改名；**勿**在本 example 倉寫部門內容。
-2. **客製化** — 編輯 [`wiki/index.md`](wiki/index.md) 的 **Overview**（部門名稱、範圍）；設定資料 owner／分類規則（[data-governance.md](docs/data-governance.md)）；必要時微調 [**AGENTS.md**](AGENTS.md)。
-3. **安裝 Skill 並第一次 Ingest** — 見下方 **npx skills 安裝** 與 [docs/onboarding.md](docs/onboarding.md)。若會 ingest PDF，先完成上方 **初始化安裝（建議；含 PDF Ingest）**。再在 Cursor 輸入 **`/ingest <路徑>`**（或把檔案放入 `raw/inbox/` 後 `/ingest raw/inbox`）。
+2. **客製化** — 編輯 [`wiki/purpose.md`](wiki/purpose.md)（目標／關鍵問題）與 [`wiki/index.md`](wiki/index.md) Overview；設定資料 owner／分類規則（[data-governance.md](docs/data-governance.md)）；必要時微調 [**AGENTS.md**](AGENTS.md)。
+3. **安裝 Skill 並第一次 Ingest** — 見下方 **npx skills 安裝** 與 [docs/onboarding.md](docs/onboarding.md)。若會 ingest PDF，先完成上方 **初始化安裝（建議；含 PDF Ingest）**。再在 Cursor 輸入 **`/ingest <路徑>`**（預設 fast；兩段式分析；同檔 SHA 命中會 skip）。
 
 ### 日常操作
 
@@ -277,7 +284,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | [**docs/okf.md**](docs/okf.md) | OKF v0.2 對照、合規、遷移、匯出／匯入 |
 | [**docs/data-governance.md**](docs/data-governance.md) | 分類、owner、PII、保存、遮罩、人工核可與 Git 准入 |
 | [**docs/PROMPTS.md**](docs/PROMPTS.md) | Agent 提示詞（**步驟單一來源**） |
-| [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) | Ingest 13 個業務步驟（多模態；telemetry 為外層 wrapper） |
+| [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) | Ingest 管線對照（完整步驟以 PROMPTS／AGENTS 為準） |
 | [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) | PDF 轉譯 SOP（預設 fast；full／Docling 僅使用者指定） |
 | [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md) | Visual Evidence 就地放置、讀圖一律 subagent、強制提示詞 |
 | [**docs/onboarding.md**](docs/onboarding.md) | 第一輪 Ingest |

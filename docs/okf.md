@@ -20,7 +20,7 @@ repo/
 | OKF | 本倉 |
 |---|---|
 | Knowledge Bundle | `wiki/` |
-| Concept | 任一 `wiki/**/*.md`（`index.md`、`log.md` 除外） |
+| Concept | 任一 `wiki/**/*.md`（`index.md`、`log.md`、`purpose.md`、`queue.md`、`insights.md`、`README.md` 除外） |
 | Concept ID | 相對 `wiki/` 的路徑去掉 `.md` |
 | `index.md`／`log.md` | 任意層級的保留檔名，不能作 Concept |
 

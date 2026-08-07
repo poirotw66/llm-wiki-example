@@ -31,7 +31,7 @@
 | OKF 術語 | 本倉對應 |
 |----------|----------|
 | Knowledge Bundle | `wiki/` |
-| Concept | `wiki/**/*.md`（保留檔名 `index.md`、`log.md` 除外） |
+| Concept | `wiki/**/*.md`（保留檔名 `index.md`、`log.md`、`purpose.md`、`queue.md`、`insights.md`、`README.md` 除外） |
 | Concept ID | 相對 `wiki/` 之路徑去掉 `.md`（例：`concepts/rest-api`、`entities/my-service`） |
 | `index.md` | `wiki/index.md`（漸進式揭露總目錄） |
 | `log.md` | `wiki/log.md`（變更歷史；本倉另訂操作日誌格式） |
@@ -46,7 +46,7 @@
 
 * `raw/`：既有來源的 **不可變** 區（❗ 不可就地修改）。Ingest 依 [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) 寫入新檔。來源修訂時 **另建新歸檔檔**（勿改寫既有 `raw/` 檔）；slug 慣例見 [**docs/okf.md**](docs/okf.md) → **`archive_slug` 與 resource**。
 
-* `raw/inbox/`：使用者提供、**待處理** 之原件（PDF、Office、圖片、MD 等）；Ingest 可從此讀取。**成功歸檔後刪除** inbox／repo 根目錄等輸入副本（見 **操作：Ingest** 步驟 12）。
+* `raw/inbox/`：使用者提供、**待處理** 之原件（PDF、Office、圖片、MD 等）；Ingest 可從此讀取。**成功歸檔後刪除** inbox／repo 根目錄等輸入副本（見 **操作：Ingest** 步驟 15）。
 
 * `raw/originals/`：**所有輸入原件**之不可變副本（**含 Markdown**、PDF、Office、圖片等；新檔歸檔；勿改寫既有檔）。保留原始檔名與位元內容（或與輸入一致之副檔名）。
 
@@ -57,6 +57,10 @@
 * `wiki/`：**OKF Knowledge Bundle**（由 LLM／人類維護的知識本體）
 
 * `wiki/index.md`：總目錄（canonical catalog）
+
+* `wiki/purpose.md`：wiki **方向**（目標、關鍵問題、範圍）；與 AGENTS／PROMPTS 的操作 schema 分離
+
+* `wiki/review/queue.md`：非同步人審佇列（Ingest 可 append，不阻擋寫入）
 
 * `wiki/log.md`：僅可 append 的操作日誌
 
@@ -76,11 +80,13 @@
 
 * `docs/`（**支援文件**，不計入 wiki 知識本體）：
 
+  * `docs/templates/ingest-analysis.md` — **兩段式 Ingest** 分析稿骨架（寫入 `.llm-wiki/ingest/analyses/`）。
+
   * `docs/templates/page-template-source.md` — 僅供 **`wiki/sources/*`** 起稿；區塊標題須與下方 **來源頁 Schema** 完全一致。
 
   * `docs/templates/page-template-concept.md` — 供 **`wiki/concepts/*`**、**`wiki/entities/*`**、**`wiki/queries/*`** 起稿（建議骨架）。
 
-  * `docs/ingest-pipeline.md` — **Ingest 13 個業務步驟合併管線**（現行 8 步 + BU 10 步 + 多模態 triage；telemetry 為外層 wrapper）；對照表與支援檔型。
+  * `docs/ingest-pipeline.md` — **Ingest 管線對照**（完整步驟以 PROMPTS／AGENTS 為準；含快取／兩段式／Review）。
 
   * `docs/visual-source-conversion.md` — 含資訊性視覺時之轉換與 Visual Evidence Block。
 
@@ -434,21 +440,24 @@ redaction: required
 
 # 🛠 操作：Ingest
 
-下列為合併後的 **13 個 Ingest 業務步驟**（對照 [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md)）。Token telemetry 是操作外層 wrapper，不計入 13 步：開始前以本次 log title 執行 `python3 scripts/wiki-usage.py start ingest --title "<title>"`；完成步驟 13 並 append log 後，執行 `python3 scripts/wiki-usage.py finish ingest --title "<title>"`。
+下列為 Ingest 業務步驟（對照 [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md)）。開始前讀 [**wiki/purpose.md**](wiki/purpose.md)。Token telemetry：`start ingest`／`finish ingest`（同 title）。
 
 1. 讀取 **指定** 來源（路徑、`raw/inbox/` 或批次）。
-2. **Detect／Triage**（檔型、是否需轉檔、是否含資訊性視覺）。
-3. 必要時 **轉 Markdown**（含視覺閘；**讀圖一律 subagent**，見 **docs/visual-source-conversion.md**）。
-4. **一律** 將輸入原件複製至 **`raw/originals/`**（含 `.md`；新檔；勿改寫既有檔）。
-5. 視覺資產寫入 **`raw/assets/`**（若適用）。
-6. **新增** canonical 歸檔 **`raw/sources/<slug>.md`**（僅新檔；遵循命名規約；自 originals 轉寫／清理／補強，非省略 originals）。
-7. 建立或更新 **`wiki/sources/`**（來源頁 Schema）。
-8. 抽取 **concepts**、**entities**。
-9. 更新相關頁並 **雙向連結**（相對路徑）。
-10. 補齊 **OKF v0.2 frontmatter**（`description`、URI/path 型 `resource`〔若適用〕、`sources`、`generated`、`status`、必要時 `verified`／`stale_after`）及資料治理欄位；來源頁另填 `archive_slug`，每個 `sources[]` 必有 `resource`，不可將 agent 自評寫成 `human:` 驗證。
-11. 更新 **`wiki/index.md`**。
-12. **輸入原件清理**：步驟 4（originals）與步驟 6（sources）成功後，僅限 `raw/inbox/` 或 repo 根目錄的明確支援輸入檔。清理前必須驗證 `raw/originals/` 有位元一致副本且 `raw/sources/` 有 canonical 歸檔；`scripts/ingest-cleanup.py` 預設 dry-run，只有人工確認輸出後加 `--confirm` 才可刪除。**禁止**刪除 `raw/` 歸檔本體、目錄、symlink 或非支援輸入。
-13. **Append** `wiki/log.md`（含 triage／轉檔摘要；步驟 12 有刪檔時註明路徑）。
+2. **SHA-256 快取**：`python3 scripts/ingest-cache.py lookup "<path>"`。若 `hit: true` 且使用者未要求強制重跑 → append log **no-op**（註明 sha256／既有 archive_slug）並結束。
+3. **Detect／Triage**（檔型、是否需轉檔、是否含資訊性視覺）。
+4. 必要時 **轉 Markdown**（含視覺閘；**讀圖一律 subagent**；PDF 預設 **fast**，見 **docs/pdf-ingest-sop.md**）。
+5. **一律** 將輸入原件複製至 **`raw/originals/`**（含 `.md`；新檔；勿改寫既有檔）。
+6. 視覺資產寫入 **`raw/assets/`**（若適用）。
+7. **新增** canonical 歸檔 **`raw/sources/<archive-slug>.md`**（僅新檔；詳盡還原）。
+8. **兩段式 · 分析（強制）**：依 [**docs/templates/ingest-analysis.md**](docs/templates/ingest-analysis.md) 寫入 `.llm-wiki/ingest/analyses/<archive-slug>.md`（實體／概念／既有連結／矛盾與張力／建議落點／review candidates）。**禁止**跳過分析直接寫 wiki 頁。
+9. **保證來源摘要頁**：建立或更新 **`wiki/sources/<archive-slug>.md`**（來源頁 Schema）。lint 要求每個 `raw/sources/*.md` 有對應 wiki 來源頁。
+10. 依分析抽取／更新 **concepts**、**entities**。
+11. 更新相關頁並 **雙向連結**（相對路徑）。
+12. 補齊 **OKF v0.2 frontmatter** 與治理欄位；來源頁填 `archive_slug`；不可把 agent 自評寫成 `human:` 驗證。
+13. 更新 **`wiki/index.md`**；必要時更新 **`wiki/purpose.md`** 的 Evolving thesis（僅在有根據時）。
+14. **非同步 Review**：對 review candidates／未答 Q&A／需人審治理項，執行 `python3 scripts/ingest-review.py append ...` 寫入 `wiki/review/queue.md`（**不**阻擋本輪寫入）。
+15. **輸入原件清理**（`scripts/ingest-cleanup.py`；先 dry-run 再 `--confirm`）。
+16. **Append** `wiki/log.md`；成功後 `python3 scripts/ingest-cache.py record "<path>" --archive-slug … --source-page wiki/sources/….md`。
 
 ---
 
@@ -466,11 +475,20 @@ redaction: required
 
 ## Query 解析規則（強制）
 
-1. 先查 `wiki/` 摘要頁（`faq`、`concepts`、`entities`、`queries`）。
+**預設模式**（綜合 wiki + 必要時 raw）：
+
+1. 先讀 [**wiki/purpose.md**](wiki/purpose.md) 對齊範圍；再查 `wiki/` 摘要頁（`faq`、`concepts`、`entities`、`queries`）。
 2. 摘要足夠且無衝突 → 直接回答。
 3. 不足、模糊或衝突 → 回到 `raw/sources/*` 核對。
 4. 最終答案須含可追溯位置（至少檔案路徑；必要時到章節／行）。
 5. 若答案涉及架構圖、流程圖等資訊性視覺，**必須**附上 `raw/assets/` 原圖的 Markdown embed 或連至含 **`## Visual Assets`** 的來源頁；**禁止**僅文字描述而不給原圖（見 **visual-source-conversion.md** → **可檢索原圖**）。若須重新讀圖分析內容，**一律派 subagent**（主 Agent 禁止自行讀圖）。
+
+**Read Sources Only 模式**（使用者說「僅讀歸檔」「read sources only」「--sources-only」）：
+
+1. **禁止**以 `wiki/concepts|entities|faq|queries` 摘要作為證據來源。
+2. 只讀 `raw/sources/*`（必要時 `raw/assets/` 與對應 Visual Evidence）。
+3. 答案須標明 `mode: read-sources-only`，並引用歸檔路徑。
+4. 仍可將可重用答案持久化至 `wiki/queries/*`（標明證據僅來自 raw）。
 
 ---
 
@@ -599,10 +617,11 @@ tags: ["faq"]
 
 1. 遍歷所有頁面
 2. 抽取連結
-3. 推論關係
-4. 產出 graph 摘要
-5. **新增或實質變更** graph 產物時，更新 `wiki/index.md`（**Overview** 區：連結 + 一行說明）（例如 `wiki/graph/knowledge-map.md`）
-6. Append `wiki/log.md` — **每次** Graph 皆執行，含可選輸出或未變更（記 pass／no-op）
+3. 推論關係；並執行 `python3 scripts/wiki-graph-insights.py` 產出／更新 `wiki/graph/insights.md`（孤立頁、橋接、缺來源摘要頁、單向連結）
+4. Agent 依 insights 的 **Agent follow-up** 補充矛盾／缺頁判斷（結構腳本不自動判定語意矛盾）
+5. 產出或更新 graph 摘要（可選：`wiki/graph/knowledge-map.md`）
+6. **新增或實質變更** graph 產物時，更新 `wiki/index.md`（**Overview** 區：連結 + 一行說明）
+7. Append `wiki/log.md` — **每次** Graph 皆執行，含可選輸出或未變更（記 pass／no-op）
 
 操作開始前／append log 後，分別以相同 title 執行 `python3 scripts/wiki-usage.py start graph --title "<title>"`／`python3 scripts/wiki-usage.py finish graph --title "<title>"`。
 
@@ -610,6 +629,7 @@ tags: ["faq"]
 
 ```md
 wiki/graph/knowledge-map.md
+wiki/graph/insights.md
 ```
 
 ---
