@@ -76,13 +76,16 @@ pyproject.toml  uv.lock  .python-version
 
 ### Ingest 檔案流程
 
-一次 `/ingest` 時，檔案大致這樣走（細節見 [docs/ingest-pipeline.md](docs/ingest-pipeline.md)）：
+一次 `/ingest` 時，檔案大致這樣走（細節見 [docs/ingest-pipeline.md](docs/ingest-pipeline.md)；步驟 **0–16**）：
 
 ```text
 輸入（路徑／raw/inbox／批次）
         │
         ▼
  資料治理閘（classification／PII／遮罩；見 data-governance）
+        │
+        ▼
+ SHA-256 快取 lookup（hit 且未強制 → no-op 結束）
         │
         ▼
  Detect／Triage（檔型、是否轉檔、是否含資訊圖）
@@ -99,13 +102,21 @@ pyproject.toml  uv.lock  .python-version
  raw/sources/<archive-slug>.md   ← 詳盡歸檔（VE **就地**插入；修訂另建新檔）
         │
         ▼
- wiki/sources/ 摘要頁 ＋ 抽取 concepts／entities
+ 兩段式分析 → .llm-wiki/ingest/analyses/<archive-slug>.md
         │
         ▼
- 更新 wiki/index.md、雙向連結、append wiki/log.md
+ wiki/sources/ 摘要頁（必有）＋ concepts／entities＋雙向連結
         │
         ▼
- 刪除 inbox／根目錄輸入副本（禁止刪 raw/ 歸檔本體）
+ 更新 wiki/index.md；可選 ops/purpose.md thesis
+        │
+        ├─ ops/review-queue.md（非同步人審；不擋寫入）
+        │
+        ▼
+ append wiki/log.md ＋ ingest-cache record
+        │
+        ▼
+ 清理 inbox／根目錄輸入副本（ingest-cleanup；禁止刪 raw/ 歸檔本體）
 ```
 
 | 階段 | 產物 | 說明 |
@@ -251,6 +262,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 /ingest raw/inbox/某規格.pdf
 /ingest ./手冊.pdf 前五頁
 /query <你的問題>
+/query <問題> 僅讀歸檔
 /lint
 /faq
 /graph
@@ -259,7 +271,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 ### 執行後 Agent 應完成
 
 1. 依 **AGENTS.md** 硬約束（引用、連結、OKF v0.2 frontmatter、治理欄位、`raw/` 不可變、讀圖 subagent 等）
-2. 依 **PROMPTS.md** 該操作步驟全文執行（Ingest：originals → sources → wiki）
+2. 依 **PROMPTS.md** 該操作步驟全文執行（Ingest：治理 → 快取 → originals → 分析 → wiki → Review → log／cache → cleanup）
 3. 必要時更新 [wiki/index.md](wiki/index.md)
 4. 開始執行 `python3 scripts/wiki-usage.py start <operation> --title "<title>"`，append [wiki/log.md](wiki/log.md) 後執行 `python3 scripts/wiki-usage.py finish <operation> --title "<title>"`（無變更時記 pass／no-op）
 
@@ -283,19 +295,20 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | [**docs/okf.md**](docs/okf.md) | OKF v0.2 對照、合規、遷移、匯出／匯入 |
 | [**docs/data-governance.md**](docs/data-governance.md) | 分類、owner、PII、保存、遮罩、人工核可與 Git 准入 |
 | [**docs/PROMPTS.md**](docs/PROMPTS.md) | Agent 提示詞（**步驟單一來源**） |
-| [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) | Ingest 管線對照（完整步驟以 PROMPTS／AGENTS 為準） |
+| [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) | Ingest 步驟 **0–16** 對照（含快取／兩段式／Review） |
 | [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) | PDF 轉譯 SOP（預設 fast；full／Docling 僅使用者指定） |
 | [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md) | Visual Evidence 就地放置、讀圖一律 subagent、強制提示詞 |
 | [**docs/onboarding.md**](docs/onboarding.md) | 第一輪 Ingest |
 | [**docs/skill-usage.md**](docs/skill-usage.md) | Skill token／usage ledger |
-| [**docs/templates/**](docs/templates/) | 來源頁／概念頁版型 |
+| [**docs/templates/**](docs/templates/) | 來源頁／概念頁／ingest 分析版型 |
+| [**ops/purpose.md**](ops/purpose.md) | bundle 外方向（目標／範圍；與操作 schema 分離） |
 | [**wiki/index.md**](wiki/index.md) | OKF bundle 總目錄（預設空白；`okf_version: "0.2"`） |
 | [**docs/wiki-bundle.md**](docs/wiki-bundle.md) | `wiki/` bundle 導覽 |
 | [**SKILL.md**](SKILL.md) | npx skills 安裝 |
 | [**skills/**](skills/) | 薄 Skill（**唯一 Git 來源**） |
 | [**pyproject.toml**](pyproject.toml)／[**uv.lock**](uv.lock) | uv 依賴；可選 PDF／Docling 組見 `uv sync --group pdf` |
 | [**config/**](config/) | usage 費率等設定 |
-| [**scripts/**](scripts/) | lint、cleanup、wiki-reset、docling-pdf、wiki-usage |
+| [**scripts/**](scripts/) | lint、cleanup、ingest-cache、ingest-review、wiki-graph-insights、wiki-reset、docling-pdf、wiki-usage |
 | [**.github/workflows/wiki-quality.yml**](.github/workflows/wiki-quality.yml) | PR／push：pytest + wiki-lint |
 
 ---
