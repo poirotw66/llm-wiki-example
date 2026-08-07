@@ -9,6 +9,7 @@
 | 規約與五大操作 | [**AGENTS.md**](AGENTS.md) |
 | OKF 對照 | [**docs/okf.md**](docs/okf.md) |
 | 資料分類、PII 與 Git 准入 | [**docs/data-governance.md**](docs/data-governance.md) |
+| `raw/` 進 Git 核可收據 | [`governance/raw-approvals.json`](governance/raw-approvals.json)（每筆須 `approved_by: human:<id>`；細節見 data-governance） |
 | Agent 提示詞（步驟單一來源） | [**docs/PROMPTS.md**](docs/PROMPTS.md) |
 | Ingest 步驟（含快取／兩段式／Review） | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md)／[PROMPTS](docs/PROMPTS.md) |
 | 第一輪 Ingest | [**docs/onboarding.md**](docs/onboarding.md) |
@@ -53,6 +54,7 @@ config/                 # skill-usage 費率等設定
 .llm-wiki/usage/        # append-only Skill 使用量 ledger（events.jsonl）
 .llm-wiki/ingest/       # SHA 快取＋兩段式分析稿（本機；已 gitignore）
 ops/                    # bundle 外操作狀態：purpose、review queue、graph insights
+governance/             # raw-approvals.json — 新 raw/ 進 Git 前人審收據（CI gate）
 skills/                 # 薄 Skill 單一來源（npx / 本機同步）
 AGENTS.md  SKILL.md  README.md
 pyproject.toml  uv.lock  .python-version
@@ -145,7 +147,8 @@ pyproject.toml  uv.lock  .python-version
 - 架構圖／流程圖禁止只抄標題；Visual Evidence **就地**放置，禁止文末彙整
 - **讀圖一律 subagent**（主 Agent 禁止自行 `Read` 圖片）；多張平行派工
 - Concept 須合 OKF v0.2（`type`、`generated`、lifecycle）與本倉治理欄位（見 [docs/okf.md](docs/okf.md)、[docs/data-governance.md](docs/data-governance.md)）
-- 寫入前通過資料治理 Git 准入
+- **Ingest ≠ 進 Git**：Agent 可寫本機 `raw/`／`wiki/`；要 commit／過 CI 時，每個新 `raw/` 檔須在 [`governance/raw-approvals.json`](governance/raw-approvals.json) 有人審收據（`approved_by` 只能是 `human:<id>`，不可由 Agent 代簽）
+- 寫入前通過資料治理 Git 准入（分類／PII；見 [docs/data-governance.md](docs/data-governance.md)）
 
 細節：[docs/visual-source-conversion.md](docs/visual-source-conversion.md)、[docs/pdf-ingest-sop.md](docs/pdf-ingest-sop.md)。
 
@@ -294,6 +297,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | [**AGENTS.md**](AGENTS.md) | OKF 主軸、目錄契約、頁面格式、五大操作 |
 | [**docs/okf.md**](docs/okf.md) | OKF v0.2 對照、合規、遷移、匯出／匯入 |
 | [**docs/data-governance.md**](docs/data-governance.md) | 分類、owner、PII、保存、遮罩、人工核可與 Git 准入 |
+| [**governance/raw-approvals.json**](governance/raw-approvals.json) | 新 `raw/` 進 Git 的人審收據（CI `governance-gate`） |
 | [**docs/PROMPTS.md**](docs/PROMPTS.md) | Agent 提示詞（**步驟單一來源**） |
 | [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md) | Ingest 步驟 **0–16** 對照（含快取／兩段式／Review） |
 | [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) | PDF 轉譯 SOP（預設 fast；full／Docling 僅使用者指定） |

@@ -30,6 +30,7 @@ mode: template
 
 - （選填）目前對領域的工作假設；隨 Ingest 更新，勿寫成不可驗證的定論。
 
+
 ## Related
 
 - Catalog：[wiki/index.md](../wiki/index.md)
