@@ -24,7 +24,10 @@ def _bundle(tmp_path: Path) -> tuple[Path, Path]:
         encoding="utf-8",
     )
     (wiki / "log.md").write_text("# Wiki Log\n", encoding="utf-8")
-    (wiki / "purpose.md").write_text("# Purpose\n\n## Goals\n\n- demo\n", encoding="utf-8")
+    (tmp_path / "ops").mkdir()
+    (tmp_path / "ops/purpose.md").write_text(
+        "---\nmode: template\n---\n\n# Purpose\n\n## Goals\n\n- demo\n", encoding="utf-8"
+    )
     page = wiki / "concepts/api.md"
     page.write_text(
         """---\ntype: concept\ntitle: API\ndescription: Application programming interface\ntags: [api]\nstatus: stable\nsources:\n  - id: spec\n    resource: https://example.com/spec\ngenerated: {by: agent/test, at: 2026-08-05T12:00:00Z}\nstale_after: 2099-01-01\nclassification: internal\nowner: team:platform\naccess_scope: team:platform\ncontains_pii: false\nretention: permanent\nredaction: none\n---\n\n# API\n\nSee [Index](../index.md).\n""",
@@ -146,6 +149,48 @@ def test_source_schema_and_forbidden_wiki_link_are_checked(tmp_path: Path, capsy
     output = capsys.readouterr().err
     assert "source page missing required headings" in output
     assert "wiki-style link is forbidden" in output
+
+
+def test_every_non_reserved_markdown_is_a_concept_and_production_purpose_is_complete(tmp_path: Path, capsys) -> None:
+    module = _load_lint()
+    wiki, _ = _bundle(tmp_path)
+    (wiki / "purpose.md").write_text("# accidentally in bundle\n", encoding="utf-8")
+    purpose = tmp_path / "ops/purpose.md"
+    purpose.write_text("---\nmode: production\n---\n\n# Purpose\n\n- （填寫）\n", encoding="utf-8")
+    _configure(module, tmp_path)
+    assert module.main([]) == 1
+    output = capsys.readouterr().err
+    assert "missing YAML frontmatter: wiki/purpose.md" in output
+    assert "must not retain template placeholders" in output
+
+
+def test_source_page_requires_private_analysis_receipt(tmp_path: Path, capsys) -> None:
+    module = _load_lint()
+    wiki, page = _bundle(tmp_path)
+    page.unlink()
+    source = wiki / "sources/source.md"
+    source.parent.mkdir()
+    source.write_text(
+        "---\ntype: source\ntitle: Source\narchive_slug: source\nsources:\n  - resource: ../../raw/sources/source.md\ngenerated: {by: agent/test, at: 2026-08-05T12:00:00Z}\nclassification: internal\nowner: team:platform\naccess_scope: team:platform\ncontains_pii: false\nretention: permanent\nredaction: none\n---\n# Source\n\n## Summary\n\n## Key Concepts\n\n## Entities\n\n## Notable Claims\n\n## Limitations / Gaps\n", encoding="utf-8")
+    (tmp_path / "raw/sources/source.md").write_text("# source\n", encoding="utf-8")
+    (wiki / "index.md").write_text((wiki / "index.md").read_text(encoding="utf-8").replace("./concepts/api.md", "./sources/source.md"), encoding="utf-8")
+    _configure(module, tmp_path)
+    assert module.main([]) == 1
+    assert "missing analysis_receipt" in capsys.readouterr().err
+
+
+def test_analysis_receipt_must_bind_to_raw_archive(tmp_path: Path, capsys) -> None:
+    module = _load_lint()
+    wiki, page = _bundle(tmp_path)
+    page.unlink()
+    (tmp_path / "raw/sources/source.md").write_text("# archive\n", encoding="utf-8")
+    source = wiki / "sources/source.md"
+    source.parent.mkdir()
+    source.write_text("---\ntype: source\ntitle: Source\narchive_slug: source\nanalysis_receipt: {version: '1', sha256: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', source_sha256: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', generated_by: 'agent/test', generated_at: '2026-08-07T00:00:00Z'}\nsources:\n  - resource: ../../raw/sources/source.md\ngenerated: {by: agent/test, at: 2026-08-07T00:00:00Z}\nclassification: internal\nowner: team:platform\naccess_scope: team:platform\ncontains_pii: false\nretention: permanent\nredaction: none\n---\n# Source\n\n## Summary\n\n## Key Concepts\n\n## Entities\n\n## Notable Claims\n\n## Limitations / Gaps\n", encoding="utf-8")
+    (wiki / "index.md").write_text((wiki / "index.md").read_text(encoding="utf-8").replace("./concepts/api.md", "./sources/source.md"), encoding="utf-8")
+    _configure(module, tmp_path)
+    assert module.main([]) == 1
+    assert "source_sha256 does not match raw archive" in capsys.readouterr().err
 
 
 def test_raw_archive_requires_wiki_source_page(tmp_path: Path, capsys) -> None:

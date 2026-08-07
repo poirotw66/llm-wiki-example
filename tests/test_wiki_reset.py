@@ -35,7 +35,8 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
     (wiki / "index.md").write_text("# old index\n", encoding="utf-8")
     (wiki / "log.md").write_text("# Wiki Log\n\n## 2026-01-01\n\n- **lint** | seed\n", encoding="utf-8")
-    (wiki / "README.md").write_text("# keep\n", encoding="utf-8")
+    (tmp_path / "ops").mkdir()
+    (tmp_path / "ops" / "purpose.md").write_text("# keep\n", encoding="utf-8")
     (wiki / "lint" / "report.md").write_text("# lint keep\n", encoding="utf-8")
     (wiki / "sources" / "demo.md").write_text("# source\n", encoding="utf-8")
     (wiki / "concepts" / "idea.md").write_text("# concept\n", encoding="utf-8")
@@ -89,7 +90,8 @@ def test_confirm_resets_knowledge_and_raw_keeps_lint(repo: Path) -> None:
     assert not (repo / "raw/originals/demo.pdf").exists()
     assert not (repo / "raw/assets/demo").exists()
     assert (repo / "wiki/lint/report.md").exists()
-    assert (repo / "wiki/README.md").read_text(encoding="utf-8") == "# keep\n"
+    assert (repo / "ops/purpose.md").read_text(encoding="utf-8") == "# keep\n"
+    assert (repo / "ops/review-queue.md").is_file()
     index = (repo / "wiki/index.md").read_text(encoding="utf-8")
     assert 'okf_version: "0.2"' in index
     assert "刻意留白" in index

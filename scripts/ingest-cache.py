@@ -5,7 +5,7 @@ Ledger: ``.llm-wiki/ingest/cache.json``
 
 Commands:
   lookup <path>           Print hit/miss JSON for a source file
-  record <path> ...       Record a successful ingest
+  record [path] ...       Record a successful ingest; accepts lookup --sha256 after cleanup
   list                    List cache entries
 """
 from __future__ import annotations
@@ -13,13 +13,22 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
+import re
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+try:
+    from cross_platform_lock import ExclusiveFileLock
+except ModuleNotFoundError:  # Imported by tests as scripts.ingest_cache.
+    from scripts.cross_platform_lock import ExclusiveFileLock
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CACHE = ROOT / ".llm-wiki" / "ingest" / "cache.json"
+SHA256 = re.compile(r"^[0-9a-f]{64}$")
+ACTOR = re.compile(r"^(?:human:[^\s:]+|process:[^\s:]+|[^\s/]+/[^\s/]+)$")
 
 
 def sha256_file(path: Path) -> str:
@@ -43,12 +52,18 @@ def load_cache(path: Path) -> dict[str, Any]:
     return data
 
 
-def save_cache(path: Path, data: dict[str, Any]) -> None:
+def atomic_write(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent, text=True)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
 
 
 def resolve_input(raw: str) -> Path:
@@ -66,6 +81,10 @@ def artifacts_present(entry: dict[str, Any]) -> bool:
     archive = ROOT / "raw" / "sources" / f"{archive_slug}.md"
     if not archive.is_file():
         return False
+    receipt = entry.get("analysis_receipt")
+    if receipt is not None:
+        if not isinstance(receipt, dict) or receipt.get("source_sha256") != sha256_file(archive):
+            return False
     if isinstance(source_page, str) and source_page.strip():
         page = ROOT / source_page
         if not page.is_file():
@@ -95,22 +114,60 @@ def cmd_lookup(args: argparse.Namespace) -> int:
 
 
 def cmd_record(args: argparse.Namespace) -> int:
-    source = resolve_input(args.path)
-    if not source.is_file():
-        print(f"ingest-cache: not a file: {source}", file=sys.stderr)
-        return 1
-    digest = sha256_file(source)
+    digest = getattr(args, "sha256", None)
+    source_name = getattr(args, "original_name", None)
+    source_path = getattr(args, "path", None)
+    if digest:
+        if not isinstance(digest, str) or not SHA256.fullmatch(digest):
+            print("ingest-cache: --sha256 must be a lowercase SHA-256 digest", file=sys.stderr)
+            return 1
+        digest = digest.lower()
+        if not source_name and source_path:
+            source_name = resolve_input(source_path).name
+        if not source_name:
+            print("ingest-cache: --original-name is required with --sha256", file=sys.stderr)
+            return 1
+    else:
+        if not source_path:
+            print("ingest-cache: path is required unless --sha256 is supplied", file=sys.stderr)
+            return 1
+        source = resolve_input(source_path)
+        if not source.is_file():
+            print(f"ingest-cache: not a file: {source}", file=sys.stderr)
+            return 1
+        digest = sha256_file(source)
+        source_name = source.name
     cache_path = Path(args.cache) if args.cache else DEFAULT_CACHE
-    cache = load_cache(cache_path)
     entry = {
         "sha256": digest,
         "archive_slug": args.archive_slug,
         "source_page": args.source_page,
-        "original_name": source.name,
+        "original_name": source_name,
         "ingested_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
-    cache["entries"][digest] = entry
-    save_cache(cache_path, cache)
+    receipt = getattr(args, "analysis_receipt", None)
+    if receipt:
+        if not isinstance(receipt, str) or not SHA256.fullmatch(receipt):
+            print("ingest-cache: --analysis-receipt must be a lowercase SHA-256 digest", file=sys.stderr)
+            return 1
+        source_digest = getattr(args, "analysis_source_sha256", None)
+        if not isinstance(source_digest, str) or not SHA256.fullmatch(source_digest):
+            print("ingest-cache: --analysis-source-sha256 must be a lowercase SHA-256 digest", file=sys.stderr)
+            return 1
+        generated_by = getattr(args, "analysis_generated_by", None)
+        generated_at = getattr(args, "analysis_generated_at", None)
+        try:
+            valid_time = isinstance(generated_at, str) and bool(generated_at.strip()) and datetime.fromisoformat(generated_at.replace("Z", "+00:00"))
+        except ValueError:
+            valid_time = None
+        if not isinstance(generated_by, str) or not ACTOR.fullmatch(generated_by) or not valid_time:
+            print("ingest-cache: analysis receipt requires a valid actor and ISO --analysis-generated-at", file=sys.stderr)
+            return 1
+        entry["analysis_receipt"] = {"version": str(getattr(args, "analysis_version", "1")), "sha256": receipt, "source_sha256": source_digest, "generated_by": generated_by, "generated_at": generated_at}
+    with ExclusiveFileLock(cache_path):
+        cache = load_cache(cache_path)
+        cache["entries"][digest] = entry
+        atomic_write(cache_path, json.dumps(cache, ensure_ascii=False, indent=2) + "\n")
     print(json.dumps({"ok": True, "recorded": entry}, ensure_ascii=False, indent=2))
     return 0
 
@@ -144,13 +201,20 @@ def build_parser() -> argparse.ArgumentParser:
     lookup.set_defaults(func=cmd_lookup)
 
     record = sub.add_parser("record", help="Record a successful ingest")
-    record.add_argument("path", help="Source file path that was ingested")
+    record.add_argument("path", nargs="?", help="Source file path that was ingested")
+    record.add_argument("--sha256", help="Digest returned by lookup; permits recording after cleanup")
+    record.add_argument("--original-name", help="Original filename (required with --sha256 when no path remains)")
     record.add_argument("--archive-slug", required=True, help="raw/sources/<slug>.md stem")
     record.add_argument(
         "--source-page",
         required=True,
         help="wiki/sources/<page>.md relative to repo root",
     )
+    record.add_argument("--analysis-receipt", help="SHA-256 of the private two-stage analysis file")
+    record.add_argument("--analysis-version", default="1", help="Analysis receipt schema version")
+    record.add_argument("--analysis-source-sha256", help="SHA-256 of raw/sources canonical archive")
+    record.add_argument("--analysis-generated-by", help="Actor that completed the private analysis")
+    record.add_argument("--analysis-generated-at", help="ISO 8601 analysis completion time")
     record.set_defaults(func=cmd_record)
 
     listed = sub.add_parser("list", help="Print the cache ledger")

@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""Emit structural wiki graph insights as Markdown (no UI).
-
-Writes ``wiki/graph/insights.md`` by default (reserved filename; not an OKF Concept).
-"""
+"""Emit structural wiki graph insights as operational Markdown (no UI)."""
 from __future__ import annotations
 
 import argparse
@@ -14,9 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 WIKI = ROOT / "wiki"
 RAW_SOURCES = ROOT / "raw" / "sources"
-SKIP = frozenset(
-    {"index.md", "log.md", "README.md", "purpose.md", "queue.md", "insights.md"}
-)
+SKIP = frozenset({"index.md", "log.md"})
 LINKS = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+\.md(?:#[^)]+)?)\)")
 ROLE_DIRS = ("sources", "concepts", "entities", "queries", "faq", "lint", "graph")
 
@@ -101,7 +96,7 @@ def render(
         "",
         f"Generated: {today}",
         "",
-        "> Structural report from `scripts/wiki-graph-insights.py`. Not an OKF Concept.",
+        "> Structural report from `scripts/wiki-graph-insights.py`; operational state is outside the OKF bundle.",
         "",
         "## Summary",
         "",
@@ -167,8 +162,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--out",
-        default=str(WIKI / "graph" / "insights.md"),
-        help="Output Markdown path (default: wiki/graph/insights.md)",
+        default=str(ROOT / "ops" / "graph-insights.md"),
+        help="Output Markdown path (default: ops/graph-insights.md)",
     )
     args = parser.parse_args(argv)
     pages = wiki_pages()

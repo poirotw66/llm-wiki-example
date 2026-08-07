@@ -10,3 +10,4 @@ __pycache__/
 models/docling/
 # Ingest working products (SHA cache + two-step analyses)
 .llm-wiki/ingest/
+ops/*.lock

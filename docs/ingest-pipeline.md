@@ -24,14 +24,14 @@
 | **10** | 抽取 concepts／entities | `wiki/concepts/*`、`wiki/entities/*` | ④ | ⑥ | — |
 | **11** | 更新頁面與雙向連結 | 相對路徑 `.md` | ⑤⑥ | ⑦⑧ | — |
 | **12** | OKF + 治理 frontmatter | `archive_slug`、`sources[]`、`generated`… | （併入） | — | — |
-| **13** | 更新 index／purpose | `wiki/index.md`；可選 `wiki/purpose.md` thesis | ⑦ | ⑨ | — |
-| **14** | 非同步 Review | `scripts/ingest-review.py append` → `wiki/review/queue.md` | — | — | — |
-| **15** | 輸入原件清理 | `scripts/ingest-cleanup.py`（dry-run → `--confirm`） | — | — | — |
-| **16** | append log + cache record | `wiki/log.md`；`ingest-cache.py record` | ⑧ | ⑩ | — |
+| **13** | 更新 index／purpose | `wiki/index.md`；可選 `ops/purpose.md` thesis | ⑦ | ⑨ | — |
+| **14** | 非同步 Review | `scripts/ingest-review.py append` → `ops/review-queue.md` | — | — | — |
+| **15** | append log + cache record | `wiki/log.md`；`ingest-cache.py record --sha256 …` | ⑧ | ⑩ | — |
+| **16** | 輸入原件清理 | `scripts/ingest-cleanup.py`（dry-run → `--confirm`） | — | — | — |
 
 **外層 wrapper（不計入 0–16）**：`python3 scripts/wiki-usage.py start ingest --title "…"`／`finish ingest --title "…"`。
 
-開始前讀 [**wiki/purpose.md**](../wiki/purpose.md)。
+開始前讀 [**ops/purpose.md**](../ops/purpose.md)。
 
 ---
 
@@ -82,7 +82,7 @@ python3 scripts/ingest-cache.py lookup "<path>"
 
 **8. 兩段式 · 分析（強制）**  
 依 [**templates/ingest-analysis.md**](./templates/ingest-analysis.md) 寫入 `.llm-wiki/ingest/analyses/<archive-slug>.md`：  
-實體／概念／與既有 wiki 連結／矛盾與張力／建議落點／review candidates。  
+實體／概念／與既有 wiki 連結／矛盾與張力／建議落點／review candidates。將分析檔 SHA-256、canonical `raw/sources` SHA-256、actor、時間與版本寫入來源頁 `analysis_receipt`，僅保存 receipt、不保存私有分析正文。
 **禁止**未寫分析就產生 wiki 頁。
 
 **9. 保證來源摘要頁**  
@@ -99,7 +99,7 @@ markdown 相對路徑；冷啟動時新頁至少連一個其他 wiki 頁（常�
 `description`、`sources`、`generated`、`status`，必要時 `verified`／`stale_after`、來源頁 `archive_slug` 與六個治理欄位。不可把 agent 自評寫成 `human:` 驗證。
 
 **13. 更新 `wiki/index.md`**  
-於 **Sources**、**Concepts**、**Entities** 等區加 **連結 + 一行說明**。有根據時可微調 `wiki/purpose.md` → Evolving thesis。
+於 **Sources**、**Concepts**、**Entities** 等區加 **連結 + 一行說明**。有根據時可微調 `ops/purpose.md` → Evolving thesis。
 
 ### D. Review、清理與留痕（14–16）
 
@@ -108,9 +108,15 @@ markdown 相對路徑；冷啟動時新頁至少連一個其他 wiki 頁（常�
 ```bash
 python3 scripts/ingest-review.py append --title "…" --reason "…" --action human_verify|create_page|deep_research|governance|skip
 ```  
-寫入 `wiki/review/queue.md`；**不**阻擋本輪 wiki 寫入。
+寫入 `ops/review-queue.md`；**不**阻擋本輪 wiki 寫入。
 
-**15. 輸入原件清理**  
+**15. append log + cache record**
+在 destructive cleanup 前，使用步驟 2 lookup 的 SHA-256 記錄成功 ingest：
+```bash
+python3 scripts/ingest-cache.py record --sha256 "<lookup-sha256>" --original-name "<原檔名>" --archive-slug "<slug>" --source-page "wiki/sources/<slug>.md" --analysis-receipt "<analysis-sha256>" --analysis-source-sha256 "<archive-sha256>" --analysis-generated-by "<actor>" --analysis-generated-at "<ISO-8601>"
+```
+
+**16. 輸入原件清理**
 步驟 5（originals）與步驟 7（sources）成功後，僅可清理 `raw/inbox/` 或 repo 根目錄的明確支援輸入檔。  
 ```bash
 python3 scripts/ingest-cleanup.py "<input>" --archive "raw/originals/…" --archive "raw/sources/<slug>.md"
@@ -118,12 +124,7 @@ python3 scripts/ingest-cleanup.py "<input>" --archive "raw/originals/…" --arch
 ```
 **禁止**刪 `raw/` 歸檔本體、目錄、symlink。
 
-**16. append log + cache record**  
-- Append `wiki/log.md`（triage／轉檔／vision／cache／cleanup 摘要）。  
-- 成功後：  
-```bash
-python3 scripts/ingest-cache.py record "<path>" --archive-slug "<slug>" --source-page "wiki/sources/<slug>.md"
-```
+- Append `wiki/log.md`（triage／轉檔／vision／cache／cleanup 摘要）。
 
 ---
 
@@ -155,10 +156,11 @@ raw/
   cache.json               # SHA-256 → 已 ingest 對照
   analyses/<archive-slug>.md
 wiki/
-  purpose.md               # 方向（非 schema）
   sources/ concepts/ entities/
-  review/queue.md          # 非同步人審
   index.md  log.md
+ops/
+  purpose.md               # 方向（bundle 外操作資料）
+  review-queue.md          # 非同步人審
 ```
 
 `wiki/` 為 **OKF bundle**；`raw/` 與 `.llm-wiki/ingest/` 為本倉擴充。

@@ -10,7 +10,7 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 
 將本 repository 作為以來源為根據的 wiki 系統。完整對照表見 [**docs/ingest-pipeline.md**](./ingest-pipeline.md)。
 
-嚴格遵循 **AGENTS.md** → **操作：Ingest**。步驟 0 為資料治理 gate；telemetry wrapper 不計入業務步驟。開始前讀 [**wiki/purpose.md**](../wiki/purpose.md)。
+嚴格遵循 **AGENTS.md** → **操作：Ingest**。步驟 0 為資料治理 gate；telemetry wrapper 不計入業務步驟。開始前讀 [**ops/purpose.md**](../ops/purpose.md)。
 
 開始前：決定本次 `wiki/log.md` title 後，執行 `python3 scripts/wiki-usage.py start ingest --title "<title>"`。
 0. **先行資料治理閘**：依 [data-governance.md](./data-governance.md) 判定 classification、owner、access scope、PII、retention、redaction 與 Git 准入。`confidential`／`restricted`、PII 或未知 PII、`redaction: required`、秘密或不確定時，停止自動 Ingest 並要求人工核可。
@@ -21,15 +21,15 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 5. 複製原件至 `raw/originals/`（新檔）。
 6. 視覺資產寫入 `raw/assets/`（若適用）。
 7. **新增** `raw/sources/<archive-slug>.md`（詳盡還原；就地 Visual Evidence）。
-8. **兩段式 · 分析（強制）**：依 [**templates/ingest-analysis.md**](./templates/ingest-analysis.md) 寫入 `.llm-wiki/ingest/analyses/<archive-slug>.md`（實體／概念／既有連結／矛盾與張力／建議落點／review candidates）。**禁止**未寫分析就產生 wiki 頁。
+8. **兩段式 · 分析（強制）**：依 [**templates/ingest-analysis.md**](./templates/ingest-analysis.md) 寫入 `.llm-wiki/ingest/analyses/<archive-slug>.md`（實體／概念／既有連結／矛盾與張力／建議落點／review candidates）。將 analysis SHA-256、canonical archive SHA-256、actor、時間與 version 寫入來源頁 `analysis_receipt`，但不提交分析正文。**禁止**未寫分析就產生 wiki 頁。
 9. **保證來源摘要頁**：建立／更新 `wiki/sources/<archive-slug>.md`（來源頁 Schema）。每個 raw archive **必須**有對應 wiki 來源頁（lint 硬閘）。
 10. 依分析更新 `wiki/concepts/*`、`wiki/entities/*`。
 11. 雙向連結（相對路徑）。
 12. 補齊 OKF v0.2 + 治理 frontmatter；來源頁填 `archive_slug`。
-13. 更新 `wiki/index.md`；有根據時可微調 `wiki/purpose.md` → Evolving thesis。
-14. **非同步 Review**：`python3 scripts/ingest-review.py append --title "…" --reason "…" --action human_verify|create_page|deep_research|governance|skip [--related path]` → `wiki/review/queue.md`（不阻擋寫入）。
-15. 輸入清理：`scripts/ingest-cleanup.py`（dry-run → `--confirm`）。
-16. Append `wiki/log.md`；成功後 `python3 scripts/ingest-cache.py record "<path>" --archive-slug "<slug>" --source-page "wiki/sources/<slug>.md"`。
+13. 更新 `wiki/index.md`；有根據時可微調 `ops/purpose.md` → Evolving thesis。
+14. **非同步 Review**：`python3 scripts/ingest-review.py append --title "…" --reason "…" --action human_verify|create_page|deep_research|governance|skip [--related path]` → `ops/review-queue.md`（不阻擋寫入）。
+15. Append `wiki/log.md`；在 cleanup 前以 lookup digest 記 cache：`python3 scripts/ingest-cache.py record --sha256 "<lookup-sha256>" --original-name "<name>" --archive-slug "<slug>" --source-page "wiki/sources/<slug>.md" --analysis-receipt "<analysis-sha256>" --analysis-source-sha256 "<archive-sha256>" --analysis-generated-by "<actor>" --analysis-generated-at "<ISO-8601>"`。
+16. 輸入清理：`scripts/ingest-cleanup.py`（dry-run → `--confirm`）。
 完成後：`python3 scripts/wiki-usage.py finish ingest --title "<title>"`。
 
 所有可驗證主張須引用來源；不確定時標記（`（推測）`、`（未知）`）。
@@ -41,7 +41,7 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 
 依序：
 0. 決定本次 `wiki/log.md` title 後，執行 `python3 scripts/wiki-usage.py start query --title "<title>"`。
-1. 判斷模式：若使用者含「僅讀歸檔」「read sources only」「--sources-only」→ **Read Sources Only**；否則預設模式。先讀 [**wiki/purpose.md**](../wiki/purpose.md)。
+1. 判斷模式：若使用者含「僅讀歸檔」「read sources only」「--sources-only」→ **Read Sources Only**；否則預設模式。先讀 [**ops/purpose.md**](../ops/purpose.md)。
 2. **預設模式**：先查 `wiki/` 摘要（優先 **`## Visual Assets`**）；不足／衝突再核對 `raw/sources/*`。
 3. **Read Sources Only**：只讀 `raw/sources/*`（必要時 `raw/assets/`／Visual Evidence）；**禁止**把 wiki concepts／entities／faq／queries 當證據；答案標 `mode: read-sources-only`。
 4. 答案須含可追溯位置；引用來源；不確定時標記。
@@ -102,7 +102,7 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 0. 決定本次 `wiki/log.md` title 後，執行 `python3 scripts/wiki-usage.py start graph --title "<title>"`。
 1. 遍歷 wiki 頁（遵守連結與關係規則）。
 2. 抽取連結並推論關係。
-3. 執行 `python3 scripts/wiki-graph-insights.py` → `wiki/graph/insights.md`；依 **Agent follow-up** 補充矛盾／缺頁（語意矛盾由 Agent 判斷）。
+3. 執行 `python3 scripts/wiki-graph-insights.py` → `ops/graph-insights.md`；依 **Agent follow-up** 補充矛盾／缺頁（語意矛盾由 Agent 判斷）。
 4. 產出或更新 graph 摘要（可選：`wiki/graph/knowledge-map.md`）。
 5. **新增或實質變更** graph 產物時，更新 `wiki/index.md`（**Overview**：連結 + 一行說明，含 insights）。
 6. **一律** append `wiki/log.md` — 含可選輸出或 **未變更**（記 `pass`、`no-op` 或一行摘要）。

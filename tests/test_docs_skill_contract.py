@@ -88,3 +88,11 @@ def test_contract_docs_do_not_use_untitled_finish_commands() -> None:
     )
     for path in paths:
         assert not untitled.search(read(path)), path
+
+
+def test_bundle_boundary_contract_has_no_legacy_operational_paths() -> None:
+    paths = [ROOT / "AGENTS.md", ROOT / "README.md", *(ROOT / "docs").glob("*.md")]
+    retired = ("wiki/purpose.md", "wiki/review/queue.md", "wiki/graph/insights.md")
+    for path in paths:
+        text = read(path)
+        assert not any(value in text for value in retired), path

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -22,7 +23,7 @@ def _load():
 def test_append_and_close_review_item(tmp_path: Path, monkeypatch) -> None:
     module = _load()
     monkeypatch.setattr(module, "ROOT", tmp_path)
-    queue_path = tmp_path / "wiki" / "review" / "queue.md"
+    queue_path = tmp_path / "ops" / "review-queue.md"
     module.DEFAULT_QUEUE = queue_path
 
     append_args = SimpleNamespace(
@@ -46,3 +47,16 @@ def test_append_and_close_review_item(tmp_path: Path, monkeypatch) -> None:
     open_part, done_part = text.split("## Done", 1)
     assert "abc123" in done_part
     assert "- [ ] id: abc123 |" not in open_part
+
+
+def test_parallel_appends_are_not_lost(tmp_path: Path, monkeypatch) -> None:
+    module = _load()
+    monkeypatch.setattr(module, "ROOT", tmp_path)
+    queue_path = tmp_path / "ops/review-queue.md"
+    module.DEFAULT_QUEUE = queue_path
+    def append(number: int) -> int:
+        return module.cmd_append(SimpleNamespace(queue=str(queue_path), title=f"title {number}", reason="test", source="ingest", action="human_verify", related=[], id=f"id{number}"))
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        assert list(executor.map(append, range(8))) == [0] * 8
+    text = queue_path.read_text(encoding="utf-8")
+    assert sum(1 for number in range(8) if f"id: id{number} |" in text) == 8

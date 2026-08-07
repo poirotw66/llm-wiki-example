@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import os
 import re
 import subprocess
@@ -24,9 +25,7 @@ WIKI = ROOT / "wiki"
 RAW = ROOT / "raw"
 RAW_SOURCES = RAW / "sources"
 RAW_ASSETS = RAW / "assets"
-SKIP = frozenset(
-    {"index.md", "log.md", "README.md", "purpose.md", "queue.md", "insights.md"}
-)
+SKIP = frozenset({"index.md", "log.md"})
 FM = re.compile(r"\A---[ \t]*\r?\n(.*?)\r?\n---[ \t]*(?:\r?\n|\Z)", re.DOTALL)
 LINKS = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")
 IMG = re.compile(r"!\[[^\]]*\]\(([^)]+)\)")
@@ -338,13 +337,32 @@ def archive_slug(meta: dict[str, Any]) -> str | None:
 
 
 def check_purpose(err: list[str]) -> None:
-    path = WIKI / "purpose.md"
+    path = ROOT / "ops" / "purpose.md"
     if not path.is_file():
-        err.append("missing wiki purpose file: wiki/purpose.md")
+        err.append("missing operational purpose file: ops/purpose.md")
         return
     text = path.read_text(encoding="utf-8")
     if "# Purpose" not in text and "# 目的" not in text:
-        err.append("wiki/purpose.md must contain '# Purpose' or '# 目的'")
+        err.append("ops/purpose.md must contain '# Purpose' or '# 目的'")
+        return
+    match = FM.match(text)
+    if not match:
+        err.append("ops/purpose.md must declare mode: template or production in YAML frontmatter")
+        return
+    try:
+        meta = yaml.safe_load(match.group(1))
+    except yaml.YAMLError:
+        err.append("ops/purpose.md has invalid YAML frontmatter")
+        return
+    mode = meta.get("mode") if isinstance(meta, dict) else None
+    if mode not in {"template", "production"}:
+        err.append("ops/purpose.md mode must be template or production")
+    if mode == "production":
+        if "（填寫）" in text or "<填寫" in text:
+            err.append("production ops/purpose.md must not retain template placeholders")
+        for heading in ("Goals", "Key questions", "Scope", "Audience & owners"):
+            if f"## {heading}" not in text:
+                err.append(f"production ops/purpose.md missing ## {heading}")
 
 
 def check_archive_has_source_page(err: list[str]) -> None:
@@ -396,6 +414,25 @@ def check_source_schema(pages: dict[Path, tuple[str, dict[str, Any]]], err: list
         missing = [heading for heading in SOURCE_HEADINGS if heading not in headings]
         if missing:
             err.append(f"source page missing required headings ({', '.join(missing)}): {relative(path)}")
+        receipt = meta.get("analysis_receipt")
+        if not isinstance(receipt, dict):
+            err.append(f"wiki/sources page missing analysis_receipt: {relative(path)}")
+            continue
+        if not is_string(receipt.get("version")):
+            err.append(f"analysis_receipt.version must be a non-empty string: {relative(path)}")
+        for key in ("sha256", "source_sha256"):
+            digest = receipt.get(key)
+            if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+                err.append(f"analysis_receipt.{key} must be a lowercase SHA-256 digest: {relative(path)}")
+        actor = receipt.get("generated_by")
+        if not is_string(actor) or not ACTOR.fullmatch(actor):
+            err.append(f"analysis_receipt.generated_by must follow the OKF actor convention: {relative(path)}")
+        if not is_iso_datetime(receipt.get("generated_at")):
+            err.append(f"analysis_receipt.generated_at must be ISO 8601: {relative(path)}")
+        slug = archive_slug(meta)
+        archive = RAW_SOURCES / f"{slug}.md" if slug else None
+        if archive and archive.is_file() and receipt.get("source_sha256") != hashlib.sha256(archive.read_bytes()).hexdigest():
+            err.append(f"analysis_receipt.source_sha256 does not match raw archive: {relative(path)}")
 
 
 def check_catalog_and_backlinks(pages: dict[Path, tuple[str, dict[str, Any]]], backlinks: dict[Path, int], err: list[str]) -> None:

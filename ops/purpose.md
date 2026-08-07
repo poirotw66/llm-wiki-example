@@ -1,7 +1,11 @@
+---
+mode: template
+---
+
 # Purpose
 
-> 本檔是 wiki 的**方向文件**（為何存在），與 [AGENTS.md](../AGENTS.md)／[docs/PROMPTS.md](../docs/PROMPTS.md) 的**維護 schema**（怎麼操作）分離。  
-> fork 後請改成部門自己的目的；Ingest／Query 前應讀本檔。
+> 此檔為 workspace 操作方向，刻意位於 `ops/`，不屬於 OKF Knowledge Bundle。
+> fork 成正式知識庫前請把 `mode` 改為 `production` 並完成所有填寫欄位；lint 會拒絕 production placeholder。
 
 ## Goals
 
@@ -20,7 +24,7 @@
 ## Audience & owners
 
 - **Audience**：（填寫）
-- **Owner**：見各頁 frontmatter `owner`；本檔維護責任：（填寫 `team:<id>`）
+- **Owner**：（填寫 `team:<id>`）
 
 ## Evolving thesis
 
@@ -28,7 +32,7 @@
 
 ## Related
 
-- Catalog：[index.md](./index.md)
+- Catalog：[wiki/index.md](../wiki/index.md)
 - Schema／操作：[AGENTS.md](../AGENTS.md)、[PROMPTS.md](../docs/PROMPTS.md)
 - 治理：[data-governance.md](../docs/data-governance.md)
-- Review 佇列：[review/queue.md](./review/queue.md)
+- Review 佇列：[review-queue.md](./review-queue.md)

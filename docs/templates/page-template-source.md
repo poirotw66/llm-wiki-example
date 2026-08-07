@@ -4,6 +4,12 @@ type: source
 description: "<一語摘要（OKF 建議）>"
 resource: "<來源的 canonical URI；無 URI 時可省略>"
 archive_slug: "<對應 raw/sources/<slug>.md 的 slug>"
+analysis_receipt:
+  version: "1"
+  sha256: "<兩段式分析稿 SHA-256；不寫入分析正文>"
+  source_sha256: "<raw/sources canonical 檔 SHA-256>"
+  generated_by: "<agent/version|human:id|process:id>"
+  generated_at: "YYYY-MM-DDTHH:MM:SSZ"
 tags: []
 sources:
   - id: archive

@@ -17,7 +17,7 @@
 
 1. 以 **GitHub Template** 或 **fork** 建立新 repo。
 2. **不要**在共用的 `llm-wiki-example` 上寫部門知識。
-3. 編輯 `wiki/purpose.md`（目標、關鍵問題、範圍）與 `wiki/index.md` 的 **Overview**。
+3. 編輯 `ops/purpose.md`（改為 `mode: production`，完成目標、關鍵問題、範圍）與 `wiki/index.md` 的 **Overview**。
 4. 先指定資料 owner、分類／PII 規則與核准私有 repo；依 [data-governance.md](./data-governance.md) 完成 Git 准入與例外流程設定。
 5. 若會 ingest PDF：完成下方 **PDF 前置（與 README 對齊）**（預設只需 Poppler）。
 
