@@ -426,6 +426,7 @@ redaction: required
 * 非 Markdown 或含不可讀視覺之來源 → 轉 **結構化 Markdown** 後寫入 `raw/sources/`（**詳盡還原稿**，見 **docs/visual-source-conversion.md**）；純 MD 輸入亦須另寫 canonical 至 `raw/sources/`（可清理／補強，不可省略 originals）。
 * 支援類型：`.md`、`.txt`、`.docx`、`.pdf`、`.ppt`/`.pptx`、`.xlsx`、常見圖片格式（見 ingest-pipeline 表）。
 * 含流程圖、架構圖、截圖、ER、掃描頁等 → 依 [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md)；資產入 `raw/assets/`。**PDF** 預設 **fast**：`pdftotext` + 頁級分流（`scripts/docling-pdf.py`，`--engine fast`）→ 文字頁直入；**僅**資訊圖／文字層極短頁再 `pdftoppm` + vision／VLM（見 [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md)）。**僅使用者明確指定** full／Docling 時才用 `--engine docling`；Agent 不得自行升級。[Docling](https://github.com/docling-project/docling) 為可選路徑。**文字層極短但頁面有架構圖時，必須 vision 寫層／節點盤點，禁止只抄標題。** Visual Evidence **就地**寫在該頁／該節下，**禁止**文末彙整所有圖。**讀圖一律 subagent**（見 visual-source-conversion → 平行 Vision 編排）；主 Agent **禁止**自行讀圖。
+* **自動觸發 Vision（強制）**：只要 detect／triage 判定存在資訊性視覺（含 PDF helper 輸出的非空 `vision_pages`），Agent **必須**自動匯出圖片並派遣 Vision subagent；**不可**等待使用者再次指定，也不可因「文字層已夠」而略過候選頁。只有 triage 判定無資訊性視覺（`vision_pages` 為空且無其他資訊圖硬閘）時，才可略過 Vision。
 * 無資訊性視覺 → log 或歸檔稿註明「視覺轉換閘：未適用」。
 * 視覺無法辨識 → 保留資產（若可）、標 `（未知）`、寫入 **Limitations / Gaps**。
 * 資產路徑為 **`raw/assets/<base-slug>/p<NN>.png`**（見 **docs/pdf-ingest-sop.md**）；頁碼須與「來源位置」一致；修訂歸檔時 **另建新檔**（如 `YYYYMMDD_<base-slug>.md`），勿改寫既有 `raw/sources/`。
@@ -445,10 +446,10 @@ redaction: required
 1. 讀取 **指定** 來源（路徑、`raw/inbox/` 或批次）。
 2. **SHA-256 快取**：`python3 scripts/ingest-cache.py lookup "<path>"`。若 `hit: true` 且使用者未要求強制重跑 → append log **no-op**（註明 sha256／既有 archive_slug）並結束。
 3. **Detect／Triage**（檔型、是否需轉檔、是否含資訊性視覺）。
-4. 必要時 **轉 Markdown**（含視覺閘；**讀圖一律 subagent**；PDF 預設 **fast**，見 **docs/pdf-ingest-sop.md**）。
+4. 必要時 **轉 Markdown**（含視覺閘；**讀圖一律 subagent**；PDF 預設 **fast**，見 **docs/pdf-ingest-sop.md**）。若 `vision_pages` 非空：先 `--export-vision-assets`，再對每一候選頁派遣 Vision subagent 完成 Visual Evidence（層／節點／箭頭盤點）；**未完成不得**進入步驟 8 之後的 wiki 寫入。
 5. **一律** 將輸入原件複製至 **`raw/originals/`**（含 `.md`；新檔；勿改寫既有檔）。
-6. 視覺資產寫入 **`raw/assets/`**（若適用）。
-7. **新增** canonical 歸檔 **`raw/sources/<archive-slug>.md`**（僅新檔；詳盡還原）。
+6. 視覺資產寫入 **`raw/assets/`**（若適用；`vision_pages` 非空時本步必做）。
+7. **新增** canonical 歸檔 **`raw/sources/<archive-slug>.md`**（僅新檔；詳盡還原；視覺閘頁須已含就地 Visual Evidence）。
 8. **兩段式 · 分析（強制）**：依 [**docs/templates/ingest-analysis.md**](docs/templates/ingest-analysis.md) 寫入 `.llm-wiki/ingest/analyses/<archive-slug>.md`（實體／概念／既有連結／矛盾與張力／建議落點／review candidates）；將 analysis SHA-256、canonical archive SHA-256、actor、時間與版本寫入來源頁 `analysis_receipt`（不寫入私有分析正文）。**禁止**跳過分析直接寫 wiki 頁。
 9. **保證來源摘要頁**：建立或更新 **`wiki/sources/<archive-slug>.md`**（來源頁 Schema）。lint 要求每個 `raw/sources/*.md` 有對應 wiki 來源頁。
 10. 依分析抽取／更新 **concepts**、**entities**。

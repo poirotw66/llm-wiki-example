@@ -16,12 +16,14 @@ Ingest／Query／Lint／FAQ／Graph 之標準提示詞。規約見 [**AGENTS.md*
 0. **先行資料治理閘**：依 [data-governance.md](./data-governance.md) 判定 classification、owner、access scope、PII、retention、redaction 與 Git 准入。`confidential`／`restricted`、PII 或未知 PII、`redaction: required`、秘密或不確定時，停止自動 Ingest 並要求人工核可。
 1. 讀取指定來源；未提供時向使用者索取。
 2. **SHA-256 快取**：`python3 scripts/ingest-cache.py lookup "<path>"`。`hit: true` 且未要求強制重跑 → append log **no-op** 並 `finish ingest`。強制重跑時加 `--force` 或使用者明示。
-3. **Detect／Triage**：副檔名、是否需轉 Markdown、是否含資訊性視覺。
+3. **Detect／Triage**：副檔名、是否需轉 Markdown、是否含資訊性視覺。PDF 執行 `scripts/docling-pdf.py` 並讀取 stdout 的 `vision_pages`。
 4. 必要時轉為結構化 Markdown。**PDF** 依 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)（**預設 fast**；僅使用者指定才 `--engine docling`）。視覺閘依 [**visual-source-conversion.md**](./visual-source-conversion.md)；**讀圖一律 subagent**；結束前 lint 不得出現 `weak Visual Evidence`／`Visual Evidence dumped at end`。
+   - **自動 Vision（強制）**：若 `vision_pages` **非空**，必須立刻 `--export-vision-assets` 並對每一候選頁派遣 Vision subagent，完成逐頁節點／層級／箭頭盤點與就地 Visual Evidence 後，**才可**建立或更新 wiki 頁（步驟 8 起）。**不可**等待使用者再次指定 Vision，也不可因文字層「看起來夠」而略過候選頁。
+   - 僅當 `vision_pages` 為空且無其他資訊圖硬閘時，才可略過 Vision，並在 log／歸檔註明「視覺轉換閘：未適用」。
 5. 複製原件至 `raw/originals/`（新檔）。
-6. 視覺資產寫入 `raw/assets/`（若適用）。
-7. **新增** `raw/sources/<archive-slug>.md`（詳盡還原；就地 Visual Evidence）。
-8. **兩段式 · 分析（強制）**：依 [**templates/ingest-analysis.md**](./templates/ingest-analysis.md) 寫入 `.llm-wiki/ingest/analyses/<archive-slug>.md`（實體／概念／既有連結／矛盾與張力／建議落點／review candidates）。將 analysis SHA-256、canonical archive SHA-256、actor、時間與 version 寫入來源頁 `analysis_receipt`，但不提交分析正文。**禁止**未寫分析就產生 wiki 頁。
+6. 視覺資產寫入 `raw/assets/`（若適用；`vision_pages` 非空時必做）。
+7. **新增** `raw/sources/<archive-slug>.md`（詳盡還原；視覺閘頁須已含就地 Visual Evidence）。
+8. **兩段式 · 分析（強制）**：依 [**templates/ingest-analysis.md**](./templates/ingest-analysis.md) 寫入 `.llm-wiki/ingest/analyses/<archive-slug>.md`（實體／概念／既有連結／矛盾與張力／建議落點／review candidates）。將 analysis SHA-256、canonical archive SHA-256、actor、時間與 version 寫入來源頁 `analysis_receipt`，但不提交分析正文。**禁止**未寫分析就產生 wiki 頁；**亦禁止**在 `vision_pages` 尚未跑完 Vision 時產生 wiki 頁。
 9. **保證來源摘要頁**：建立／更新 `wiki/sources/<archive-slug>.md`（來源頁 Schema）。每個 raw archive **必須**有對應 wiki 來源頁（lint 硬閘）。
 10. 依分析更新 `wiki/concepts/*`、`wiki/entities/*`。
 11. 雙向連結（相對路徑）。

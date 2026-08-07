@@ -15,7 +15,7 @@
 | **1** | 讀取指定來源 | 路徑／`raw/inbox/`／批次 | ① | ① | `INPUT_PATH` |
 | **2** | SHA-256 快取 lookup | `scripts/ingest-cache.py lookup`；hit → no-op | — | — | — |
 | **3** | Detect／Triage | 檔型、轉檔需求、資訊性視覺 | — | ② | `detect` |
-| **4** | 多模態轉 Markdown | PDF：**fast** 預設；視覺閘＋subagent | — | ③ | extractor |
+| **4** | 多模態轉 Markdown | PDF：**fast**；`vision_pages` 非空 → 強制 Vision subagent | — | ③ | extractor |
 | **5** | 原件歸檔 | `raw/originals/`（一律，含 MD） | — | （④ 內） | — |
 | **6** | 視覺資產 | `raw/assets/<base-slug>/p<NN>.png` | — | ③ 產物 | 圖片抽出 |
 | **7** | canonical 歸檔 | `raw/sources/<archive-slug>.md` | ② | ④ | — |
@@ -57,11 +57,23 @@ python3 scripts/ingest-cache.py lookup "<path>"
 | 檢查項 | 動作 |
 |--------|------|
 | 副檔名 | 見下方「支援輸入類型」 |
-| 是否含資訊性視覺 | 流程圖、架構圖、截圖、掃描頁、ER、簡報圖 |
+| 是否含資訊性視覺 | 流程圖、架構圖、截圖、掃描頁、ER、簡報圖；PDF 以 helper 的 `vision_pages` 為準 |
 | 可否直達歸檔整理 | `.md` 且內容已結構化 → 可跳過轉檔，仍須 originals＋canonical sources |
 
+視覺閘分支（固定；Agent **自動**執行，勿等使用者再指定）：
+
+```text
+detect/triage
+  → vision_pages 非空？（或其他資訊圖硬閘）
+    → 是：render（pdftoppm／--export-vision-assets）
+         → Vision subagent（每頁／每圖；層／節點／箭頭盤點）
+         → 就地 Visual Evidence
+         → 繼續文字轉換／歸檔
+    → 否：繼續文字轉換（log／歸檔註明「視覺轉換閘：未適用」）
+```
+
 **4. 多模態轉 Markdown**（非 `.md` 或 `.md` 內嵌不可讀視覺時）  
-依類型轉為 **結構化繁體中文 Markdown**（技術詞保留英文）。**PDF** 依 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)：`scripts/docling-pdf.py`（預設 `--engine fast`）→ 文字／表格直入；**僅**資訊圖／短文字頁 `pdftoppm` + vision／VLM。**僅使用者指定**時才 `--engine docling`。含資訊性視覺時 **必須** 依 [**visual-source-conversion.md**](./visual-source-conversion.md)（硬閘、就地放置、**讀圖一律 subagent**）。
+依類型轉為 **結構化繁體中文 Markdown**（技術詞保留英文）。**PDF** 依 [**pdf-ingest-sop.md**](./pdf-ingest-sop.md)：`scripts/docling-pdf.py`（預設 `--engine fast`）→ 文字／表格直入；`vision_pages` 非空時 **必須** `pdftoppm` + Vision subagent（見上方分支）。**僅使用者指定**時才 `--engine docling`。含資訊性視覺時 **必須** 依 [**visual-source-conversion.md**](./visual-source-conversion.md)（硬閘、就地放置、**讀圖一律 subagent**）。**禁止**在 `vision_pages` 未跑完 Vision 前建立 wiki 頁。
 
 ### B. 不可變歸檔（5–7）
 

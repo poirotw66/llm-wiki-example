@@ -107,20 +107,26 @@ uv run python scripts/docling-pdf.py "<path>.pdf" --export-vision-assets
 ```text
 PDF
  ├─ 預設 fast：pdftotext → 逐頁 MD 初稿 + 頁級 triage
- ├─ 文字／表格夠 → 整理進 raw/sources（不必 vision）
- └─ 架構圖／流程圖／對照表／文字層極短
-       → pdftoppm 整頁 + vision subagent → 就地 Visual Evidence
+ │
+ ├─ vision_pages 非空？（強制分支；Agent 自動執行，勿等使用者再指定）
+ │     → 是：pdftoppm／--export-vision-assets
+ │           → Vision subagent（每頁；層／節點／箭頭盤點）
+ │           → 就地 Visual Evidence
+ │           → 再與文字初稿合併進 raw/sources
+ │     → 否：文字／表格頁整理進 raw/sources（不必 vision；註明「視覺轉換閘：未適用」）
+ │
+ └─ 禁止：vision_pages 非空卻跳過 Vision、或僅抄文字層標題就完成 Ingest
 
 可選 --engine docling（**僅使用者指定** full／Docling 時）：
- └─ Docling 結構化初稿；匯出時可優先裁切內嵌圖，否則 pdftoppm
+ └─ Docling 結構化初稿；仍須對 triage 的 vision_pages 走上方強制 Vision 分支
 ```
 
 | 類型 | 判斷 | 主路徑 |
 |------|------|--------|
-| **文字／表格型** | 文字層段落完整，無資訊圖硬閘 | `pdftotext` 初稿 → 整理進 `raw/sources/` |
-| **資訊圖頁** | 架構圖、流程圖、對照表、KPI；或文字層極短 | 文字層保留標題／旁註；**另** `pdftoppm` + vision |
+| **文字／表格型** | 文字層段落完整，且 `vision_pages` 為空、無資訊圖硬閘 | `pdftotext` 初稿 → 整理進 `raw/sources/` |
+| **資訊圖頁**（`vision_pages` 含該頁） | 架構圖、流程圖、對照表、KPI；或文字層極短 | 文字層保留標題／旁註；**必須** `pdftoppm` + Vision subagent（自動觸發） |
 | **掃描／純圖型** | `pdftotext` 字元近 0、或僅點陣頁 | **以 vision 為正文來源**；勿把 OCR 亂稿當定稿；標 Limitations |
-| **full／Docling**（opt-in） | 使用者明確要求 | `--engine docling`（須已裝模型） |
+| **full／Docling**（opt-in） | 使用者明確要求 | `--engine docling`（須已裝模型）；**不**免除 Vision 分支 |
 
 #### OCR 策略（刻意不硬優化）
 
@@ -209,23 +215,26 @@ uv run python scripts/docling-pdf.py "<path>.pdf" --engine docling --base-slug "
 
 1. 以 **`pdftotext -layout`** 產出逐頁 Markdown 初稿。
 2. 以每頁字元數、大圖面積與關鍵詞做 **頁級 triage**（預設字元閾值 200）。
-3. 在 stdout 印出 `vision_pages` 清單供 Agent 使用。
+3. 在 stdout 印出 `vision_pages` 清單；Agent **必須**讀取並依結果分支（見下方）。
 
-**文字／表格夠的頁**：以 `pdftotext` 初稿為主整理進歸檔，**不必**逐頁送雲端 vision。
+**文字／表格夠且不在 `vision_pages` 的頁**：以 `pdftotext` 初稿為主整理進歸檔，**不必**逐頁送雲端 vision。
 
-### 3. 判定視覺閘（硬閘）
+### 3. 判定視覺閘（硬閘／自動觸發）
 
-下列任一成立 → **必須** 匯出該頁圖並 vision／VLM（即使初稿已有標題）：
+下列任一成立 → **必須** 匯出該頁圖並派遣 Vision subagent（即使初稿已有標題）；**不可**等待使用者再說一次「用 vision」：
 
+- helper 輸出的 `vision_pages` **含該頁**（清單非空即觸發整批候選頁）
 - 架構圖、流程圖、對照表、KPI 區塊
 - 文字層極短但版面有大塊圖形（`docling-pdf` 的 `short_text`／keyword 候選）
 - 掃描頁或文字層明顯不足
 
-**禁止**只抄標題結案。Agent 應覆核 `vision_pages`：可剔除誤報；若漏報資訊圖頁，**手動加入**。
+**禁止**只抄標題結案。**禁止**在 `vision_pages` 非空時以「文字已夠／省 token／稍後再跑」完成 Ingest。Agent 應覆核 `vision_pages`：可剔除明顯誤報；若漏報資訊圖頁，**手動加入**後仍須跑 Vision。
+
+`vision_pages` 非空卻未完成逐頁 Visual Evidence（含層／節點／箭頭盤點）→ Ingest **未完成**，不得建立或更新 wiki 頁。
 
 ### 4. 匯出視覺閘頁面圖
 
-預設 **144 DPI**；vision 不足時重試 **288 DPI**，並在歸檔 metadata 註明。
+預設 **144 DPI**；vision 不足時重試 **288 DPI**，並在歸檔 metadata 註明。`vision_pages` 非空時本步為 **強制**，不是建議。
 
 ```bash
 # 預設 fast：pdftoppm 整頁 → raw/assets/<base-slug>/p<NN>.png
@@ -254,14 +263,15 @@ stdout 的 `exported_assets[].method`：
 
 `pdftoppm` 輸出檔名可能為 `-1.png` 或 `-01.png`；**重新命名時以 PDF 實際頁碼為準**。
 
-### 5. Vision／VLM 文字化（僅候選頁）
+### 5. Vision／VLM 文字化（僅候選頁；強制分支）
 
-對需視覺閘的每一頁／每一張匯出圖（品質不可縮減）：
+對 `vision_pages`／硬閘的每一頁／每一張匯出圖（品質不可縮減；本步非可選建議）：
 
 1. **編排**：凡讀圖依 [**visual-source-conversion.md → 平行 Vision 編排**](./visual-source-conversion.md#平行-vision-編排強制凡讀圖) — **每張圖派 subagent**（多張平行；同時 3–5、每員 1–2 張）；主 Agent **禁止**自行 `Read` 圖片。
 2. **讀圖（subagent）**：子代理打開對應 `raw/assets/<base-slug>/p<NN>.png`（或整頁匯出圖）。
 3. **套用提示詞**：完整複製 [**visual-source-conversion.md → Agent 用提示詞（強制）**](./visual-source-conversion.md#agent-用提示詞強制可複製) 執行轉寫（勿改寫成摘要版提示）。Subagent 須回傳該檔規定的 **VE schema 區塊**（勿寫整份歸檔）。
 4. **合併就地**：主 Agent 將各區塊寫入 `raw/sources/` **該頁／該節正下方**（embed、層／節點盤點、主要資料流 `→`）。**禁止**先寫完全文再把所有圖堆到文末 `## Visual Evidence`（見 [放置規則](./visual-source-conversion.md#放置規則強制歸檔稿)）。
+5. **閘門**：全部候選頁 VE 完成前，**不得**建立／更新 `wiki/sources|concepts|entities`。
 5. 衝突時以圖為準，標 `（推測）`／`（未知）`。
 6. 跑 `python3 scripts/wiki-lint.py`；出現 `weak Visual Evidence` 或 `Visual Evidence dumped at end` 則未完成。
 
@@ -347,7 +357,9 @@ uv run python scripts/docling-pdf.py "raw/inbox/手冊.pdf" \
 完成 PDF ingest 前確認：
 
 - [ ] 原件已入 `raw/originals/`，且 SHA-256 已記錄
-- [ ] 已跑 `scripts/docling-pdf.py`（預設 `--engine fast`）並保留／合併初稿
+- [ ] 已跑 `scripts/docling-pdf.py`（預設 `--engine fast`）並讀取 stdout `vision_pages`
+- [ ] `vision_pages` 非空時：已 `--export-vision-assets` 且 **全部**候選頁完成 Vision subagent＋就地 Visual Evidence（未留白完成 Ingest）
+- [ ] `vision_pages` 為空時：log／歸檔註明「視覺轉換閘：未適用」
 - [ ] 每個處理頁有 `### 第 N 頁`（或等效分節）
 - [ ] 非視覺閘頁未無謂送雲端 vision
 - [ ] 文字層空／極短頁：正文以 vision 為準（未把 OCR 亂稿當定稿）
@@ -368,6 +380,7 @@ uv run python scripts/docling-pdf.py "raw/inbox/手冊.pdf" \
 | 錯誤 | 正確做法 |
 |------|----------|
 | 全檔每頁都送雲端 vision | 預設 fast；僅 `vision_pages`／硬閘頁 vision |
+| `vision_pages` 非空卻略過 Vision／等使用者再說 | **自動** export＋Vision subagent；未完成不得寫 wiki |
 | 有架構圖卻只採用標題／文字層 | 該頁進視覺閘，補層級表 + Visual Evidence |
 | 未指定卻用 Docling／full | 預設 `--engine fast`；**僅使用者明確指定**才 `--engine docling` |
 | 資產扁平檔名 `<base-slug>-p05.png` | 目錄 `raw/assets/<base-slug>/p05.png` |
