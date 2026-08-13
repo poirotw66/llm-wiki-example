@@ -273,7 +273,7 @@ stdout 的 `exported_assets[].method`：
 4. **合併就地**：主 Agent 將各區塊寫入 `raw/sources/` **該頁／該節正下方**（embed、層／節點盤點、主要資料流 `→`）。**禁止**先寫完全文再把所有圖堆到文末 `## Visual Evidence`（見 [放置規則](./visual-source-conversion.md#放置規則強制歸檔稿)）。
 5. **閘門**：全部候選頁 VE 完成前，**不得**建立／更新 `wiki/sources|concepts|entities`。
 5. 衝突時以圖為準，標 `（推測）`／`（未知）`。
-6. 跑 `python3 scripts/wiki-lint.py`；出現 `weak Visual Evidence` 或 `Visual Evidence dumped at end` 則未完成。
+6. 跑 `uv run --group test python scripts/wiki-lint.py`；出現 `weak Visual Evidence` 或 `Visual Evidence dumped at end` 則未完成。
 
 可選：本機 Docling VLM 僅作輔助；最終文字仍須符合上述提示詞與硬閘。
 

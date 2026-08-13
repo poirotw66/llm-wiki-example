@@ -29,7 +29,7 @@
 | **15** | append log + cache record | `wiki/log.md`；`ingest-cache.py record --sha256 …` | ⑧ | ⑩ | — |
 | **16** | 輸入原件清理 | `scripts/ingest-cleanup.py`（dry-run → `--confirm`） | — | — | — |
 
-**外層 wrapper（不計入 0–16）**：`python3 scripts/wiki-usage.py start ingest --title "…"`／`finish ingest --title "…"`。
+**外層 wrapper（不計入 0–16）**：`uv run python scripts/wiki-usage.py start ingest --title "…"`／`finish ingest --title "…"`。
 
 開始前讀 [**ops/purpose.md**](../ops/purpose.md)。
 
@@ -47,7 +47,7 @@
 
 **2. SHA-256 快取**  
 ```bash
-python3 scripts/ingest-cache.py lookup "<path>"
+uv run python scripts/ingest-cache.py lookup "<path>"
 ```
 - `hit: true` 且使用者未要求強制重跑 → append `wiki/log.md` **no-op**（註明 sha256／既有 archive_slug）並 `finish ingest`。
 - 強制重跑：使用者明示，或 lookup 加 `--force`。
@@ -118,20 +118,20 @@ markdown 相對路徑；冷啟動時新頁至少連一個其他 wiki 頁（常�
 **14. 非同步 Review**  
 對分析中的 review candidates、未答 Q&A、需人審治理項：  
 ```bash
-python3 scripts/ingest-review.py append --title "…" --reason "…" --action human_verify|create_page|deep_research|governance|skip
+uv run python scripts/ingest-review.py append --title "…" --reason "…" --action human_verify|create_page|deep_research|governance|skip
 ```  
 寫入 `ops/review-queue.md`；**不**阻擋本輪 wiki 寫入。
 
 **15. append log + cache record**
 在 destructive cleanup 前，使用步驟 2 lookup 的 SHA-256 記錄成功 ingest：
 ```bash
-python3 scripts/ingest-cache.py record --sha256 "<lookup-sha256>" --original-name "<原檔名>" --archive-slug "<slug>" --source-page "wiki/sources/<slug>.md" --analysis-receipt "<analysis-sha256>" --analysis-source-sha256 "<archive-sha256>" --analysis-generated-by "<actor>" --analysis-generated-at "<ISO-8601>"
+uv run python scripts/ingest-cache.py record --sha256 "<lookup-sha256>" --original-name "<原檔名>" --archive-slug "<slug>" --source-page "wiki/sources/<slug>.md" --analysis-receipt "<analysis-sha256>" --analysis-source-sha256 "<archive-sha256>" --analysis-generated-by "<actor>" --analysis-generated-at "<ISO-8601>"
 ```
 
 **16. 輸入原件清理**
 步驟 5（originals）與步驟 7（sources）成功後，僅可清理 `raw/inbox/` 或 repo 根目錄的明確支援輸入檔。  
 ```bash
-python3 scripts/ingest-cleanup.py "<input>" --archive "raw/originals/…" --archive "raw/sources/<slug>.md"
+uv run python scripts/ingest-cleanup.py "<input>" --archive "raw/originals/…" --archive "raw/sources/<slug>.md"
 # 確認後再加 --confirm
 ```
 **禁止**刪 `raw/` 歸檔本體、目錄、symlink。

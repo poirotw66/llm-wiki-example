@@ -10,10 +10,10 @@
 
 ```bash
 # 操作開始時（title 與 wiki/log.md 標題相同）
-python3 scripts/wiki-usage.py start <operation> --title "<operation title>"
+uv run python scripts/wiki-usage.py start <operation> --title "<operation title>"
 
 # 寫完 wiki/log.md 後
-python3 scripts/wiki-usage.py finish <operation> --title "<operation title>"
+uv run python scripts/wiki-usage.py finish <operation> --title "<operation title>"
 ```
 
 `--title` 讓完成時能對應正確的 `wiki/log.md` 條目，即使另一個 task 同時 append log 也不會誤歸因。若本機不是 Codex Desktop，或找不到對應 task，流程不會失敗；該次仍由 `wiki/log.md` 計入執行次數，但 token 顯示 `—`。
@@ -23,10 +23,10 @@ python3 scripts/wiki-usage.py finish <operation> --title "<operation title>"
 ## 報表
 
 ```bash
-python3 scripts/wiki-usage.py report --by operation
-python3 scripts/wiki-usage.py report --by skill
-python3 scripts/wiki-usage.py report --by model
-python3 scripts/wiki-usage.py report --by operation --format json
+uv run python scripts/wiki-usage.py report --by operation
+uv run python scripts/wiki-usage.py report --by skill
+uv run python scripts/wiki-usage.py report --by model
+uv run python scripts/wiki-usage.py report --by operation --format json
 ```
 
 `Total tokens` 及 input／output／cache 欄位來自每次 session 的 `last_token_usage`；當欄位完整時，報表以事件的實際 model 讀取 [`config/skill-usage-pricing.json`](../config/skill-usage-pricing.json)，顯示精確的 **API equiv. USD**。只有舊的總 token 快照才會顯示費用區間；這不是 Codex 訂閱實際扣款。
@@ -34,7 +34,7 @@ python3 scripts/wiki-usage.py report --by operation --format json
 要看每一次 Ingest／Query 的個別費用，可依 log title 展開：
 
 ```bash
-python3 scripts/wiki-usage.py report --by run
+uv run python scripts/wiki-usage.py report --by run
 ```
 
 要看兩類操作的彙總則使用 `--by operation`；每筆已完成的操作都會有自己的 token、model、耗時與成本事件。
@@ -48,14 +48,14 @@ python3 scripts/wiki-usage.py report --by run
 一條指令會依序顯示 model、day、session 三個區段：
 
 ```bash
-python3 scripts/wiki-usage.py codex-report
+uv run python scripts/wiki-usage.py codex-report
 ```
 
 需要單獨查看某一種分組時才加 `--by`；需要機器可讀輸出時加 `--format json`：
 
 ```bash
-python3 scripts/wiki-usage.py codex-report --by model
-python3 scripts/wiki-usage.py codex-report --format json
+uv run python scripts/wiki-usage.py codex-report --by model
+uv run python scripts/wiki-usage.py codex-report --format json
 ```
 
 這些欄位對應 ccusage 的 Codex 資料模型：`input_tokens`、`cached_input_tokens`、`cache_write_input_tokens`、`output_tokens`、`reasoning_output_tokens`、`total_tokens`、model、session 與 USD cost。ccusage 同樣是從 Codex session JSONL 的累計 token event 取每次 turn 的差額／usage，並依 model 計價。[ccusage Codex data source](https://ccusage.com/guide/codex/)

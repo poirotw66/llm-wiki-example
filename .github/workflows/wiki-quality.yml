@@ -24,24 +24,24 @@ jobs:
       - name: Install test dependencies
         run: uv sync --locked --group test
       - name: Validate docs and Skill contracts
-        run: uv run --group test python3 -m pytest -q tests/test_docs_skill_contract.py
+        run: uv run --group test python -m pytest -q tests/test_docs_skill_contract.py
       - name: Run unit tests
-        run: uv run --group test python3 -m pytest --ignore=tests/test_docs_skill_contract.py
+        run: uv run --group test python -m pytest --ignore=tests/test_docs_skill_contract.py
       - name: Validate knowledge bundle
         env:
           WIKI_LINT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
           if [ "$WIKI_LINT_BASE" = "0000000000000000000000000000000000000000" ]; then
-            uv run --group test python3 scripts/wiki-lint.py
+            uv run --group test python scripts/wiki-lint.py
           else
-            uv run --group test python3 scripts/wiki-lint.py --base "$WIKI_LINT_BASE"
+            uv run --group test python scripts/wiki-lint.py --base "$WIKI_LINT_BASE"
           fi
       - name: Enforce governance admission gate
         env:
           WIKI_LINT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
           if [ "$WIKI_LINT_BASE" = "0000000000000000000000000000000000000000" ]; then
-            uv run --group test python3 scripts/governance-gate.py
+            uv run --group test python scripts/governance-gate.py
           else
-            uv run --group test python3 scripts/governance-gate.py --base "$WIKI_LINT_BASE"
+            uv run --group test python scripts/governance-gate.py --base "$WIKI_LINT_BASE"
           fi

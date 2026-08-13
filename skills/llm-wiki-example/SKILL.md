@@ -21,7 +21,7 @@ description: 以來源為根據的 LLM Wiki 部門範本。fork 上手、目錄�
 
 1. **AGENTS.md** — 硬約束與操作定義
 2. **docs/PROMPTS.md** — 對應章節全文執行
-3. 操作開始執行 `python3 scripts/wiki-usage.py start <operation> --title "<title>"`，append `wiki/log.md` 後執行 `python3 scripts/wiki-usage.py finish <operation> --title "<title>"`（實測 token；若漏掉 start，finish 會自動復原且拒絕 0 token；見 `docs/skill-usage.md`）
+3. 操作開始執行 `uv run python scripts/wiki-usage.py start <operation> --title "<title>"`，append `wiki/log.md` 後執行 `uv run python scripts/wiki-usage.py finish <operation> --title "<title>"`（實測 token；若漏掉 start，finish 會自動復原且拒絕 0 token；見 `docs/skill-usage.md`）
 
 ## 安裝（npx skills）
 
