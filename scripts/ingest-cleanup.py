@@ -9,12 +9,16 @@ an explicit action (``--confirm``); without it this command is a dry run.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import os
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+_SCRIPTS = str(Path(__file__).resolve().parent)
+if _SCRIPTS not in sys.path:  # scripts/ uses hyphenated, unimportable filenames.
+    sys.path.append(_SCRIPTS)
+
+from _common import ROOT, sha256_file
+
 ORIGINALS_DIR = ROOT / "raw/originals"
 SOURCES_DIR = ROOT / "raw/sources"
 INBOX_DIR = ROOT / "raw/inbox"
@@ -79,14 +83,6 @@ def has_symlink_component(path: Path) -> bool:
     return False
 
 
-def sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
 def is_allowed_input_location(input_path: Path) -> bool:
     if input_path.is_relative_to(INBOX_DIR):
         return True
@@ -135,7 +131,7 @@ def validate_archives(input_path: Path, archives: list[Path]) -> None:
         raise ValueError("missing raw/originals archive")
     if not sources:
         raise ValueError("missing raw/sources canonical archive")
-    if not any(sha256(original) == sha256(input_path) for original in originals):
+    if not any(sha256_file(original) == sha256_file(input_path) for original in originals):
         raise ValueError("no raw/originals archive is byte-identical to the input (SHA-256 mismatch)")
 
 

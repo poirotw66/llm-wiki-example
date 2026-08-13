@@ -11,32 +11,23 @@ Commands:
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
-import os
 import re
 import sys
-import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-try:
-    from cross_platform_lock import ExclusiveFileLock
-except ModuleNotFoundError:  # Imported by tests as scripts.ingest_cache.
-    from scripts.cross_platform_lock import ExclusiveFileLock
 
-ROOT = Path(__file__).resolve().parents[1]
+_SCRIPTS = str(Path(__file__).resolve().parent)
+if _SCRIPTS not in sys.path:  # scripts/ uses hyphenated, unimportable filenames.
+    sys.path.append(_SCRIPTS)
+
+from _common import ROOT, atomic_write, sha256_file
+from cross_platform_lock import ExclusiveFileLock
+
 DEFAULT_CACHE = ROOT / ".llm-wiki" / "ingest" / "cache.json"
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 ACTOR = re.compile(r"^(?:human:[^\s:]+|process:[^\s:]+|[^\s/]+/[^\s/]+)$")
-
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def load_cache(path: Path) -> dict[str, Any]:
@@ -50,20 +41,6 @@ def load_cache(path: Path) -> dict[str, Any]:
         data["entries"] = {}
     data.setdefault("version", 1)
     return data
-
-
-def atomic_write(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent, text=True)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            handle.write(content)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, path)
-    finally:
-        if os.path.exists(temporary):
-            os.unlink(temporary)
 
 
 def resolve_input(raw: str) -> Path:

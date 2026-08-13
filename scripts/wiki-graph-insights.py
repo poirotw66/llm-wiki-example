@@ -5,28 +5,36 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import re
+import sys
 from collections import defaultdict
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-WIKI = ROOT / "wiki"
-RAW_SOURCES = ROOT / "raw" / "sources"
-SKIP = frozenset({"index.md", "log.md"})
+_SCRIPTS = str(Path(__file__).resolve().parent)
+if _SCRIPTS not in sys.path:  # scripts/ uses hyphenated, unimportable filenames.
+    sys.path.append(_SCRIPTS)
+
+from _common import ROOT, Paths
+
+#: Bundle under inspection.  ``configure`` repoints every location at once.
+PATHS = Paths(ROOT)
 LINKS = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+\.md(?:#[^)]+)?)\)")
 ROLE_DIRS = ("sources", "concepts", "entities", "queries", "faq", "lint", "graph")
 
 
-def wiki_pages() -> list[Path]:
-    return sorted(path for path in WIKI.rglob("*.md") if path.name not in SKIP)
+def configure(root: Path | str) -> Paths:
+    """Point the report at ``root``; returns the resulting layout."""
+    global PATHS
+    PATHS = Paths(Path(root))
+    return PATHS
 
 
 def relative(path: Path) -> str:
-    return str(path.relative_to(ROOT))
+    return PATHS.relative(path)
 
 
 def role_of(path: Path) -> str:
     try:
-        return path.relative_to(WIKI).parts[0]
+        return path.relative_to(PATHS.wiki).parts[0]
     except ValueError:
         return ""
 
@@ -51,7 +59,7 @@ def build_graph(
 
 
 def wiki_link(path: Path) -> str:
-    return f"[{relative(path)}](../{path.relative_to(WIKI).as_posix()})"
+    return f"[{relative(path)}](../{path.relative_to(PATHS.wiki).as_posix()})"
 
 
 def render(
@@ -83,11 +91,11 @@ def render(
                 one_way.append((path, target))
 
     missing_sources: list[str] = []
-    if RAW_SOURCES.is_dir():
+    if PATHS.raw_sources.is_dir():
         wiki_source_stems = {
-            path.stem for path in pages if path.parent == WIKI / "sources"
+            path.stem for path in pages if path.parent == PATHS.wiki_sources
         }
-        for archive in sorted(RAW_SOURCES.glob("*.md")):
+        for archive in sorted(PATHS.raw_sources.glob("*.md")):
             if archive.stem not in wiki_source_stems:
                 missing_sources.append(archive.name)
 
@@ -162,21 +170,23 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--out",
-        default=str(ROOT / "ops" / "graph-insights.md"),
-        help="Output Markdown path (default: ops/graph-insights.md)",
+        help="Output Markdown path (default: <root>/ops/graph-insights.md)",
     )
+    parser.add_argument("--root", help="Bundle root to scan (default: this repository)")
     args = parser.parse_args(argv)
-    pages = wiki_pages()
+    if args.root:
+        configure(args.root)
+    pages = PATHS.wiki_pages()
     if not pages:
         print("wiki-graph-insights: no concept pages; skipped")
         return 0
     outbound, inbound = build_graph(pages)
-    out = Path(args.out)
+    out = Path(args.out) if args.out else PATHS.ops / "graph-insights.md"
     if not out.is_absolute():
-        out = ROOT / out
+        out = PATHS.root / out
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(render(pages, outbound, inbound), encoding="utf-8")
-    print(f"wrote {out.relative_to(ROOT)}")
+    print(f"wrote {PATHS.display(out)}")
     return 0
 
 

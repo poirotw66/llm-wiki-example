@@ -9,10 +9,8 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-import hashlib
 import os
 import re
-import subprocess
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -20,12 +18,15 @@ from typing import Any
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[1]
-WIKI = ROOT / "wiki"
-RAW = ROOT / "raw"
-RAW_SOURCES = RAW / "sources"
-RAW_ASSETS = RAW / "assets"
-SKIP = frozenset({"index.md", "log.md"})
+_SCRIPTS = str(Path(__file__).resolve().parent)
+if _SCRIPTS not in sys.path:  # scripts/ uses hyphenated, unimportable filenames.
+    sys.path.append(_SCRIPTS)
+
+from _common import LOG_BRACKET_OPERATION, LOG_DATE, LOG_OPERATION, ROOT, Paths, sha256_file
+from _common import git_output as _git_output
+
+#: Bundle under inspection.  ``configure`` repoints every location at once.
+PATHS = Paths(ROOT)
 FM = re.compile(r"\A---[ \t]*\r?\n(.*?)\r?\n---[ \t]*(?:\r?\n|\Z)", re.DOTALL)
 LINKS = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")
 IMG = re.compile(r"!\[[^\]]*\]\(([^)]+)\)")
@@ -41,15 +42,6 @@ VE_FLOW = re.compile(r"資料流|控制流|主要資料流|→")
 ASSET_EMBED = re.compile(r"!\[[^\]]*\]\((?:(?:\.\./)+)assets/[^)\s]+/p\d+\.png\)")
 H2_VE = re.compile(r"(?m)^## Visual Evidence\s*$")
 H2_ANY = re.compile(r"(?m)^## ")
-LOG_DATE = re.compile(r"^## \d{4}-\d{2}-\d{2}$")
-LOG_OPERATION = re.compile(r"^- \*\*(?:ingest|query|lint|faq|graph)\*\* \| .+\s*$")
-HISTORY_BRACKET_OPERATION = re.compile(
-    r"^## \[(?P<date>\d{4}-\d{2}-\d{2})\] "
-    r"(?P<operation>ingest|query|lint|faq|graph) \| (?P<title>.+)$"
-)
-HISTORY_OPERATION = re.compile(
-    r"^- \*\*(?P<operation>ingest|query|lint|faq|graph)\*\* \| (?P<title>.+)$"
-)
 V02_STATUS = {"draft", "stable", "deprecated"}
 V01_FIELDS = {"timestamp", "updated", "source_count"}
 V01_CITATIONS = re.compile(r"(?m)^# Citations\s*$")
@@ -62,8 +54,15 @@ RETENTION = re.compile(r"^(?:permanent|per-policy:[^\s:]+|until:\d{4}-\d{2}-\d{2
 ACTOR = re.compile(r"^(?:human:[^\s:]+|process:[^\s:]+|[^\s/]+/[^\s/]+)$")
 
 
+def configure(root: Path | str) -> Paths:
+    """Point every check at ``root``; returns the resulting layout."""
+    global PATHS
+    PATHS = Paths(Path(root))
+    return PATHS
+
+
 def relative(path: Path) -> str:
-    return str(path.relative_to(ROOT))
+    return PATHS.relative(path)
 
 
 def parse_frontmatter(path: Path, text: str, err: list[str]) -> dict[str, Any] | None:
@@ -80,10 +79,6 @@ def parse_frontmatter(path: Path, text: str, err: list[str]) -> dict[str, Any] |
         err.append(f"frontmatter must be a YAML mapping: {relative(path)}")
         return None
     return data
-
-
-def wiki_pages() -> list[Path]:
-    return sorted(p for p in WIKI.rglob("*.md") if p.name not in SKIP)
 
 
 def is_string(value: Any) -> bool:
@@ -241,7 +236,7 @@ def check_metadata(path: Path, meta: dict[str, Any], err: list[str]) -> None:
 
 def load_pages(err: list[str]) -> dict[Path, tuple[str, dict[str, Any]]]:
     pages: dict[Path, tuple[str, dict[str, Any]]] = {}
-    for path in wiki_pages():
+    for path in PATHS.wiki_pages():
         text = path.read_text(encoding="utf-8")
         meta = parse_frontmatter(path, text, err)
         if meta is not None:
@@ -253,7 +248,7 @@ def load_pages(err: list[str]) -> dict[Path, tuple[str, dict[str, Any]]]:
 
 
 def check_index(err: list[str]) -> None:
-    path = WIKI / "index.md"
+    path = PATHS.index
     if not path.is_file():
         err.append("missing bundle root index: wiki/index.md")
         return
@@ -281,7 +276,7 @@ def check_index(err: list[str]) -> None:
 
 
 def check_log(err: list[str]) -> None:
-    path = WIKI / "log.md"
+    path = PATHS.log
     if not path.is_file():
         err.append("missing reserved operation log: wiki/log.md")
         return
@@ -337,7 +332,7 @@ def archive_slug(meta: dict[str, Any]) -> str | None:
 
 
 def check_purpose(err: list[str]) -> None:
-    path = ROOT / "ops" / "purpose.md"
+    path = PATHS.purpose
     if not path.is_file():
         err.append("missing operational purpose file: ops/purpose.md")
         return
@@ -367,14 +362,14 @@ def check_purpose(err: list[str]) -> None:
 
 def check_archive_has_source_page(err: list[str]) -> None:
     """Every raw/sources archive must have a matching wiki/sources summary page."""
-    if not RAW_SOURCES.is_dir():
+    if not PATHS.raw_sources.is_dir():
         return
     wiki_stems = {
         path.stem
-        for path in (WIKI / "sources").glob("*.md")
+        for path in PATHS.wiki_sources.glob("*.md")
         if path.is_file()
-    } if (WIKI / "sources").is_dir() else set()
-    for archive in sorted(RAW_SOURCES.glob("*.md")):
+    } if PATHS.wiki_sources.is_dir() else set()
+    for archive in sorted(PATHS.raw_sources.glob("*.md")):
         if archive.stem not in wiki_stems:
             err.append(
                 "raw archive missing wiki/sources summary page: "
@@ -385,9 +380,9 @@ def check_archive_has_source_page(err: list[str]) -> None:
 def check_resources(pages: dict[Path, tuple[str, dict[str, Any]]], err: list[str]) -> None:
     for path, (_, meta) in pages.items():
         slug = archive_slug(meta)
-        if path.parent == WIKI / "sources" and not slug:
+        if path.parent == PATHS.wiki_sources and not slug:
             err.append(f"wiki/sources page must declare archive_slug or a raw/sources entry: {relative(path)}")
-        if slug and not (RAW_SOURCES / f"{slug}.md").is_file():
+        if slug and not (PATHS.raw_sources / f"{slug}.md").is_file():
             err.append(f"missing raw archive: {relative(path)} archive_slug={slug}")
 
 
@@ -406,7 +401,7 @@ def check_staleness(pages: dict[Path, tuple[str, dict[str, Any]]], err: list[str
 
 def check_source_schema(pages: dict[Path, tuple[str, dict[str, Any]]], err: list[str]) -> None:
     for path, (text, meta) in pages.items():
-        if path.parent != WIKI / "sources":
+        if path.parent != PATHS.wiki_sources:
             continue
         if meta.get("type") != "source":
             err.append(f"wiki/sources page must have type: source: {relative(path)}")
@@ -430,13 +425,13 @@ def check_source_schema(pages: dict[Path, tuple[str, dict[str, Any]]], err: list
         if not is_iso_datetime(receipt.get("generated_at")):
             err.append(f"analysis_receipt.generated_at must be ISO 8601: {relative(path)}")
         slug = archive_slug(meta)
-        archive = RAW_SOURCES / f"{slug}.md" if slug else None
-        if archive and archive.is_file() and receipt.get("source_sha256") != hashlib.sha256(archive.read_bytes()).hexdigest():
+        archive = PATHS.raw_sources / f"{slug}.md" if slug else None
+        if archive and archive.is_file() and receipt.get("source_sha256") != sha256_file(archive):
             err.append(f"analysis_receipt.source_sha256 does not match raw archive: {relative(path)}")
 
 
 def check_catalog_and_backlinks(pages: dict[Path, tuple[str, dict[str, Any]]], backlinks: dict[Path, int], err: list[str]) -> None:
-    index = WIKI / "index.md"
+    index = PATHS.index
     index_text = index.read_text(encoding="utf-8") if index.is_file() else ""
     indexed: set[Path] = set()
     for target in MD_LINK.findall(index_text):
@@ -484,10 +479,10 @@ def visual_evidence_placement_issues(text: str) -> list[str]:
 
 
 def check_visual(pages: dict[Path, tuple[str, dict[str, Any]]], err: list[str]) -> None:
-    if not RAW_ASSETS.is_dir():
+    if not PATHS.raw_assets.is_dir():
         return
-    source_pages = [(path, value) for path, value in pages.items() if path.parent == WIKI / "sources"]
-    for directory in sorted(path for path in RAW_ASSETS.iterdir() if path.is_dir()):
+    source_pages = [(path, value) for path, value in pages.items() if path.parent == PATHS.wiki_sources]
+    for directory in sorted(path for path in PATHS.raw_assets.iterdir() if path.is_dir()):
         if not list(directory.glob("p*.png")):
             continue
         slug = directory.name
@@ -509,12 +504,12 @@ def check_visual(pages: dict[Path, tuple[str, dict[str, Any]]], err: list[str]) 
 
 def check_visual_evidence(pages: dict[Path, tuple[str, dict[str, Any]]], err: list[str]) -> None:
     for page, (page_text, meta) in pages.items():
-        if page.parent != WIKI / "sources":
+        if page.parent != PATHS.wiki_sources:
             continue
         slug = archive_slug(meta)
         if not slug:
             continue
-        archive = RAW_SOURCES / f"{slug}.md"
+        archive = PATHS.raw_sources / f"{slug}.md"
         if not archive.is_file():
             continue
         text = archive.read_text(encoding="utf-8")
@@ -529,10 +524,7 @@ def check_visual_evidence(pages: dict[Path, tuple[str, dict[str, Any]]], err: li
 
 
 def git_output(*args: str) -> str | None:
-    try:
-        return subprocess.check_output(["git", *args], cwd=ROOT, text=True, stderr=subprocess.DEVNULL)
-    except (OSError, subprocess.CalledProcessError):
-        return None
+    return _git_output(*args, cwd=PATHS.root)
 
 
 def normalized_log_history(text: str) -> list[str]:
@@ -542,8 +534,8 @@ def normalized_log_history(text: str) -> list[str]:
     for raw_line in text.splitlines():
         line = raw_line.strip()
         date_match = LOG_DATE.fullmatch(line)
-        bracket_match = HISTORY_BRACKET_OPERATION.fullmatch(line)
-        operation_match = HISTORY_OPERATION.fullmatch(line)
+        bracket_match = LOG_BRACKET_OPERATION.fullmatch(line)
+        operation_match = LOG_OPERATION.fullmatch(line)
         if date_match:
             current_date = line.removeprefix("## ")
         elif bracket_match:
@@ -589,7 +581,10 @@ def check_history(base: str | None, err: list[str]) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", help="Git revision used for history-sensitive checks")
+    parser.add_argument("--root", help="Bundle root to lint (default: this repository)")
     args = parser.parse_args(argv)
+    if args.root:
+        configure(args.root)
     err: list[str] = []
     check_index(err)
     check_log(err)

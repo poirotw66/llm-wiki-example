@@ -3,19 +3,19 @@
 from __future__ import annotations
 
 import argparse
-import os
 import sys
-import tempfile
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-try:
-    from cross_platform_lock import ExclusiveFileLock
-except ModuleNotFoundError:  # Imported by tests as scripts.ingest_review.
-    from scripts.cross_platform_lock import ExclusiveFileLock
 
-ROOT = Path(__file__).resolve().parents[1]
+_SCRIPTS = str(Path(__file__).resolve().parent)
+if _SCRIPTS not in sys.path:  # scripts/ uses hyphenated, unimportable filenames.
+    sys.path.append(_SCRIPTS)
+
+from _common import ROOT, atomic_write
+from cross_platform_lock import ExclusiveFileLock
+
 DEFAULT_QUEUE = ROOT / "ops" / "review-queue.md"
 ACTIONS = ("human_verify", "create_page", "deep_research", "governance", "skip")
 SKELETON = """# Review Queue
@@ -27,20 +27,6 @@ Close items with ``python3 scripts/ingest-review.py close --id <id>``.
 
 ## Done
 """
-
-
-def atomic_write(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent, text=True)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            handle.write(content)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, path)
-    finally:
-        if os.path.exists(temporary):
-            os.unlink(temporary)
 
 
 def ensure_queue(path: Path) -> str:

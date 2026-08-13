@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-import hashlib
 import json
 import re
 import subprocess
@@ -15,7 +14,12 @@ import sys
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
+_SCRIPTS = str(Path(__file__).resolve().parent)
+if _SCRIPTS not in sys.path:  # scripts/ uses hyphenated, unimportable filenames.
+    sys.path.append(_SCRIPTS)
+
+from _common import ROOT, git, sha256_file
+
 DEFAULT_MANIFEST = ROOT / "governance" / "raw-approvals.json"
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 OWNER = re.compile(r"^(?:team|human|process):[^\s:]+$")
@@ -25,10 +29,6 @@ SECRET_PATTERNS = (
     ("AWS access key", re.compile(r"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b")),
     ("generic credential assignment", re.compile(r"(?i)\b(?:api[_-]?key|secret|password|token)\s*[:=]\s*['\"]?[A-Za-z0-9_./+=-]{16,}")),
 )
-
-
-def git(*args: str) -> str:
-    return subprocess.check_output(["git", *args], cwd=ROOT, text=True, stderr=subprocess.DEVNULL)
 
 
 def relevant_paths(base: str | None) -> list[tuple[str, str]]:
@@ -46,14 +46,6 @@ def relevant_paths(base: str | None) -> list[tuple[str, str]]:
         # R/C lines are status, old path, new path; inspect the new content.
         result.append((status, fields[-1]))
     return result
-
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def load_manifest(path: Path) -> dict[str, dict[str, Any]]:
