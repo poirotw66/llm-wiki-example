@@ -107,6 +107,20 @@ class Paths:
     def purpose(self) -> Path:
         return self.ops / "purpose.md"
 
+    @property
+    def review_queue(self) -> Path:
+        """Written by ingest-review, emptied by wiki-reset."""
+        return self.ops / "review-queue.md"
+
+    @property
+    def ingest_cache(self) -> Path:
+        """Written by ingest-cache, removed by wiki-reset."""
+        return self.root / ".llm-wiki" / "ingest" / "cache.json"
+
+    @property
+    def ingest_analyses(self) -> Path:
+        return self.root / ".llm-wiki" / "ingest" / "analyses"
+
     def relative(self, path: Path) -> str:
         """Render ``path`` for human-readable output, relative to the root."""
         return str(path.relative_to(self.root))

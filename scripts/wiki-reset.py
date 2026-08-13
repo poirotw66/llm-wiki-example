@@ -13,24 +13,19 @@ import shutil
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-WIKI = ROOT / "wiki"
-RAW = ROOT / "raw"
+_SCRIPTS = str(Path(__file__).resolve().parent)
+if _SCRIPTS not in sys.path:  # scripts/ uses hyphenated, unimportable filenames.
+    sys.path.append(_SCRIPTS)
 
-KNOWLEDGE_DIRS = (
-    WIKI / "sources",
-    WIKI / "concepts",
-    WIKI / "entities",
-    WIKI / "queries",
-    WIKI / "faq",
-    WIKI / "graph",
-)
-RAW_CONTENT_DIRS = (
-    RAW / "inbox",
-    RAW / "originals",
-    RAW / "sources",
-    RAW / "assets",
-)
+from _common import ROOT, Paths
+
+#: Bundle being reset.  ``configure`` repoints every location at once.
+PATHS = Paths(ROOT)
+
+#: Emptied on reset.  Stored as names so the sets cannot fall out of step with
+#: the configured root; ``wiki/lint/`` is deliberately absent, it is preserved.
+KNOWLEDGE_DIR_NAMES = ("sources", "concepts", "entities", "queries", "faq", "graph")
+RAW_CONTENT_DIR_NAMES = ("inbox", "originals", "sources", "assets")
 PRESERVE_NAMES = {".gitkeep"}
 
 BLANK_INDEX = """\
@@ -84,6 +79,21 @@ Close items with `python3 scripts/ingest-review.py close --id <id>`.
 """
 
 
+def configure(root: Path | str) -> Paths:
+    """Point every location at ``root``; returns the resulting layout."""
+    global PATHS
+    PATHS = Paths(Path(root))
+    return PATHS
+
+
+def knowledge_dirs() -> tuple[Path, ...]:
+    return tuple(PATHS.wiki / name for name in KNOWLEDGE_DIR_NAMES)
+
+
+def raw_content_dirs() -> tuple[Path, ...]:
+    return tuple(PATHS.raw / name for name in RAW_CONTENT_DIR_NAMES)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
@@ -106,19 +116,20 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Do not append wiki/log.md (still prints the planned entry)",
     )
+    parser.add_argument("--root", help="Bundle root to reset (default: this repository)")
     return parser
 
 
 def list_removals() -> list[Path]:
     """Return files and directories that would be removed."""
     targets: list[Path] = []
-    for directory in KNOWLEDGE_DIRS:
+    for directory in knowledge_dirs():
         if not directory.is_dir():
             continue
         for path in sorted(directory.rglob("*")):
             if path.is_file() and path.name not in PRESERVE_NAMES:
                 targets.append(path)
-    for directory in RAW_CONTENT_DIRS:
+    for directory in raw_content_dirs():
         if not directory.is_dir():
             continue
         for path in sorted(directory.iterdir()):
@@ -136,7 +147,7 @@ def remove_path(path: Path) -> None:
 
 
 def ensure_gitkeeps() -> None:
-    for directory in (*KNOWLEDGE_DIRS, *RAW_CONTENT_DIRS):
+    for directory in (*knowledge_dirs(), *raw_content_dirs()):
         directory.mkdir(parents=True, exist_ok=True)
         gitkeep = directory / ".gitkeep"
         if not gitkeep.exists():
@@ -157,19 +168,19 @@ def append_log(log_path: Path, title: str, detail_lines: list[str]) -> None:
 
 def reset_wiki(*, confirmed: bool, skip_log: bool) -> int:
     targets = list_removals()
-    index_path = WIKI / "index.md"
-    log_path = WIKI / "log.md"
+    index_path = PATHS.index
+    log_path = PATHS.log
+    review_path = PATHS.review_queue
+    cache_path = PATHS.ingest_cache
+    analyses_dir = PATHS.ingest_analyses
     print(f"planned removals: {len(targets)}")
     for path in targets:
-        print(f"  - {path.relative_to(ROOT)}")
-    print(f"  - rewrite {index_path.relative_to(ROOT)} (blank catalog)")
-    review_path = ROOT / "ops" / "review-queue.md"
-    print(f"  - rewrite {review_path.relative_to(ROOT)} (empty queue)")
-    cache_path = ROOT / ".llm-wiki" / "ingest" / "cache.json"
-    analyses_dir = ROOT / ".llm-wiki" / "ingest" / "analyses"
-    print(f"  - clear ingest cache/analyses under .llm-wiki/ingest/")
+        print(f"  - {PATHS.relative(path)}")
+    print(f"  - rewrite {PATHS.relative(index_path)} (blank catalog)")
+    print(f"  - rewrite {PATHS.relative(review_path)} (empty queue)")
+    print("  - clear ingest cache/analyses under .llm-wiki/ingest/")
     if not skip_log:
-        print(f"  - append {log_path.relative_to(ROOT)}")
+        print(f"  - append {PATHS.relative(log_path)}")
 
     if not confirmed:
         print("dry-run: would reset (--confirm is required)")
@@ -200,6 +211,8 @@ def reset_wiki(*, confirmed: bool, skip_log: bool) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.root:
+        configure(args.root)
     confirmed = bool(args.confirm) and not bool(args.dry_run)
     try:
         return reset_wiki(confirmed=confirmed, skip_log=args.skip_log)

@@ -7,6 +7,8 @@ import importlib.util
 import sys
 from pathlib import Path
 
+import pytest
+
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 if str(SCRIPTS) not in sys.path:  # Mirrors the bootstrap each script performs.
     sys.path.append(str(SCRIPTS))
@@ -23,12 +25,34 @@ def _load(filename: str, name: str):
     return module
 
 
+#: Every script whose locations must follow its configured root.
+CONFIGURABLE_SCRIPTS = (
+    "wiki-lint.py",
+    "wiki-graph-insights.py",
+    "wiki-reset.py",
+    "ingest-cleanup.py",
+    "ingest-cache.py",
+    "ingest-review.py",
+)
+
+
 def _path_constants(module) -> list[str]:
-    return [
-        name
-        for name, value in vars(module).items()
-        if isinstance(value, Path) and name != "ROOT" and not name.startswith("_")
-    ]
+    """Module-level Paths that ``configure`` cannot repoint.
+
+    A tuple of paths counts too: wiki-reset and ingest-cleanup previously held
+    their directory sets that way.
+    """
+    found: list[str] = []
+    for name, value in vars(module).items():
+        if name == "ROOT" or name.startswith("_"):
+            continue
+        if isinstance(value, Path):
+            found.append(name)
+        elif isinstance(value, (tuple, list, set, frozenset)) and any(
+            isinstance(item, Path) for item in value
+        ):
+            found.append(name)
+    return found
 
 
 def test_every_bundle_location_derives_from_the_root(tmp_path: Path) -> None:
@@ -41,16 +65,20 @@ def test_every_bundle_location_derives_from_the_root(tmp_path: Path) -> None:
         assert getattr(paths, name).is_relative_to(tmp_path), name
 
 
-def test_lint_keeps_no_path_constants_outside_the_configured_root() -> None:
+@pytest.mark.parametrize("filename", CONFIGURABLE_SCRIPTS)
+def test_scripts_keep_no_path_constants_outside_the_configured_root(filename: str) -> None:
     """A module-level ``ROOT / ...`` constant would survive ``configure`` and
     silently read the real repository during tests."""
-    module = _load("wiki-lint.py", "wiki_lint_paths")
+    module = _load(filename, f"{filename}_paths")
     assert _path_constants(module) == []
 
 
-def test_graph_insights_keeps_no_path_constants_outside_the_configured_root() -> None:
-    module = _load("wiki-graph-insights.py", "wiki_graph_insights_paths")
-    assert _path_constants(module) == []
+@pytest.mark.parametrize("filename", CONFIGURABLE_SCRIPTS)
+def test_configure_moves_a_script_off_the_real_repository(tmp_path: Path, filename: str) -> None:
+    module = _load(filename, f"{filename}_configure")
+    assert module.PATHS.root == _common.ROOT
+    assert module.configure(tmp_path).root == tmp_path
+    assert module.PATHS.root == tmp_path
 
 
 def test_lint_and_usage_share_one_log_grammar() -> None:

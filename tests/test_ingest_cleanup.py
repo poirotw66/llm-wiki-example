@@ -43,14 +43,12 @@ def require_symlink_support(directory: Path) -> None:
 
 
 @pytest.fixture()
-def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+def repo(tmp_path: Path) -> Path:
     for directory in ("raw/inbox", "raw/originals", "raw/sources", "scripts", "wiki", "docs", "config"):
         (tmp_path / directory).mkdir(parents=True, exist_ok=True)
-    monkeypatch.setattr(cleanup, "ROOT", tmp_path)
-    monkeypatch.setattr(cleanup, "INBOX_DIR", tmp_path / "raw/inbox")
-    monkeypatch.setattr(cleanup, "ORIGINALS_DIR", tmp_path / "raw/originals")
-    monkeypatch.setattr(cleanup, "SOURCES_DIR", tmp_path / "raw/sources")
-    monkeypatch.setattr(cleanup, "PROTECTED_DIRS", tuple(tmp_path / part for part in (".git", "config", "docs", "raw", "scripts", "skills", "tests", "wiki")))
+    # One call: the protected set and every archive location follow the root,
+    # so a directory added to the script is covered here without editing this.
+    cleanup.configure(tmp_path)
     return tmp_path
 
 
@@ -95,6 +93,36 @@ def test_refuses_previously_deletable_protected_paths(repo: Path, bad_path: str)
 
     with pytest.raises(ValueError, match="protected path|raw/inbox or the repository root"):
         cleanup.validate_input(target)
+
+
+#: Minimum protected surface. The test below derives its cases from the
+#: script's own list, so it covers additions automatically but cannot notice a
+#: removal; this floor is the independent half of that pair.
+REQUIRED_PROTECTED_DIRS = frozenset(
+    {".git", "config", "docs", "raw", "scripts", "skills", "tests", "wiki"}
+)
+
+
+def test_protected_list_still_covers_the_required_directories() -> None:
+    missing = REQUIRED_PROTECTED_DIRS - set(cleanup.PROTECTED_DIR_NAMES)
+    assert not missing, f"cleanup stopped protecting: {sorted(missing)}"
+
+
+def test_every_protected_directory_is_refused(repo: Path) -> None:
+    """Derived from the script's own list, so a directory added there is
+    covered here without editing this test.
+
+    Matches the protected-path message specifically. The location allowlist
+    would refuse these paths anyway, with a different message; asserting the
+    exact one keeps that second layer from masking a shrunken list.
+    """
+    assert cleanup.PROTECTED_DIR_NAMES
+    for name in cleanup.PROTECTED_DIR_NAMES:
+        target = repo / name / "note.md"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("do not remove", encoding="utf-8")
+        with pytest.raises(ValueError, match="refuse protected path"):
+            cleanup.validate_input(target)
 
 
 def test_requires_both_archive_roles_and_identical_original(repo: Path) -> None:

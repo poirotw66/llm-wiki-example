@@ -7,16 +7,16 @@ import sys
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 _SCRIPTS = str(Path(__file__).resolve().parent)
 if _SCRIPTS not in sys.path:  # scripts/ uses hyphenated, unimportable filenames.
     sys.path.append(_SCRIPTS)
 
-from _common import ROOT, atomic_write
+from _common import ROOT, Paths, atomic_write
 from cross_platform_lock import ExclusiveFileLock
 
-DEFAULT_QUEUE = ROOT / "ops" / "review-queue.md"
+#: Repository holding the queue.  ``configure`` repoints it in one call.
+PATHS = Paths(ROOT)
 ACTIONS = ("human_verify", "create_page", "deep_research", "governance", "skip")
 SKELETON = """# Review Queue
 
@@ -29,6 +29,13 @@ Close items with ``python3 scripts/ingest-review.py close --id <id>``.
 """
 
 
+def configure(root: Path | str) -> Paths:
+    """Point the review queue at ``root``."""
+    global PATHS
+    PATHS = Paths(Path(root))
+    return PATHS
+
+
 def ensure_queue(path: Path) -> str:
     if not path.is_file():
         atomic_write(path, SKELETON)
@@ -36,7 +43,7 @@ def ensure_queue(path: Path) -> str:
 
 
 def queue_path(args: argparse.Namespace) -> Path:
-    return Path(args.queue) if args.queue else DEFAULT_QUEUE
+    return Path(args.queue) if args.queue else PATHS.review_queue
 
 
 def cmd_append(args: argparse.Namespace) -> int:
@@ -60,7 +67,7 @@ def cmd_append(args: argparse.Namespace) -> int:
         insert_at = open_at + len(text[open_at:done_at].rstrip()) + 1
         updated = text[:insert_at] + "\n" + block + text[insert_at:].lstrip("\n")
         atomic_write(path, updated if updated.endswith("\n") else updated + "\n")
-    print(f"appended id={item_id} -> {path.relative_to(ROOT)}")
+    print(f"appended id={item_id} -> {PATHS.display(path)}")
     return 0
 
 

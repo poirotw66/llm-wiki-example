@@ -10,7 +10,6 @@ from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
 
-import pytest
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 
@@ -25,9 +24,9 @@ def _load():
     return module
 
 
-def test_lookup_miss_then_record_hit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_lookup_miss_then_record_hit(tmp_path: Path) -> None:
     module = _load()
-    monkeypatch.setattr(module, "ROOT", tmp_path)
+    module.configure(tmp_path)
     source = tmp_path / "doc.pdf"
     source.write_bytes(b"%PDF-demo")
     (tmp_path / "raw" / "sources").mkdir(parents=True)
@@ -35,7 +34,6 @@ def test_lookup_miss_then_record_hit(tmp_path: Path, monkeypatch: pytest.MonkeyP
     (tmp_path / "wiki" / "sources").mkdir(parents=True)
     (tmp_path / "wiki" / "sources" / "doc.md").write_text("# doc\n", encoding="utf-8")
     cache_path = tmp_path / "cache.json"
-    module.DEFAULT_CACHE = cache_path
 
     lookup_args = SimpleNamespace(
         path=str(source),
@@ -64,9 +62,9 @@ def test_lookup_miss_then_record_hit(tmp_path: Path, monkeypatch: pytest.MonkeyP
     assert payload["entry"]["archive_slug"] == "doc"
 
 
-def test_record_accepts_lookup_digest_after_cleanup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_record_accepts_lookup_digest_after_cleanup(tmp_path: Path) -> None:
     module = _load()
-    monkeypatch.setattr(module, "ROOT", tmp_path)
+    module.configure(tmp_path)
     source = tmp_path / "inbox.md"
     source.write_bytes(b"original")
     digest = module.sha256_file(source)
@@ -83,10 +81,10 @@ def test_record_accepts_lookup_digest_after_cleanup(tmp_path: Path, monkeypatch:
 
 
 def test_force_lookup_is_miss_even_when_cached(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path
 ) -> None:
     module = _load()
-    monkeypatch.setattr(module, "ROOT", tmp_path)
+    module.configure(tmp_path)
     source = tmp_path / "doc.pdf"
     source.write_bytes(b"abc")
     (tmp_path / "raw/sources").mkdir(parents=True)
@@ -121,9 +119,9 @@ def test_force_lookup_is_miss_even_when_cached(
     assert json.loads(buf.getvalue())["hit"] is False
 
 
-def test_parallel_records_preserve_every_entry(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_parallel_records_preserve_every_entry(tmp_path: Path) -> None:
     module = _load()
-    monkeypatch.setattr(module, "ROOT", tmp_path)
+    module.configure(tmp_path)
     (tmp_path / "raw/sources").mkdir(parents=True)
     (tmp_path / "wiki/sources").mkdir(parents=True)
     cache_path = tmp_path / "cache.json"
