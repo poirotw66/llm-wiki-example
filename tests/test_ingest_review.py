@@ -20,11 +20,10 @@ def _load():
     return module
 
 
-def test_append_and_close_review_item(tmp_path: Path, monkeypatch) -> None:
+def test_append_and_close_review_item(tmp_path: Path) -> None:
     module = _load()
-    monkeypatch.setattr(module, "ROOT", tmp_path)
-    queue_path = tmp_path / "ops" / "review-queue.md"
-    module.DEFAULT_QUEUE = queue_path
+    module.configure(tmp_path)
+    queue_path = module.PATHS.review_queue
 
     append_args = SimpleNamespace(
         queue=str(queue_path),
@@ -49,11 +48,10 @@ def test_append_and_close_review_item(tmp_path: Path, monkeypatch) -> None:
     assert "- [ ] id: abc123 |" not in open_part
 
 
-def test_parallel_appends_are_not_lost(tmp_path: Path, monkeypatch) -> None:
+def test_parallel_appends_are_not_lost(tmp_path: Path) -> None:
     module = _load()
-    monkeypatch.setattr(module, "ROOT", tmp_path)
-    queue_path = tmp_path / "ops/review-queue.md"
-    module.DEFAULT_QUEUE = queue_path
+    module.configure(tmp_path)
+    queue_path = module.PATHS.review_queue
     def append(number: int) -> int:
         return module.cmd_append(SimpleNamespace(queue=str(queue_path), title=f"title {number}", reason="test", source="ingest", action="human_verify", related=[], id=f"id{number}"))
     with ThreadPoolExecutor(max_workers=8) as executor:

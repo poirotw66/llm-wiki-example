@@ -11,32 +11,35 @@ Commands:
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
-import os
 import re
 import sys
-import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-try:
-    from cross_platform_lock import ExclusiveFileLock
-except ModuleNotFoundError:  # Imported by tests as scripts.ingest_cache.
-    from scripts.cross_platform_lock import ExclusiveFileLock
 
-ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CACHE = ROOT / ".llm-wiki" / "ingest" / "cache.json"
+_SCRIPTS = str(Path(__file__).resolve().parent)
+if _SCRIPTS not in sys.path:  # scripts/ uses hyphenated, unimportable filenames.
+    sys.path.append(_SCRIPTS)
+
+from _common import ROOT, Paths, atomic_write, sha256_file
+from cross_platform_lock import ExclusiveFileLock
+
+#: Repository holding the cache.  ``configure`` repoints it in one call.
+PATHS = Paths(ROOT)
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 ACTOR = re.compile(r"^(?:human:[^\s:]+|process:[^\s:]+|[^\s/]+/[^\s/]+)$")
 
 
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+def configure(root: Path | str) -> Paths:
+    """Point the cache and its artifact checks at ``root``."""
+    global PATHS
+    PATHS = Paths(Path(root))
+    return PATHS
+
+
+def cache_path(value: str | None) -> Path:
+    return Path(value) if value else PATHS.ingest_cache
 
 
 def load_cache(path: Path) -> dict[str, Any]:
@@ -52,24 +55,10 @@ def load_cache(path: Path) -> dict[str, Any]:
     return data
 
 
-def atomic_write(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent, text=True)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            handle.write(content)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, path)
-    finally:
-        if os.path.exists(temporary):
-            os.unlink(temporary)
-
-
 def resolve_input(raw: str) -> Path:
     path = Path(raw).expanduser()
     if not path.is_absolute():
-        path = ROOT / path
+        path = PATHS.root / path
     return path.resolve()
 
 
@@ -78,7 +67,7 @@ def artifacts_present(entry: dict[str, Any]) -> bool:
     source_page = entry.get("source_page")
     if not isinstance(archive_slug, str) or not archive_slug.strip():
         return False
-    archive = ROOT / "raw" / "sources" / f"{archive_slug}.md"
+    archive = PATHS.raw_sources / f"{archive_slug}.md"
     if not archive.is_file():
         return False
     receipt = entry.get("analysis_receipt")
@@ -86,7 +75,7 @@ def artifacts_present(entry: dict[str, Any]) -> bool:
         if not isinstance(receipt, dict) or receipt.get("source_sha256") != sha256_file(archive):
             return False
     if isinstance(source_page, str) and source_page.strip():
-        page = ROOT / source_page
+        page = PATHS.root / source_page
         if not page.is_file():
             return False
     return True
@@ -98,14 +87,14 @@ def cmd_lookup(args: argparse.Namespace) -> int:
         print(json.dumps({"ok": False, "error": f"not a file: {source}"}), file=sys.stderr)
         return 1
     digest = sha256_file(source)
-    cache = load_cache(Path(args.cache) if args.cache else DEFAULT_CACHE)
+    cache = load_cache(cache_path(args.cache))
     entry = cache["entries"].get(digest)
     hit = isinstance(entry, dict) and artifacts_present(entry) and not args.force
     payload = {
         "ok": True,
         "hit": hit,
         "sha256": digest,
-        "path": str(source.relative_to(ROOT)) if source.is_relative_to(ROOT) else str(source),
+        "path": PATHS.display(source),
         "force": bool(args.force),
         "entry": entry if isinstance(entry, dict) else None,
     }
@@ -137,7 +126,7 @@ def cmd_record(args: argparse.Namespace) -> int:
             return 1
         digest = sha256_file(source)
         source_name = source.name
-    cache_path = Path(args.cache) if args.cache else DEFAULT_CACHE
+    target = cache_path(args.cache)
     entry = {
         "sha256": digest,
         "archive_slug": args.archive_slug,
@@ -164,16 +153,16 @@ def cmd_record(args: argparse.Namespace) -> int:
             print("ingest-cache: analysis receipt requires a valid actor and ISO --analysis-generated-at", file=sys.stderr)
             return 1
         entry["analysis_receipt"] = {"version": str(getattr(args, "analysis_version", "1")), "sha256": receipt, "source_sha256": source_digest, "generated_by": generated_by, "generated_at": generated_at}
-    with ExclusiveFileLock(cache_path):
-        cache = load_cache(cache_path)
+    with ExclusiveFileLock(target):
+        cache = load_cache(target)
         cache["entries"][digest] = entry
-        atomic_write(cache_path, json.dumps(cache, ensure_ascii=False, indent=2) + "\n")
+        atomic_write(target, json.dumps(cache, ensure_ascii=False, indent=2) + "\n")
     print(json.dumps({"ok": True, "recorded": entry}, ensure_ascii=False, indent=2))
     return 0
 
 
 def cmd_list(args: argparse.Namespace) -> int:
-    cache = load_cache(Path(args.cache) if args.cache else DEFAULT_CACHE)
+    cache = load_cache(cache_path(args.cache))
     print(json.dumps(cache, ensure_ascii=False, indent=2))
     return 0
 

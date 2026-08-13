@@ -3,20 +3,20 @@
 from __future__ import annotations
 
 import argparse
-import os
 import sys
-import tempfile
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
-try:
-    from cross_platform_lock import ExclusiveFileLock
-except ModuleNotFoundError:  # Imported by tests as scripts.ingest_review.
-    from scripts.cross_platform_lock import ExclusiveFileLock
 
-ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_QUEUE = ROOT / "ops" / "review-queue.md"
+_SCRIPTS = str(Path(__file__).resolve().parent)
+if _SCRIPTS not in sys.path:  # scripts/ uses hyphenated, unimportable filenames.
+    sys.path.append(_SCRIPTS)
+
+from _common import ROOT, Paths, atomic_write
+from cross_platform_lock import ExclusiveFileLock
+
+#: Repository holding the queue.  ``configure`` repoints it in one call.
+PATHS = Paths(ROOT)
 ACTIONS = ("human_verify", "create_page", "deep_research", "governance", "skip")
 SKELETON = """# Review Queue
 
@@ -29,18 +29,11 @@ Close items with ``python3 scripts/ingest-review.py close --id <id>``.
 """
 
 
-def atomic_write(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent, text=True)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            handle.write(content)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, path)
-    finally:
-        if os.path.exists(temporary):
-            os.unlink(temporary)
+def configure(root: Path | str) -> Paths:
+    """Point the review queue at ``root``."""
+    global PATHS
+    PATHS = Paths(Path(root))
+    return PATHS
 
 
 def ensure_queue(path: Path) -> str:
@@ -50,7 +43,7 @@ def ensure_queue(path: Path) -> str:
 
 
 def queue_path(args: argparse.Namespace) -> Path:
-    return Path(args.queue) if args.queue else DEFAULT_QUEUE
+    return Path(args.queue) if args.queue else PATHS.review_queue
 
 
 def cmd_append(args: argparse.Namespace) -> int:
@@ -74,7 +67,7 @@ def cmd_append(args: argparse.Namespace) -> int:
         insert_at = open_at + len(text[open_at:done_at].rstrip()) + 1
         updated = text[:insert_at] + "\n" + block + text[insert_at:].lstrip("\n")
         atomic_write(path, updated if updated.endswith("\n") else updated + "\n")
-    print(f"appended id={item_id} -> {path.relative_to(ROOT)}")
+    print(f"appended id={item_id} -> {PATHS.display(path)}")
     return 0
 
 

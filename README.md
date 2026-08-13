@@ -48,6 +48,7 @@ docs/                   # 支援文件（非 wiki 知識本體）
   data-governance.md  skill-usage.md  templates/
 scripts/                # wiki-lint、ingest-cleanup、ingest-cache、ingest-review、
                         # wiki-graph-insights、wiki-reset、docling-pdf、wiki-usage
+                        # _common.py：共用工具（bundle 路徑、log 格式、SHA-256、原子寫入、git）
 .github/workflows/      # wiki-quality CI
 models/docling/         # 可選 Docling 模型（本機下載；已 gitignore；約 1.2GB）
 config/                 # skill-usage 費率等設定
@@ -312,7 +313,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | [**skills/**](skills/) | 薄 Skill（**唯一 Git 來源**） |
 | [**pyproject.toml**](pyproject.toml)／[**uv.lock**](uv.lock) | uv 依賴；可選 PDF／Docling 組見 `uv sync --group pdf` |
 | [**config/**](config/) | usage 費率等設定 |
-| [**scripts/**](scripts/) | lint、cleanup、ingest-cache、ingest-review、wiki-graph-insights、wiki-reset、docling-pdf、wiki-usage |
+| [**scripts/**](scripts/) | lint、cleanup、ingest-cache、ingest-review、wiki-graph-insights、wiki-reset、docling-pdf、wiki-usage；共用工具在 [`scripts/_common.py`](scripts/_common.py) |
 | [**.github/workflows/wiki-quality.yml**](.github/workflows/wiki-quality.yml) | PR／push：pytest + wiki-lint |
 
 ---

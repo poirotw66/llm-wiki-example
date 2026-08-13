@@ -14,7 +14,7 @@ SPEC.loader.exec_module(wiki_reset)
 
 
 @pytest.fixture()
-def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+def repo(tmp_path: Path) -> Path:
     wiki = tmp_path / "wiki"
     raw = tmp_path / "raw"
     for relative in (
@@ -46,31 +46,9 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     assets.mkdir()
     (assets / "p01.png").write_bytes(b"png")
 
-    monkeypatch.setattr(wiki_reset, "ROOT", tmp_path)
-    monkeypatch.setattr(wiki_reset, "WIKI", wiki)
-    monkeypatch.setattr(wiki_reset, "RAW", raw)
-    monkeypatch.setattr(
-        wiki_reset,
-        "KNOWLEDGE_DIRS",
-        (
-            wiki / "sources",
-            wiki / "concepts",
-            wiki / "entities",
-            wiki / "queries",
-            wiki / "faq",
-            wiki / "graph",
-        ),
-    )
-    monkeypatch.setattr(
-        wiki_reset,
-        "RAW_CONTENT_DIRS",
-        (
-            raw / "inbox",
-            raw / "originals",
-            raw / "sources",
-            raw / "assets",
-        ),
-    )
+    # One call: the knowledge and raw directory sets follow the root, so a
+    # directory added to the script is covered here without editing this.
+    wiki_reset.configure(tmp_path)
     return tmp_path
 
 
@@ -80,6 +58,29 @@ def test_dry_run_does_not_delete(repo: Path, capsys: pytest.CaptureFixture[str])
     assert (repo / "wiki/sources/demo.md").exists()
     assert (repo / "raw/originals/demo.pdf").exists()
     assert "--confirm is required" in capsys.readouterr().out
+
+
+def test_every_configured_directory_is_cleared(repo: Path) -> None:
+    """Derived from the script's own lists, so a directory added there is
+    covered here without editing this test."""
+    assert wiki_reset.KNOWLEDGE_DIR_NAMES and wiki_reset.RAW_CONTENT_DIR_NAMES
+    seeded = []
+    for parent, names in (
+        ("wiki", wiki_reset.KNOWLEDGE_DIR_NAMES),
+        ("raw", wiki_reset.RAW_CONTENT_DIR_NAMES),
+    ):
+        for name in names:
+            item = repo / parent / name / "item.md"
+            item.parent.mkdir(parents=True, exist_ok=True)
+            item.write_text("# seeded\n", encoding="utf-8")
+            seeded.append(item)
+
+    assert wiki_reset.reset_wiki(confirmed=True, skip_log=True) == 0
+
+    for item in seeded:
+        assert not item.exists(), item
+        assert (item.parent / ".gitkeep").exists(), item.parent
+    assert (repo / "wiki/lint/report.md").exists(), "wiki/lint/ must be preserved"
 
 
 def test_confirm_resets_knowledge_and_raw_keeps_lint(repo: Path) -> None:

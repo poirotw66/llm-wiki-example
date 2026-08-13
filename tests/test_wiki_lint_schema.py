@@ -37,11 +37,8 @@ def _bundle(tmp_path: Path) -> tuple[Path, Path]:
 
 
 def _configure(module, tmp_path: Path) -> None:
-    module.ROOT = tmp_path
-    module.WIKI = tmp_path / "wiki"
-    module.RAW = tmp_path / "raw"
-    module.RAW_SOURCES = tmp_path / "raw/sources"
-    module.RAW_ASSETS = tmp_path / "raw/assets"
+    """Point every lint location at the fixture bundle in one call."""
+    module.configure(tmp_path)
 
 
 def test_valid_okf_v02_bundle_passes(tmp_path: Path) -> None:

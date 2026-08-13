@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sqlite3
 import sys
 import time
@@ -15,14 +14,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+_SCRIPTS = str(Path(__file__).resolve().parent)
+if _SCRIPTS not in sys.path:  # scripts/ uses hyphenated, unimportable filenames.
+    sys.path.append(_SCRIPTS)
+
+# The log grammar is shared with wiki-lint, which enforces it: a private copy
+# here could accept entries lint rejects, or silently drop token attribution.
+from _common import LOG_DATE, LOG_OPERATION, OPERATIONS as VALID_OPERATIONS
 
 DEFAULT_LEDGER = Path(".llm-wiki/usage/events.jsonl")
 DEFAULT_ACTIVE_DIR = Path(".llm-wiki/usage/active")
 DEFAULT_PRICING = Path("config/skill-usage-pricing.json")
-VALID_OPERATIONS = ("ingest", "query", "lint", "faq", "graph")
 OPERATION_SKILLS = {operation: f"llm-wiki-{operation}" for operation in VALID_OPERATIONS}
-LOG_DATE = re.compile(r"^## (?P<date>\d{4}-\d{2}-\d{2})$")
-LOG_OPERATION = re.compile(r"^- \*\*(?P<operation>ingest|query|lint|faq|graph)\*\* \| (?P<title>.+)$")
 
 
 def parse_timestamp(value: str) -> datetime:
