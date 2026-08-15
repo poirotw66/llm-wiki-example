@@ -20,7 +20,8 @@ if _SCRIPTS not in sys.path:  # scripts/ uses hyphenated, unimportable filenames
 
 # The log grammar is shared with wiki-lint, which enforces it: a private copy
 # here could accept entries lint rejects, or silently drop token attribution.
-from _common import LOG_DATE, LOG_OPERATION, OPERATIONS as VALID_OPERATIONS
+from _common import LOG_DATE, LOG_OPERATION
+from _common import OPERATIONS as VALID_OPERATIONS
 
 DEFAULT_LEDGER = Path(".llm-wiki/usage/events.jsonl")
 DEFAULT_ACTIVE_DIR = Path(".llm-wiki/usage/active")

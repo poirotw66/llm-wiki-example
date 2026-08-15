@@ -22,7 +22,14 @@ _SCRIPTS = str(Path(__file__).resolve().parent)
 if _SCRIPTS not in sys.path:  # scripts/ uses hyphenated, unimportable filenames.
     sys.path.append(_SCRIPTS)
 
-from _common import LOG_BRACKET_OPERATION, LOG_DATE, LOG_OPERATION, ROOT, Paths, sha256_file
+from _common import (
+    LOG_BRACKET_OPERATION,
+    LOG_DATE,
+    LOG_OPERATION,
+    ROOT,
+    Paths,
+    sha256_file,
+)
 from _common import git_output as _git_output
 
 #: Bundle under inspection.  ``configure`` repoints every location at once.

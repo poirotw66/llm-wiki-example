@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pytest
 
-
 SCRIPT = Path(__file__).parents[1] / "scripts" / "ingest-cleanup.py"
 SPEC = importlib.util.spec_from_file_location("ingest_cleanup", SCRIPT)
 assert SPEC and SPEC.loader

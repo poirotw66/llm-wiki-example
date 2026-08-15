@@ -20,6 +20,9 @@ test = [
     "PyYAML>=6.0.1",
     "pytest>=8.0",
 ]
+lint = [
+    "ruff==0.16.3",
+]
 pdf = [
     "docling>=2.0",
     "torch==2.2.2; platform_system == 'Darwin' and platform_machine == 'x86_64'",
@@ -33,3 +36,25 @@ pdf = [
 [tool.uv]
 package = false
 default-groups = []
+
+[tool.ruff]
+# Long lines are idiomatic here: lint messages and the Chinese prose in
+# docstrings read worse when wrapped.  E501 is not selected below.
+target-version = "py310"
+
+[tool.ruff.lint]
+# Deliberately narrow: rules that catch real defects, not style opinions.
+#   E4/E7/E9 syntax and statement errors   F  pyflakes (undefined, unused)
+#   I  import order                        B  bugbear
+#   UP pyupgrade (target-version aware)
+select = ["E4", "E7", "E9", "F", "I", "B", "UP"]
+ignore = [
+    # scripts/ uses hyphenated, unimportable filenames, so each script must
+    # extend sys.path before importing its siblings.  The import cannot move
+    # to the top of the file.
+    "E402",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Fixture bundles legitimately shadow builtins and reuse loop variables.
+"tests/*" = ["B011"]

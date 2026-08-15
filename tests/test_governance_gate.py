@@ -3,7 +3,6 @@ from __future__ import annotations
 import importlib.util
 import sys
 from pathlib import Path
-from types import SimpleNamespace
 
 
 def _load():
