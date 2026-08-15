@@ -11,7 +11,7 @@ class ExclusiveFileLock:
         self.path = target.with_suffix(target.suffix + ".lock")
         self.timeout, self.stale_after, self.acquired = timeout, stale_after, False
 
-    def __enter__(self) -> "ExclusiveFileLock":
+    def __enter__(self) -> ExclusiveFileLock:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         deadline = time.monotonic() + self.timeout
         while True:
@@ -29,7 +29,9 @@ class ExclusiveFileLock:
                 except FileNotFoundError:
                     continue
                 if time.monotonic() >= deadline:
-                    raise TimeoutError(f"timed out waiting for lock: {self.path}")
+                    # FileExistsError is the normal "someone holds it" case, not
+                    # a cause worth chaining onto the timeout.
+                    raise TimeoutError(f"timed out waiting for lock: {self.path}") from None
                 time.sleep(0.02)
 
     def __exit__(self, *_: object) -> None:

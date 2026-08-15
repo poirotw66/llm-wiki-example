@@ -5,6 +5,8 @@ from __future__ import annotations
 import importlib.util
 import sys
 from pathlib import Path
+
+
 def _load_lint():
     path = Path(__file__).resolve().parents[1] / "scripts" / "wiki-lint.py"
     spec = importlib.util.spec_from_file_location("wiki_lint_schema", path)

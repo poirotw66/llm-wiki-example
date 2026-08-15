@@ -17,6 +17,7 @@
 | 視覺閘／Visual Evidence | [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md)（就地放置；**讀圖一律 subagent**） |
 | PDF 初始化安裝 | 見下方 **初始化安裝**（預設只需 **Poppler**；Docling 可選）；詳見 [docs/pdf-ingest-sop.md](docs/pdf-ingest-sop.md) |
 | Wiki lint | `uv run --group test python scripts/wiki-lint.py` |
+| Python lint | `uv run --group lint ruff check scripts tests`（規則集見 [`pyproject.toml`](pyproject.toml) `[tool.ruff.lint]`） |
 | Ingest 清理 | `uv run python scripts/ingest-cleanup.py <input> --archive raw/originals/<original> --archive raw/sources/<slug>.md`（先 dry-run，確認後加 `--confirm`） |
 | Wiki 重置為空白 | `uv run python scripts/wiki-reset.py`（dry-run）→ `--confirm`（保留 `wiki/lint/`；append log） |
 | PDF helper | `uv run python scripts/docling-pdf.py ...`（**預設 fast**；**僅使用者指定**才 `--engine docling`／full） |
@@ -314,7 +315,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 | [**pyproject.toml**](pyproject.toml)／[**uv.lock**](uv.lock) | uv 依賴；可選 PDF／Docling 組見 `uv sync --group pdf` |
 | [**config/**](config/) | usage 費率等設定 |
 | [**scripts/**](scripts/) | lint、cleanup、ingest-cache、ingest-review、wiki-graph-insights、wiki-reset、docling-pdf、wiki-usage；共用工具在 [`scripts/_common.py`](scripts/_common.py) |
-| [**.github/workflows/wiki-quality.yml**](.github/workflows/wiki-quality.yml) | PR／push：pytest + wiki-lint |
+| [**.github/workflows/wiki-quality.yml**](.github/workflows/wiki-quality.yml) | PR／push：ruff、pytest（Linux 3.10／3.12／3.13＋Windows 3.12）、wiki-lint、governance-gate |
 
 ---
 

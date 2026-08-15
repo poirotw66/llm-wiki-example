@@ -7,7 +7,6 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
-
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 
 
@@ -56,8 +55,8 @@ def test_ingest_handoff_smoke(tmp_path: Path) -> None:
     assert lint.main([]) == 0
     replacement = paths.raw_inbox / "same-content.md"
     replacement.write_bytes(original.read_bytes())
-    from io import StringIO
     import contextlib
+    from io import StringIO
     output = StringIO()
     with contextlib.redirect_stdout(output):
         assert cache.cmd_lookup(SimpleNamespace(path=str(replacement), cache=str(paths.ingest_cache), force=False, require_miss=False)) == 0

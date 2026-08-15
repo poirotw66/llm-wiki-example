@@ -10,7 +10,6 @@ from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
 
-
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 
 
