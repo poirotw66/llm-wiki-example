@@ -30,7 +30,7 @@
 
 ## CI 可驗證 gate
 
-CI 執行 `scripts/governance-gate.py --base <base>`；初始分支或手動未給 base 時掃描所有 tracked/untracked 檔。它掃描常見秘密模式，並要求每一個新 `raw/` 檔在 `governance/raw-approvals.json` 有不含內容的核可 receipt。receipt 至少需含 `path`、`source_sha256`、`classification`、合法 `owner`、`approved_by: human:<id>`、ISO `approved_at`、`contains_pii: false` 與 `redaction: none`；digest 必須與實際內容一致。`confidential`／`restricted`、PII 或需遮罩的原件不可用 manifest 放行進 Git。
+CI 執行 `uv run python scripts/governance-gate.py --base <base>`；初始分支或手動未給 base 時掃描所有 tracked/untracked 檔。它掃描常見秘密模式，並要求每一個新 `raw/` 檔在 `governance/raw-approvals.json` 有不含內容的核可 receipt。receipt 至少需含 `path`、`source_sha256`、`classification`、合法 `owner`、`approved_by: human:<id>`、ISO `approved_at`、`contains_pii: false` 與 `redaction: none`；digest 必須與實際內容一致。`confidential`／`restricted`、PII 或需遮罩的原件不可用 manifest 放行進 Git。
 
 此 gate 是提交前的機械防線，不取代 DLP、repo ACL、人工判讀或完整 secret scanner。
 

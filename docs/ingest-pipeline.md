@@ -13,7 +13,7 @@
 |------|------|------------|---------|----------|----------------|
 | **0** | 資料治理閘 | 分類／PII／owner／准入；必要時停自動寫入 | — | — | — |
 | **1** | 讀取指定來源 | 路徑／`raw/inbox/`／批次 | ① | ① | `INPUT_PATH` |
-| **2** | SHA-256 快取 lookup | `scripts/ingest-cache.py lookup`；hit → no-op | — | — | — |
+| **2** | SHA-256 快取 lookup | `uv run python scripts/ingest-cache.py lookup`；hit → no-op | — | — | — |
 | **3** | Detect／Triage | 檔型、轉檔需求、資訊性視覺 | — | ② | `detect` |
 | **4** | 多模態轉 Markdown | PDF：**fast**；`vision_pages` 非空 → 強制 Vision subagent | — | ③ | extractor |
 | **5** | 原件歸檔 | `raw/originals/`（一律，含 MD） | — | （④ 內） | — |
@@ -25,8 +25,8 @@
 | **11** | 更新頁面與雙向連結 | 相對路徑 `.md` | ⑤⑥ | ⑦⑧ | — |
 | **12** | OKF + 治理 frontmatter | `archive_slug`、`sources[]`、`generated`… | （併入） | — | — |
 | **13** | 更新 index／purpose | `wiki/index.md`；可選 `ops/purpose.md` thesis | ⑦ | ⑨ | — |
-| **14** | 非同步 Review | `scripts/ingest-review.py append` → `ops/review-queue.md` | — | — | — |
-| **15** | append log + cache record | `wiki/log.md`；`ingest-cache.py record --sha256 …` | ⑧ | ⑩ | — |
+| **14** | 非同步 Review | `uv run python scripts/ingest-review.py append` → `ops/review-queue.md` | — | — | — |
+| **15** | append log + cache record | `wiki/log.md`；`uv run python scripts/ingest-cache.py record --sha256 …` | ⑧ | ⑩ | — |
 | **16** | 輸入原件清理 | `scripts/ingest-cleanup.py`（dry-run → `--confirm`） | — | — | — |
 
 **外層 wrapper（不計入 0–16）**：`uv run python scripts/wiki-usage.py start ingest --title "…"`／`finish ingest --title "…"`。

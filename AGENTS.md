@@ -457,7 +457,7 @@ redaction: required
 12. 補齊 **OKF v0.2 frontmatter** 與治理欄位；來源頁填 `archive_slug`；不可把 agent 自評寫成 `human:` 驗證。
 13. 更新 **`wiki/index.md`**；必要時更新 **`ops/purpose.md`** 的 Evolving thesis（僅在有根據時）。
 14. **非同步 Review**：對 review candidates／未答 Q&A／需人審治理項，執行 `uv run python scripts/ingest-review.py append ...` 寫入 `ops/review-queue.md`（**不**阻擋本輪寫入）。
-15. **Append** `wiki/log.md`；成功後用 lookup 的 digest 寫入 cache：`ingest-cache.py record --sha256 … --original-name … --archive-slug … --source-page … --analysis-receipt … --analysis-source-sha256 … --analysis-generated-by … --analysis-generated-at …`。
+15. **Append** `wiki/log.md`；成功後用 lookup 的 digest 寫入 cache：`uv run python scripts/ingest-cache.py record --sha256 … --original-name … --archive-slug … --source-page … --analysis-receipt … --analysis-source-sha256 … --analysis-generated-by … --analysis-generated-at …`。
 16. **輸入原件清理**（`scripts/ingest-cleanup.py`；先 dry-run 再 `--confirm`）。
 
 ---

@@ -125,6 +125,59 @@ def test_documented_commands_run_on_windows() -> None:
     assert not offenders, "use `uv run python` instead:\n" + "\n".join(offenders)
 
 
+#: A backtick span naming a repository script.
+_SCRIPT_SPAN = re.compile(r"`([^`]*?\b[a-z][a-z_-]*\.py\b[^`]*)`")
+#: ...where the script is followed by a subcommand or flag, i.e. an invocation
+#: rather than a bare mention of the file.
+_HAS_ARGUMENTS = re.compile(r"\b[a-z][a-z_-]*\.py\b\s+\S")
+
+
+def test_documented_commands_are_runnable_as_written() -> None:
+    """Any script shown with arguments must carry its `uv run` prefix.
+
+    The same step is written out in AGENTS.md, docs/PROMPTS.md and
+    docs/ingest-pipeline.md, and the copies had already drifted: two of them
+    said ``ingest-cache.py record --sha256 …`` with no interpreter and no
+    ``scripts/`` path, so an Agent following them literally got "command not
+    found". Naming a script without arguments stays allowed — that is a
+    reference, not an instruction.
+    """
+    offenders = []
+    for path in _instruction_files():
+        if path.suffix != ".md":
+            continue
+        for number, line in enumerate(read(path).splitlines(), 1):
+            for span in _SCRIPT_SPAN.findall(line):
+                if _HAS_ARGUMENTS.search(span) and "uv run" not in span:
+                    offenders.append(f"{path.relative_to(ROOT)}:{number}: {span}")
+    assert not offenders, "prefix with `uv run python`:\n" + "\n".join(offenders)
+
+
+def test_the_three_ingest_step_lists_stay_in_step() -> None:
+    """AGENTS, PROMPTS and the pipeline table enumerate the same steps.
+
+    Three copies of one 17-step list is a maintenance hazard: inserting a
+    step means renumbering all three. They are kept because each serves a
+    different reader — the contract, the copy-paste prompt, and the
+    cross-walk to the legacy 8/10-step models — so this pins the numbering
+    they share instead. AGENTS omits step 0, the governance gate, which is
+    stated as a precondition there rather than as a step.
+    """
+    prompt_steps = [int(n) for n in re.findall(r"(?m)^(\d+)\. ", prompt_section("ingest"))]
+
+    agents = read(ROOT / "AGENTS.md")
+    start = agents.index("# 🛠 操作：Ingest")
+    end = agents.index("\n# ❓ 操作：Query", start)
+    agents_steps = [int(n) for n in re.findall(r"(?m)^(\d+)\. ", agents[start:end])]
+
+    pipeline = read(ROOT / "docs" / "ingest-pipeline.md")
+    table_steps = [int(m) for m in re.findall(r"\|\s*\*\*(\d+)\*\*\s*\|", pipeline)]
+
+    assert prompt_steps == list(range(17))
+    assert agents_steps == list(range(1, 17))
+    assert table_steps == list(range(17)), "pipeline table drifted from the step list"
+
+
 def test_bundle_boundary_contract_has_no_legacy_operational_paths() -> None:
     paths = [ROOT / "AGENTS.md", ROOT / "README.md", *(ROOT / "docs").glob("*.md")]
     retired = ("wiki/purpose.md", "wiki/review/queue.md", "wiki/graph/insights.md")
