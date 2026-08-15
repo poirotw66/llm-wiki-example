@@ -21,7 +21,7 @@ ACTIONS = ("human_verify", "create_page", "deep_research", "governance", "skip")
 SKELETON = """# Review Queue
 
 Async human-in-the-loop items. Ingest／Lint may append here without blocking wiki writes.
-Close items with ``python3 scripts/ingest-review.py close --id <id>``.
+Close items with ``uv run python scripts/ingest-review.py close --id <id>``.
 
 ## Open
 

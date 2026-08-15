@@ -16,14 +16,14 @@
 | PDF 轉譯 SOP | [**docs/pdf-ingest-sop.md**](docs/pdf-ingest-sop.md) |
 | 視覺閘／Visual Evidence | [**docs/visual-source-conversion.md**](docs/visual-source-conversion.md)（就地放置；**讀圖一律 subagent**） |
 | PDF 初始化安裝 | 見下方 **初始化安裝**（預設只需 **Poppler**；Docling 可選）；詳見 [docs/pdf-ingest-sop.md](docs/pdf-ingest-sop.md) |
-| Wiki lint | `uv run --group test python3 scripts/wiki-lint.py` |
-| Ingest 清理 | `python3 scripts/ingest-cleanup.py <input> --archive raw/originals/<original> --archive raw/sources/<slug>.md`（先 dry-run，確認後加 `--confirm`） |
+| Wiki lint | `uv run --group test python scripts/wiki-lint.py` |
+| Ingest 清理 | `uv run python scripts/ingest-cleanup.py <input> --archive raw/originals/<original> --archive raw/sources/<slug>.md`（先 dry-run，確認後加 `--confirm`） |
 | Wiki 重置為空白 | `uv run python scripts/wiki-reset.py`（dry-run）→ `--confirm`（保留 `wiki/lint/`；append log） |
 | PDF helper | `uv run python scripts/docling-pdf.py ...`（**預設 fast**；**僅使用者指定**才 `--engine docling`／full） |
-| Ingest SHA 快取 | `python3 scripts/ingest-cache.py lookup\|record …` |
-| Review 佇列 | `python3 scripts/ingest-review.py append\|close …` → `ops/review-queue.md` |
-| Graph 洞見 | `python3 scripts/wiki-graph-insights.py` → `ops/graph-insights.md` |
-| Skill token 報表 | `python3 scripts/wiki-usage.py report --by skill`（[docs/skill-usage.md](docs/skill-usage.md)） |
+| Ingest SHA 快取 | `uv run python scripts/ingest-cache.py lookup\|record …` |
+| Review 佇列 | `uv run python scripts/ingest-review.py append\|close …` → `ops/review-queue.md` |
+| Graph 洞見 | `uv run python scripts/wiki-graph-insights.py` → `ops/graph-insights.md` |
+| Skill token 報表 | `uv run python scripts/wiki-usage.py report --by skill`（[docs/skill-usage.md](docs/skill-usage.md)） |
 | 頁面版型 | [**docs/templates/**](docs/templates/) |
 | CI（schema／raw 不可變／log） | [`.github/workflows/wiki-quality.yml`](.github/workflows/wiki-quality.yml) |
 | npx skills 安裝 | [**SKILL.md**](SKILL.md) |
@@ -277,7 +277,7 @@ npx skills add poirotw66/llm-wiki-example -a cursor -a claude-code -a codex -y
 1. 依 **AGENTS.md** 硬約束（引用、連結、OKF v0.2 frontmatter、治理欄位、`raw/` 不可變、讀圖 subagent 等）
 2. 依 **PROMPTS.md** 該操作步驟全文執行（Ingest：治理 → 快取 → originals → 分析 → wiki → Review → log／cache → cleanup）
 3. 必要時更新 [wiki/index.md](wiki/index.md)
-4. 開始執行 `python3 scripts/wiki-usage.py start <operation> --title "<title>"`，append [wiki/log.md](wiki/log.md) 後執行 `python3 scripts/wiki-usage.py finish <operation> --title "<title>"`（無變更時記 pass／no-op）
+4. 開始執行 `uv run python scripts/wiki-usage.py start <operation> --title "<title>"`，append [wiki/log.md](wiki/log.md) 後執行 `uv run python scripts/wiki-usage.py finish <operation> --title "<title>"`（無變更時記 pass／no-op）
 
 ### 不用 Skill 時
 

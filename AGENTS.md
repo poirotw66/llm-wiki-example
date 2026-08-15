@@ -444,7 +444,7 @@ redaction: required
 下列為 Ingest 業務步驟（對照 [**docs/ingest-pipeline.md**](docs/ingest-pipeline.md)）。開始前讀 [**ops/purpose.md**](ops/purpose.md)。Token telemetry：`start ingest`／`finish ingest`（同 title）。
 
 1. 讀取 **指定** 來源（路徑、`raw/inbox/` 或批次）。
-2. **SHA-256 快取**：`python3 scripts/ingest-cache.py lookup "<path>"`。若 `hit: true` 且使用者未要求強制重跑 → append log **no-op**（註明 sha256／既有 archive_slug）並結束。
+2. **SHA-256 快取**：`uv run python scripts/ingest-cache.py lookup "<path>"`。若 `hit: true` 且使用者未要求強制重跑 → append log **no-op**（註明 sha256／既有 archive_slug）並結束。
 3. **Detect／Triage**（檔型、是否需轉檔、是否含資訊性視覺）。
 4. 必要時 **轉 Markdown**（含視覺閘；**讀圖一律 subagent**；PDF 預設 **fast**，見 **docs/pdf-ingest-sop.md**）。若 `vision_pages` 非空：先 `--export-vision-assets`，再對每一候選頁派遣 Vision subagent 完成 Visual Evidence（層／節點／箭頭盤點）；**未完成不得**進入步驟 8 之後的 wiki 寫入。
 5. **一律** 將輸入原件複製至 **`raw/originals/`**（含 `.md`；新檔；勿改寫既有檔）。
@@ -456,7 +456,7 @@ redaction: required
 11. 更新相關頁並 **雙向連結**（相對路徑）。
 12. 補齊 **OKF v0.2 frontmatter** 與治理欄位；來源頁填 `archive_slug`；不可把 agent 自評寫成 `human:` 驗證。
 13. 更新 **`wiki/index.md`**；必要時更新 **`ops/purpose.md`** 的 Evolving thesis（僅在有根據時）。
-14. **非同步 Review**：對 review candidates／未答 Q&A／需人審治理項，執行 `python3 scripts/ingest-review.py append ...` 寫入 `ops/review-queue.md`（**不**阻擋本輪寫入）。
+14. **非同步 Review**：對 review candidates／未答 Q&A／需人審治理項，執行 `uv run python scripts/ingest-review.py append ...` 寫入 `ops/review-queue.md`（**不**阻擋本輪寫入）。
 15. **Append** `wiki/log.md`；成功後用 lookup 的 digest 寫入 cache：`ingest-cache.py record --sha256 … --original-name … --archive-slug … --source-page … --analysis-receipt … --analysis-source-sha256 … --analysis-generated-by … --analysis-generated-at …`。
 16. **輸入原件清理**（`scripts/ingest-cleanup.py`；先 dry-run 再 `--confirm`）。
 
@@ -472,7 +472,7 @@ redaction: required
 6. 若答案可重用，持久化至 `wiki/queries/*` 並更新 `wiki/index.md`（**Queries** 區）。
 7. **一律** append `wiki/log.md`（僅回答、未改 wiki 頁時記 **pass**／**no-op**）。
 
-操作開始前／append log 後，分別以相同 title 執行 `python3 scripts/wiki-usage.py start query --title "<title>"`／`python3 scripts/wiki-usage.py finish query --title "<title>"`；量測欄位僅可記錄 runtime 實際提供的數字。
+操作開始前／append log 後，分別以相同 title 執行 `uv run python scripts/wiki-usage.py start query --title "<title>"`／`uv run python scripts/wiki-usage.py finish query --title "<title>"`；量測欄位僅可記錄 runtime 實際提供的數字。
 
 ## Query 解析規則（強制）
 
@@ -523,7 +523,7 @@ redaction: required
 6. 更新 `wiki/index.md`（FAQ 區：每條 = 連結 + 一行說明）
 7. Append `wiki/log.md`
 
-操作開始前／append log 後，分別以相同 title 執行 `python3 scripts/wiki-usage.py start faq --title "<title>"`／`python3 scripts/wiki-usage.py finish faq --title "<title>"`。
+操作開始前／append log 後，分別以相同 title 執行 `uv run python scripts/wiki-usage.py start faq --title "<title>"`／`uv run python scripts/wiki-usage.py finish faq --title "<title>"`。
 
 ---
 
@@ -586,7 +586,7 @@ tags: ["faq"]
 
 # 🧪 操作：Lint
 
-**自動檢查（優先）**：執行 `uv run --group test python3 scripts/wiki-lint.py`（真正 YAML/schema、斷鏈、catalog／孤兒頁、`resource` ↔ `raw/sources/`、生命週期、治理欄位、視覺資產；CI 另以 `--base` 檢查 raw immutability 與 log append-only）。exit code 非 0 時依輸出修正後再跑 Agent 深度 Lint。
+**自動檢查（優先）**：執行 `uv run --group test python scripts/wiki-lint.py`（真正 YAML/schema、斷鏈、catalog／孤兒頁、`resource` ↔ `raw/sources/`、生命週期、治理欄位、視覺資產；CI 另以 `--base` 檢查 raw immutability 與 log append-only）。exit code 非 0 時依輸出修正後再跑 Agent 深度 Lint。
 
 偵測：
 
@@ -606,7 +606,7 @@ tags: ["faq"]
 
 **新增或實質變更** `wiki/lint/` 持久化產物時，若目錄需露出，更新 `wiki/index.md`（**Overview** 區：連結 + 一行說明）（例如 lint 摘要頁）。
 
-**每次** Lint **一律** append `wiki/log.md`（即使未寫新檔 — 記 pass 或簡短摘要），並在開始／結束以相同 log title 執行 `python3 scripts/wiki-usage.py start lint --title "<title>"`／`python3 scripts/wiki-usage.py finish lint --title "<title>"`；詳見 [docs/skill-usage.md](docs/skill-usage.md)。
+**每次** Lint **一律** append `wiki/log.md`（即使未寫新檔 — 記 pass 或簡短摘要），並在開始／結束以相同 log title 執行 `uv run python scripts/wiki-usage.py start lint --title "<title>"`／`uv run python scripts/wiki-usage.py finish lint --title "<title>"`；詳見 [docs/skill-usage.md](docs/skill-usage.md)。
 
 ---
 
@@ -618,13 +618,13 @@ tags: ["faq"]
 
 1. 遍歷所有頁面
 2. 抽取連結
-3. 推論關係；並執行 `python3 scripts/wiki-graph-insights.py` 產出／更新 `ops/graph-insights.md`（孤立頁、橋接、缺來源摘要頁、單向連結）
+3. 推論關係；並執行 `uv run python scripts/wiki-graph-insights.py` 產出／更新 `ops/graph-insights.md`（孤立頁、橋接、缺來源摘要頁、單向連結）
 4. Agent 依 insights 的 **Agent follow-up** 補充矛盾／缺頁判斷（結構腳本不自動判定語意矛盾）
 5. 產出或更新 graph 摘要（可選：`wiki/graph/knowledge-map.md`）
 6. **新增或實質變更** graph 產物時，更新 `wiki/index.md`（**Overview** 區：連結 + 一行說明）
 7. Append `wiki/log.md` — **每次** Graph 皆執行，含可選輸出或未變更（記 pass／no-op）
 
-操作開始前／append log 後，分別以相同 title 執行 `python3 scripts/wiki-usage.py start graph --title "<title>"`／`python3 scripts/wiki-usage.py finish graph --title "<title>"`。
+操作開始前／append log 後，分別以相同 title 執行 `uv run python scripts/wiki-usage.py start graph --title "<title>"`／`uv run python scripts/wiki-usage.py finish graph --title "<title>"`。
 
 可選輸出：
 
@@ -650,7 +650,7 @@ ops/graph-insights.md
 
 日期標題須為 ISO `YYYY-MM-DD`；其他 heading 形式不合規。
 
-`.llm-wiki/usage/events.jsonl` 保存 runtime token telemetry。每次操作的 Agent 須在開始／結束以相同 log title 自動執行 `python3 scripts/wiki-usage.py start <operation> --title "<title>"`／`python3 scripts/wiki-usage.py finish <operation> --title "<title>"`；該 ledger 不取代 `wiki/log.md`。詳見 [docs/skill-usage.md](docs/skill-usage.md)。
+`.llm-wiki/usage/events.jsonl` 保存 runtime token telemetry。每次操作的 Agent 須在開始／結束以相同 log title 自動執行 `uv run python scripts/wiki-usage.py start <operation> --title "<title>"`／`uv run python scripts/wiki-usage.py finish <operation> --title "<title>"`；該 ledger 不取代 `wiki/log.md`。詳見 [docs/skill-usage.md](docs/skill-usage.md)。
 
 ---
 

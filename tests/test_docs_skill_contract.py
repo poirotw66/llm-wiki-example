@@ -16,6 +16,11 @@ ACTION_SKILLS = {
     for operation in OPERATIONS
 }
 
+#: How docs must invoke a repository script.  A bare ``python3`` is not
+#: portable: Windows installs ``python.exe`` only, so the documented steps
+#: would fail there for anyone following them literally.
+RUN = "uv run python"
+
 
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
@@ -32,8 +37,8 @@ def prompt_section(operation: str) -> str:
 def test_every_prompt_uses_the_titled_telemetry_wrapper() -> None:
     for operation in OPERATIONS:
         section = prompt_section(operation)
-        start_command = f'python3 scripts/wiki-usage.py start {operation} --title "<title>"'
-        finish_command = f'python3 scripts/wiki-usage.py finish {operation} --title "<title>"'
+        start_command = f'{RUN} scripts/wiki-usage.py start {operation} --title "<title>"'
+        finish_command = f'{RUN} scripts/wiki-usage.py finish {operation} --title "<title>"'
         assert start_command in section, operation
         assert finish_command in section, operation
         assert section.index(start_command) < section.index(finish_command), operation
@@ -84,10 +89,41 @@ def test_contract_docs_do_not_use_untitled_finish_commands() -> None:
     ]
     operation_pattern = "|".join((*OPERATIONS, re.escape("<operation>")))
     untitled = re.compile(
-        rf"python3 scripts/wiki-usage\.py finish (?:{operation_pattern})(?! --title)"
+        rf"{re.escape(RUN)} scripts/wiki-usage\.py finish (?:{operation_pattern})(?! --title)"
     )
     for path in paths:
         assert not untitled.search(read(path)), path
+
+
+#: Files whose commands a reader or Agent is expected to run.  ``wiki/`` is
+#: excluded: its pages are knowledge content, and the one command block there
+#: is a dated record of what a past lint run executed, not an instruction.
+def _instruction_files() -> list[Path]:
+    paths = [ROOT / "README.md", ROOT / "AGENTS.md", ROOT / "SKILL.md"]
+    paths += sorted((ROOT / "docs").rglob("*.md"))
+    paths += sorted((ROOT / "skills").rglob("*.md"))
+    paths += sorted((ROOT / "ops").glob("*.md"))
+    paths += sorted((ROOT / ".github").rglob("*.yml"))
+    paths += sorted((ROOT / "scripts").glob("*.py"))
+    return [path for path in paths if path.is_file()]
+
+
+def test_documented_commands_run_on_windows() -> None:
+    """No documented command may invoke a bare ``python3``.
+
+    Windows installs ``python.exe`` with no ``python3`` alias, and uv's venv
+    does not create one either, so ``python3 ...`` and ``uv run ... python3``
+    both fail there.  Shebang lines are exempt; they are never typed.
+    """
+    invocation = re.compile(r"python3\s+(?:-m\s|scripts/)")
+    offenders = []
+    for path in _instruction_files():
+        for number, line in enumerate(read(path).splitlines(), 1):
+            if line.startswith("#!"):
+                continue
+            if invocation.search(line):
+                offenders.append(f"{path.relative_to(ROOT)}:{number}: {line.strip()}")
+    assert not offenders, "use `uv run python` instead:\n" + "\n".join(offenders)
 
 
 def test_bundle_boundary_contract_has_no_legacy_operational_paths() -> None:
